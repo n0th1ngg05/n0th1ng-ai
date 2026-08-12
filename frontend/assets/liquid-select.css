@@ -1,0 +1,187 @@
+/* liquid-select.css */
+
+.liquid-select-wrapper {
+  position: relative;
+  width: 100%;
+  font-family: var(--font, 'Inter Tight', sans-serif);
+  user-select: none;
+  z-index: 10;
+}
+.liquid-select-wrapper.active {
+  z-index: 9999;
+}
+
+/* The hidden original select */
+.liquid-select-hidden {
+  display: none !important;
+}
+
+/* The visible trigger button */
+.liquid-select-trigger {
+  width: 100%;
+  padding: 12px 14px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: var(--fg, #ececec);
+  font-size: 0.875rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  cursor: pointer;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05), 0 2px 8px rgba(0, 0, 0, 0.2);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+
+.liquid-select-trigger:hover {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.15);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1), 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.liquid-select-trigger.open {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.2);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.15), 0 0 20px rgba(255, 255, 255, 0.05);
+}
+
+.liquid-select-trigger .ls-value {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  pointer-events: none;
+}
+
+.liquid-select-trigger .ls-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.4s cubic-bezier(0.68, -0.55, 0.26, 1.55);
+  opacity: 0.6;
+  pointer-events: none;
+}
+
+.liquid-select-trigger.open .ls-icon {
+  transform: rotate(180deg);
+  opacity: 1;
+}
+
+/* The dropdown menu */
+.liquid-select-dropdown {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  width: 100%;
+  border-radius: 12px;
+  background: rgba(12, 12, 12, 0.98); /* Reduced transparency (more opaque) */
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.8), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(32px) saturate(180%);
+  -webkit-backdrop-filter: blur(32px) saturate(180%);
+  z-index: 1000;
+  overflow: hidden;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-10px) scale(0.98);
+  transform-origin: top center;
+  transition: all 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+  max-height: 250px;
+  overflow-y: auto;
+}
+
+.liquid-select-dropdown.show {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0) scale(1);
+}
+
+/* Scrollbar styling for dropdown */
+.liquid-select-dropdown::-webkit-scrollbar {
+  width: 6px;
+}
+.liquid-select-dropdown::-webkit-scrollbar-track {
+  background: transparent;
+}
+.liquid-select-dropdown::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 10px;
+}
+.liquid-select-dropdown::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+/* Dropdown options */
+.liquid-select-option {
+  padding: 12px 16px;
+  font-size: 0.875rem;
+  color: rgba(255, 255, 255, 0.95); /* Brighter text */
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Create a sexy liquid hover effect */
+.liquid-select-option::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.05) 50%, rgba(255,255,255,0) 100%);
+  transform: translateX(-100%);
+  transition: transform 0.4s ease;
+  z-index: 0;
+}
+
+.liquid-select-option:hover::before {
+  transform: translateX(100%);
+}
+
+.liquid-select-option:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+  padding-left: 22px; /* slight indent on hover */
+}
+
+.liquid-select-option.selected {
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff;
+  font-weight: 500;
+  box-shadow: inset 3px 0 0 var(--gold, #d4af37);
+}
+
+.liquid-select-option span {
+  position: relative;
+  z-index: 1;
+}
+
+/* Disabled option styling */
+.liquid-select-option.disabled {
+  color: rgba(255, 255, 255, 0.3);
+  cursor: not-allowed;
+}
+.liquid-select-option.disabled:hover {
+  background: transparent;
+  padding-left: 16px;
+}
+.liquid-select-option.disabled::before {
+  display: none;
+}
+
+/* Optgroup Header Styling */
+.liquid-select-optgroup {
+  padding: 6px 16px;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: rgba(255, 255, 255, 0.5);
+  font-weight: 500;
+  pointer-events: none;
+  margin-top: 8px;
+}
+.liquid-select-dropdown > .liquid-select-optgroup:first-child {
+  margin-top: 4px;
+}

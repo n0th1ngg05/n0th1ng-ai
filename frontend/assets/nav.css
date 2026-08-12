@@ -1,0 +1,91 @@
+/* ==========================================================================
+   GLOBAL UTILITIES (Required for Navbar & General UI)
+   ========================================================================== */
+.glass {
+  background: rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+.glass-liquid {
+  background: linear-gradient(135deg, rgba(255,255,255,0.03) 0%, rgba(255,255,255,0.01) 100%);
+  backdrop-filter: blur(40px) saturate(1.5);
+  -webkit-backdrop-filter: blur(40px) saturate(1.5);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  box-shadow: inset 0 0 20px rgba(255, 255, 255, 0.02);
+}
+.glass-strong {
+  background: rgba(10, 10, 10, 0.7);
+  backdrop-filter: blur(40px) saturate(2);
+  -webkit-backdrop-filter: blur(40px) saturate(2);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+}
+
+.text-aurora {
+  background: linear-gradient(90deg, #fff 0%, #f3d673 50%, #fff 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-size: 200% auto;
+  animation: shimmer 4s linear infinite;
+}
+@keyframes shimmer { to { background-position: 200% center; } }
+
+.bg-aurora {
+  background: linear-gradient(135deg, #d4af37 0%, #fff 100%);
+  color: #000;
+  transition: all 0.3s;
+}
+.bg-aurora:hover { filter: brightness(1.1); transform: translateY(-1px); }
+
+.mono { font-family: 'JetBrains Mono', monospace; }
+.text-muted { color: #888; }
+.hidden { display: none !important; }
+
+/* ==========================================================================
+   NAVBAR COMPONENT
+   ========================================================================== */
+.nav-wrap { position: fixed; top: 0; width: 100%; z-index: 1000; padding: 16px 24px; transition: all 0.3s; }
+.nav { display: flex; justify-content: space-between; align-items: center; height: 52px; border-radius: 16px; padding: 0 16px; }
+.brand { display: flex; align-items: center; gap: 12px; text-decoration: none; }
+.brand-logo { width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center; position: relative; overflow: hidden; }
+.brand-logo img { width: 20px; height: 20px; position: relative; z-index: 2; }
+.brand-logo-bg { position: absolute; inset: 0; background: linear-gradient(135deg, #d4af37, transparent); opacity: 0.2; z-index: 1; }
+.brand-text { display: flex; flex-direction: column; }
+.brand-name { font-weight: 600; font-size: 1rem; letter-spacing: -0.02em; color: #fafafa; }
+.brand-tag { font-family: 'JetBrains Mono', monospace; font-size: 0.55rem; color: #d4af37; letter-spacing: 0.1em; opacity: 0.8; margin-top: 1px; }
+
+.nav-links { display: flex; gap: 4px; align-items: center; }
+.nav-link { color: #888; text-decoration: none; font-size: 0.85rem; padding: 8px 16px; border-radius: 8px; transition: all 0.2s; border: none; background: transparent; cursor: pointer; display: flex; align-items: center; gap: 6px; }
+.nav-link:hover { color: #fafafa; background: rgba(255, 255, 255, 0.03); }
+
+.nav-dd { position: relative; }
+
+.nav-dd-menu { position: fixed; top: 76px; right: 24px; transform: translateY(10px); opacity: 0; pointer-events: none; width: max-content; padding: 12px; border-radius: 20px; display: grid; grid-template-columns: 1fr 1fr; gap: 4px; transition: all 0.3s cubic-bezier(0.22, 1, 0.36, 1); background: rgba(10, 10, 10, 0.75); backdrop-filter: blur(24px); border: 1px solid rgba(255, 255, 255, 0.08); box-shadow: 0 24px 60px rgba(0,0,0,0.8); z-index: 100; }
+.nav-dd.active .nav-dd-menu, .nav-dd:hover .nav-dd-menu { opacity: 1; pointer-events: auto; transform: translateY(0); }
+.nav-dd-menu a { display: flex; flex-direction: column; padding: 12px 16px; text-decoration: none; color: #fafafa; border-radius: 12px; transition: background 0.2s; }
+.nav-dd-menu a:hover { background: rgba(255, 255, 255, 0.06); }
+.nav-dd-menu b { font-weight: 500; font-size: 0.9rem; }
+.nav-dd-menu i { font-style: normal; color: #888; font-size: 0.75rem; margin-top: 4px; }
+
+.nav-burger { display: none; background: transparent; border: none; color: #fafafa; cursor: pointer; padding: 8px; border-radius: 8px; }
+
+/* Drawer */
+.drawer-wrap { position: fixed; inset: 0; z-index: 2000; pointer-events: none; display: flex; justify-content: flex-end; }
+.drawer-wrap.open { pointer-events: auto; }
+.drawer-bg { position: absolute; inset: 0; background: rgba(0,0,0,0.6); opacity: 0; transition: opacity 0.4s; backdrop-filter: blur(10px); }
+.drawer-wrap.open .drawer-bg { opacity: 1; }
+.drawer { width: 300px; height: 100%; transform: translateX(100%); transition: transform 0.5s cubic-bezier(0.22, 1, 0.36, 1); display: flex; flex-direction: column; position: relative; border-left: 1px solid rgba(255, 255, 255, 0.08); background: rgba(10,10,10,0.8); backdrop-filter: blur(20px); }
+.drawer-wrap.open .drawer { transform: translateX(0); }
+.drawer-head { padding: 24px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255, 255, 255, 0.08); }
+.drawer-close { background: transparent; border: none; color: #fafafa; font-size: 1.5rem; cursor: pointer; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border-radius: 8px; }
+.drawer-links { padding: 24px; display: flex; flex-direction: column; gap: 8px; overflow-y: auto; }
+.drawer-links a { display: flex; justify-content: space-between; align-items: center; text-decoration: none; color: #fafafa; padding: 12px 16px; border-radius: 12px; transition: background 0.2s; font-size: 1.1rem; font-weight: 300; }
+.drawer-links a:hover { background: rgba(255, 255, 255, 0.06); color: #d4af37; }
+
+@media (max-width: 900px) {
+  .nav-links { display: none; }
+  .nav-burger { display: flex; }
+}
+
+

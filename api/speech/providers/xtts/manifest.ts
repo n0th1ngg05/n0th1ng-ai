@@ -1,0 +1,106 @@
+import { ProviderManifest, ModelStatus } from '../../types.js';
+import { defaultXTTSConfig } from './config.js';
+
+/** XTTS provider manifest */
+export const xttsManifest: ProviderManifest = {
+  id: 'xtts',
+  name: 'XTTS',
+  type: 'tts',
+  version: '2.0.0',
+  description: 'Coqui XTTS-v2 voice cloning TTS',
+  author: 'Coqui',
+  license: 'CPML',
+  supportedLanguages: defaultXTTSConfig.languages,
+  models: [
+    {
+      id: 'xtts-v2',
+      providerId: 'xtts',
+      name: 'XTTS v2',
+      version: '2.0.0',
+      size: 1500000000,
+      checksum: '',
+      checksumAlgorithm: 'sha256',
+      downloadUrl: 'https://huggingface.co/coqui/XTTS-v2/resolve/main/model.pth',
+      status: ModelStatus.AVAILABLE,
+      languages: defaultXTTSConfig.languages,
+      capabilities: ['tts', 'voice-cloning'],
+      minProviderVersion: '2.0.0',
+    },
+    {
+      id: 'xtts-v1',
+      providerId: 'xtts',
+      name: 'XTTS v1 (Legacy)',
+      version: '1.0.0',
+      size: 1200000000,
+      checksum: '',
+      checksumAlgorithm: 'sha256',
+      downloadUrl: 'https://huggingface.co/coqui/XTTS-v1/resolve/main/model.pth',
+      status: ModelStatus.AVAILABLE,
+      languages: ['en', 'es', 'fr', 'de', 'it', 'pt'],
+      capabilities: ['tts', 'voice-cloning'],
+      minProviderVersion: '1.0.0',
+    },
+  ],
+  voices: [
+    {
+      id: 'default',
+      modelId: 'xtts-v2',
+      providerId: 'xtts',
+      name: 'Default',
+      language: 'en',
+      gender: 'neutral',
+      description: 'Default XTTS voice preset',
+      sampleRate: 24000,
+      isDefault: true,
+    },
+    {
+      id: 'male_speaker',
+      modelId: 'xtts-v2',
+      providerId: 'xtts',
+      name: 'Male Speaker',
+      language: 'en',
+      gender: 'male',
+      description: 'Male voice preset for XTTS',
+      sampleRate: 24000,
+      isDefault: false,
+    },
+    {
+      id: 'female_speaker',
+      modelId: 'xtts-v2',
+      providerId: 'xtts',
+      name: 'Female Speaker',
+      language: 'en',
+      gender: 'female',
+      description: 'Female voice preset for XTTS',
+      sampleRate: 24000,
+      isDefault: false,
+    },
+    {
+      id: 'neutral_narrator',
+      modelId: 'xtts-v2',
+      providerId: 'xtts',
+      name: 'Neutral Narrator',
+      language: 'en',
+      gender: 'neutral',
+      description: 'Neutral narrator-style preset',
+      sampleRate: 24000,
+      isDefault: false,
+    },
+    {
+      id: 'default_v1',
+      modelId: 'xtts-v1',
+      providerId: 'xtts',
+      name: 'Default (v1)',
+      language: 'en',
+      gender: 'neutral',
+      description: 'Default XTTS v1 voice',
+      sampleRate: 22050,
+      isDefault: false,
+    },
+  ],
+};
+
+/** Gets the XTTS manifest */
+export function getXTTSManifest(): ProviderManifest {
+  return JSON.parse(JSON.stringify(xttsManifest));
+}

@@ -1,0 +1,316 @@
+﻿<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>n0th1ng ai &mdash; You Imagine, We Render.</title>
+<meta name="description" content="n0th1ng ai &mdash; a personal artificial intelligence workstation for creation, visualization, automation and exploration." />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@200;300;400;500;600&family=JetBrains+Mono:wght@300;400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="frontend/home/styles.css" />
+<link rel="stylesheet" href="frontend/assets/page-transitions.css" />
+  <script src="frontend/assets/nav.js" defer></script>
+  <link rel="stylesheet" href="frontend/assets/nav.css">
+</head>
+<body>
+
+﻿
+  <!-- Global Navbar -->
+  <header class="nav-wrap scrolled" id="navWrap">
+    <nav class="nav glass-liquid" id="nav">
+      <a href="index.html" class="brand">
+        <span class="brand-logo glass-strong">
+          <img src="frontend/assets/logo.png" alt="logo" onerror="this.style.display='none'"/>
+          <span class="brand-logo-bg" aria-hidden="true"></span>
+        </span>
+        <span class="brand-text">
+          <span class="brand-name text-aurora">n0th1ng</span>
+          <span class="brand-tag">AI Â· WORKSTATION</span>
+        </span>
+      </a>
+
+      <div class="nav-links">
+        <a class="nav-link" href="index.html">Home</a>
+        <div class="nav-dd" id="ddFeatures">
+          <button class="nav-link nav-dd-btn">Features
+            <svg width="10" height="10" viewBox="0 0 10 10"><path d="M2 3.5 L5 6.5 L8 3.5" stroke="currentColor" fill="none" stroke-width="1.4" stroke-linecap="round"/></svg>
+          </button>
+                  <div class="nav-dd-menu glass-liquid">
+          <a href="frontend/chatspace/index.html"><b>Chatspace</b><i>Ideas &rarr; reality</i></a>
+          <a href="frontend/studio/index.html"><b>Image Studio</b><i>Visualize imagination</i></a>
+          <a href="frontend/framesx/index.html"><b>FramesX</b><i>Cinematic generation</i></a>
+          <a href="frontend/files/index.html"><b>Files</b><i>Knowledge & Documents</i></a>
+          <a href="frontend/voice/index.html"><b>Voice Studio</b><i>Speech Intelligence</i></a>
+          <a href="frontend/personastudio/index.html"><b>Persona Studio</b><i>NVIDIA PersonaPlex</i></a>
+          <a href="frontend/forge/index.html"><b>Forge</b><i>Autonomous build agent</i></a>
+          <a href="frontend/forgex/index.html"><b>ForgeX</b><i>Advanced autonomous agentic coding</i></a>
+          <a href="frontend/monitor/index.html"><b>Monitor</b><i>Workstation pulse</i></a>
+          <a href="frontend/robotics/index.html"><b>Robotics</b><i>Beyond software</i></a>
+          <a href="frontend/settings/index.html"><b>Settings</b><i>Configure workspace</i></a>
+        </div>
+        </div>
+        <a class="nav-link" href="index.html#about">About</a>
+        <a class="nav-link" href="frontend/settings/index.html">Settings</a>
+      </div>
+
+      <button class="nav-burger glass-strong" id="burger" aria-label="Open menu">
+        <svg width="20" height="20" viewBox="0 0 22 22" fill="none"><path d="M3 6h16M3 11h16M3 16h16" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+      </button>
+    </nav>
+  </header>
+
+  <!-- Mobile Drawer -->
+  <div class="drawer-wrap" id="drawer">
+    <div class="drawer-bg"></div>
+    <aside class="drawer glass-liquid">
+      <div class="drawer-head">
+        <div class="brand">
+          <span class="brand-name text-aurora">n0th1ng</span>
+        </div>
+        <button class="drawer-close glass" data-close>Ã—</button>
+      </div>
+          <nav class="drawer-links">
+      <a href="index.html" data-close>Home <span>&rarr;</span></a>
+      <a href="index.html#features" data-close>Features <span>&rarr;</span></a>
+      <a href="frontend/chatspace/index.html" data-close>Chatspace <span>&rarr;</span></a>
+      <a href="frontend/studio/index.html" data-close>Image Studio <span>&rarr;</span></a>
+      <a href="frontend/framesx/index.html" data-close>FramesX <span>&rarr;</span></a>
+      <a href="frontend/files/index.html" data-close>Files <span>&rarr;</span></a>
+      <a href="frontend/voice/index.html" data-close>Voice Studio <span>&rarr;</span></a>
+      <a href="frontend/personastudio/index.html" data-close>Persona Studio <span>&rarr;</span></a>
+      <a href="frontend/forge/index.html" data-close>Forge <span>&rarr;</span></a>
+      <a href="frontend/forgex/index.html" data-close>ForgeX <span>&rarr;</span></a>
+      <a href="frontend/monitor/index.html" data-close>Monitor <span>&rarr;</span></a>
+      <a href="frontend/robotics/index.html" data-close>Robotics <span>&rarr;</span></a>
+      <a href="index.html#about" data-close>About <span>&rarr;</span></a>
+      <a href="frontend/settings/index.html" data-close>Settings <span>&rarr;</span></a>
+    </nav>
+    </aside>
+  </div>
+<section id="top" class="hero">
+  <div class="hero-aurora"></div>
+  <div class="hero-conic animate-drift"></div>
+  <div class="hero-grid"></div>
+  <canvas id="particles" class="hero-particles"></canvas>
+
+  <div class="hero-inner" id="heroInner">
+    <div class="hero-pill glass">
+      <span class="pill-dot"><span class="pill-dot-ping"></span><span class="pill-dot-core"></span></span>
+      PERSONAL INTELLIGENCE ECOSYSTEM
+    </div>
+    <h1 class="hero-title">
+      <span class="text-aurora">n0th1ng</span>
+      <span class="hero-ai">AI</span>
+    </h1>
+    <p class="hero-tag">You Imagine, <em class="text-aurora">We Render.</em></p>
+    <p class="hero-sub">A personal artificial intelligence workstation built for creation, visualization, automation and exploration.</p>
+    <div class="hero-scroll">
+      <span>SCROLL TO ENTER</span>
+      <span class="hero-scroll-line"></span>
+    </div>
+  </div>
+</section>
+
+<section id="about" class="section">
+  <div class="container">
+    <div class="kicker reveal">// 01 &mdash; ABOUT</div>
+    <h2 class="h2 reveal">What is <span class="text-aurora">n0th1ng AI</span>?</h2>
+    <p class="lead reveal">A personal intelligence ecosystem. Not a product. Not a service. A private operating space where thought becomes form, and form becomes motion.</p>
+
+    <div class="grid-6">
+      <div class="card glass-liquid reveal"><span class="card-dot bg-aurora"></span><h4>Intelligence</h4><p>Local-first reasoning</p></div>
+      <div class="card glass-liquid reveal"><span class="card-dot bg-aurora"></span><h4>Creativity</h4><p>Generative canvas</p></div>
+      <div class="card glass-liquid reveal"><span class="card-dot bg-aurora"></span><h4>Automation</h4><p>Silent agents</p></div>
+      <div class="card glass-liquid reveal"><span class="card-dot bg-aurora"></span><h4>Visualization</h4><p>Light as language</p></div>
+      <div class="card glass-liquid reveal"><span class="card-dot bg-aurora"></span><h4>Monitoring</h4><p>System telemetry</p></div>
+      <div class="card glass-liquid reveal"><span class="card-dot bg-aurora"></span><h4>Expansion</h4><p>Future modules</p></div>
+    </div>
+  </div>
+</section>
+
+<section class="section section-aurora">
+  <div class="container center">
+    <div class="kicker reveal">// 02 &mdash; PHILOSOPHY</div>
+    <h2 class="mega reveal">
+      <span>You Imagine,</span>
+      <em class="text-aurora">We Render.</em>
+    </h2>
+        <p class="lead center reveal">The distance between intention and creation collapses to zero. Every thought has a render path.</p>
+  </div>
+</section>
+
+<section id="features" class="section">
+  <div class="container">
+    <div class="kicker reveal">// 03 â€” MODULES</div>
+    <h2 class="h2 reveal">Six destinations. <span class="text-muted">One system.</span></h2>
+
+    <div class="features">
+      <div id="chatspace" class="feature">
+        <div class="feature-visual reveal">
+          <div class="feature-glow" style="background:linear-gradient(135deg, rgba(255,255,255,0.15), rgba(255,255,255,0.05));"></div>
+          <div class="feature-frame glass-liquid noise">
+            <img src="frontend/assets/feat-chatspace.jpg" class="feat-img" alt="chatspace" />
+          </div>
+        </div>
+        <div class="feature-copy reveal">
+          <div class="feature-idx">01 / MODULE</div>
+          <h3>Chatspace</h3>
+          <p>A place where ideas become reality.</p>
+          <a href="index.html" class="link-arrow">EXPLORE <span>&rarr;</span></a>
+        </div>
+      </div>
+
+      <div id="image-studio" class="feature reverse">
+        <div class="feature-visual reveal">
+          <div class="feature-glow" style="background:linear-gradient(135deg, rgba(255,255,255,0.15), rgba(212,175,55,0.05));"></div>
+          <div class="feature-frame glass-liquid noise">
+            <img src="frontend/assets/feat-imagestudio.jpg" class="feat-img" alt="image-studio" />
+          </div>
+        </div>
+        <div class="feature-copy reveal">
+          <div class="feature-idx">02 / MODULE</div>
+          <h3>Image Studio</h3>
+          <p>Transform imagination into visual experiences.</p>
+          <a href="frontend/studio/index.html" class="link-arrow">EXPLORE <span>&rarr;</span></a>
+        </div>
+      </div>
+
+      <div id="monitor" class="feature">
+        <div class="feature-visual reveal">
+          <div class="feature-glow" style="background:linear-gradient(135deg, rgba(255,255,255,0.1), rgba(255,255,255,0.02));"></div>
+          <div class="feature-frame glass-liquid noise">
+            <img src="frontend/assets/feat-monitor.jpg" class="feat-img" alt="monitor" />
+          </div>
+        </div>
+        <div class="feature-copy reveal">
+          <div class="feature-idx">03 / MODULE</div>
+          <h3>Monitor</h3>
+          <p>The pulse of your workstation.</p>
+          <a href="frontend/monitor/index.html" class="link-arrow">EXPLORE <span>&rarr;</span></a>
+        </div>
+      </div>
+
+      <div id="voice-studio" class="feature reverse">
+        <div class="feature-visual reveal">
+          <div class="feature-glow" style="background:linear-gradient(135deg, rgba(255,255,255,0.1), rgba(0,255,150,0.05));"></div>
+          <div class="feature-frame glass-liquid noise">
+            <img src="frontend/assets/feat-voice.jpg" class="feat-img" alt="voice-studio" />
+          </div>
+        </div>
+        <div class="feature-copy reveal">
+          <div class="feature-idx">04 / MODULE</div>
+          <h3>Voice Studio</h3>
+          <p>Speech intelligence and conversation without keys.</p>
+          <a href="frontend/voice/index.html" class="link-arrow">EXPLORE <span>&rarr;</span></a>
+        </div>
+      </div>
+
+      <div id="forge" class="feature">
+        <div class="feature-visual reveal">
+          <div class="feature-glow" style="background:linear-gradient(135deg, rgba(255,255,255,0.1), rgba(255,100,0,0.05));"></div>
+          <div class="feature-frame glass-liquid noise">
+            <img src="frontend/assets/feat-forge.jpg" class="feat-img" alt="forge" />
+          </div>
+        </div>
+        <div class="feature-copy reveal">
+          <div class="feature-idx">05 / MODULE</div>
+          <h3>Forge</h3>
+          <p>Autonomous agent builder for long-horizon tasks.</p>
+          <a href="frontend/forge/index.html" class="link-arrow">EXPLORE <span>&rarr;</span></a>
+        </div>
+      </div>
+
+      <div id="robotics" class="feature reverse">
+        <div class="feature-visual reveal">
+          <div class="feature-glow" style="background:linear-gradient(135deg, rgba(212,175,55,0.1), rgba(255,255,255,0.05));"></div>
+          <div class="feature-frame glass-liquid noise">
+            <img src="frontend/assets/feat-robotics.jpg" class="feat-img" alt="robotics" />
+          </div>
+        </div>
+        <div class="feature-copy reveal">
+          <div class="feature-idx">06 / MODULE</div>
+          <h3>Robotics</h3>
+          <p>Beyond software.</p>
+          <a href="frontend/robotics/index.html" class="link-arrow">EXPLORE <span>&rarr;</span></a>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="container">
+    <div class="kicker reveal">// 04 â€” TECHNOLOGY</div>
+    <h2 class="h2 reveal">Engineered for <span class="text-aurora">solitude.</span></h2>
+
+    <div class="tech-grid">
+      <div class="tech reveal"><div class="tech-num">01</div><h4>Local AI</h4><p>Models run on your machine</p></div>
+      <div class="tech reveal"><div class="tech-num">02</div><h4>Image Generation</h4><p>Pixels from intention</p></div>
+      <div class="tech reveal"><div class="tech-num">03</div><h4>Real-Time Monitoring</h4><p>Every signal, visible</p></div>
+      <div class="tech reveal"><div class="tech-num">04</div><h4>Automation</h4><p>Agents in the background</p></div>
+      <div class="tech reveal"><div class="tech-num">05</div><h4>Voice Intelligence</h4><p>Speech processing</p></div>
+      <div class="tech reveal"><div class="tech-num">06</div><h4>Autonomous Forging</h4><p>Long-horizon builds</p></div>
+      <div class="tech reveal"><div class="tech-num">07</div><h4>Privacy First</h4><p>Nothing leaves you</p></div>
+      <div class="tech reveal"><div class="tech-num">08</div><h4>Future Robotics</h4><p>From screen to space</p></div>
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="container">
+    <div class="kicker reveal">// 05 â€” SIGNALS</div>
+    <h2 class="h2 reveal">The system, in numbers.</h2>
+    <div class="stats">
+      <div class="stat card glass-liquid reveal"><div class="stat-v"><span class="text-aurora count" data-target="24">0</span><span>+</span></div><div class="stat-l">AI Models</div></div>
+      <div class="stat card glass-liquid reveal"><div class="stat-v"><span class="text-aurora count" data-target="184">0</span><span>K</span></div><div class="stat-l">Image Generations</div></div>
+      <div class="stat card glass-liquid reveal"><div class="stat-v"><span class="text-aurora count" data-target="12">0</span><span></span></div><div class="stat-l">System Modules</div></div>
+      <div class="stat card glass-liquid reveal"><div class="stat-v"><span class="text-aurora count" data-target="100">0</span><span>%</span></div><div class="stat-l">Local Processing</div></div>
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="container narrow">
+    <div class="kicker reveal">// 06 â€” ROADMAP</div>
+    <h2 class="h2 reveal">An evolving organism.</h2>
+    <div class="roadmap">
+      <div class="rm-line"></div>
+      <div class="rm-row reveal"><div class="rm-dot bg-aurora"></div><div class="rm-l"><h4>Chatspace</h4><p>The conversation layer</p></div><div class="rm-r text-aurora">Live</div></div>
+      <div class="rm-row reverse reveal"><div class="rm-dot bg-aurora"></div><div class="rm-l text-aurora">Live</div><div class="rm-r"><h4>Image Studio</h4><p>The visual layer</p></div></div>
+      <div class="rm-row reveal"><div class="rm-dot bg-aurora"></div><div class="rm-l"><h4>Monitor</h4><p>The telemetry layer</p></div><div class="rm-r text-aurora">Live</div></div>
+      <div class="rm-row reverse reveal"><div class="rm-dot bg-aurora"></div><div class="rm-l text-aurora">Live</div><div class="rm-r"><h4>Voice Studio</h4><p>Conversation without keys</p></div></div>
+      <div class="rm-row reveal"><div class="rm-dot bg-aurora"></div><div class="rm-l"><h4>Forge</h4><p>Autonomous agent builder</p></div><div class="rm-r text-aurora">Live</div></div>
+      <div class="rm-row reverse reveal"><div class="rm-dot bg-aurora"></div><div class="rm-l">2026</div><div class="rm-r"><h4>Robotics</h4><p>The embodied layer</p></div></div>
+      <div class="rm-row reveal"><div class="rm-dot bg-aurora"></div><div class="rm-l"><h4>Knowledge</h4><p>Memory across time</p></div><div class="rm-r">2026</div></div>
+      <div class="rm-row reverse reveal"><div class="rm-dot bg-aurora"></div><div class="rm-l">&infin;</div><div class="rm-r"><h4>Future Modules</h4><p>Intelligence, evolving</p></div></div>
+    </div>
+  </div>
+</section>
+
+<section id="enter" class="section section-aurora">
+  <div class="container center">
+    <h2 class="ready text-aurora reveal">Ready?</h2>
+    <p class="lead center reveal">The workstation is waiting.</p>
+    <a href="frontend/chatspace/index.html" class="enter-cta bg-aurora reveal">
+      <span>ENTER CHATSPACE</span><span>&rarr;</span>
+    </a>
+    <p class="enter-foot reveal">SYSTEM &middot; READY &middot; LOCAL &middot; PRIVATE</p>
+  </div>
+</section>
+
+<footer class="footer">
+  <div class="container footer-inner">
+    <div>
+      <div class="brand-name text-aurora" style="font-size:1.7rem">n0th1ng AI</div>
+      <p>Built by n0th1ng Studios</p>
+      <p><i>You Imagine, We Render.</i></p>
+    </div>
+    <div class="footer-copy">&copy; 2026 &middot; ALL SIGNALS RESERVED</div>
+  </div>
+</footer>
+
+<script src="frontend/assets/page-transitions.js"></script>
+<script src="frontend/home/script.js"></script>
+</body>
+</html>

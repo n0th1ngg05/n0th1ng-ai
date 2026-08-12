@@ -1,0 +1,171 @@
+{
+  "6": {
+    "inputs": {
+      "text": "A pristine 1967 Chevrolet Impala roars across the vast open fields of Texas during a brilliant golden sunset. The polished chrome and deep glossy paint shimmer under the warm evening light as the classic muscle car accelerates rapidly along a winding dirt road between endless ranches. The camera begins with a dramatic low-angle tracking shot alongside the Impala, capturing the spinning wheels throwing clouds of dust into the air. It smoothly transitions into sweeping aerial drone shots that reveal expansive golden grasslands stretching to the horizon, rustic wooden fences, weathered barns, and traditional Texas ranch houses on both sides of the road. Herds of horses graze peacefully in open pastures while longhorn cattle roam freely behind the fences. Deer leap gracefully through the tall grass, rabbits dart across the fields, and flocks of birds soar overhead beneath a sky painted with rich orange, amber, and crimson hues. The camera alternates between fast cinematic chase shots, wide panoramic vistas, and close-up details of the iconic front grille, chrome bumpers, and roaring V8 engine. As the Impala races toward the horizon, the sun sinks lower behind the distant hills, casting long dramatic shadows across the countryside. The final shot rapidly ascends into an epic aerial perspective, revealing the endless Texas landscape illuminated by the last golden rays of sunset, with the classic Chevrolet becoming a small yet striking silhouette disappearing into the glowing horizon.",
+      "clip": [
+        "38",
+        0
+      ]
+    },
+    "class_type": "CLIPTextEncode",
+    "_meta": {
+      "title": "CLIP Text Encode (Positive Prompt)"
+    }
+  },
+  "7": {
+    "inputs": {
+      "text": "low quality, worst quality, deformed, distorted, disfigured, motion smear, motion artifacts, fused fingers, bad anatomy, weird hand, ugly",
+      "clip": [
+        "38",
+        0
+      ]
+    },
+    "class_type": "CLIPTextEncode",
+    "_meta": {
+      "title": "CLIP Text Encode (Negative Prompt)"
+    }
+  },
+  "8": {
+    "inputs": {
+      "samples": [
+        "72",
+        0
+      ],
+      "vae": [
+        "44",
+        2
+      ]
+    },
+    "class_type": "VAEDecode",
+    "_meta": {
+      "title": "VAE Decode"
+    }
+  },
+  "38": {
+    "inputs": {
+      "clip_name": "t5xxl_fp16.safetensors",
+      "type": "ltxv",
+      "device": "default"
+    },
+    "class_type": "CLIPLoader",
+    "_meta": {
+      "title": "Load CLIP"
+    }
+  },
+  "41": {
+    "inputs": {
+      "filename_prefix": "ComfyUI",
+      "fps": 24,
+      "lossless": false,
+      "quality": 95,
+      "method": "default",
+      "images": [
+        "8",
+        0
+      ]
+    },
+    "class_type": "SaveAnimatedWEBP",
+    "_meta": {
+      "title": "Save Animated WEBP"
+    }
+  },
+  "44": {
+    "inputs": {
+      "ckpt_name": "ltx-video-2b-v0.9.5.safetensors"
+    },
+    "class_type": "CheckpointLoaderSimple",
+    "_meta": {
+      "title": "Load Checkpoint"
+    }
+  },
+  "69": {
+    "inputs": {
+      "frame_rate": 25,
+      "positive": [
+        "6",
+        0
+      ],
+      "negative": [
+        "7",
+        0
+      ]
+    },
+    "class_type": "LTXVConditioning",
+    "_meta": {
+      "title": "LTXVConditioning"
+    }
+  },
+  "70": {
+    "inputs": {
+      "width": 768,
+      "height": 512,
+      "length": 193,
+      "batch_size": 1
+    },
+    "class_type": "EmptyLTXVLatentVideo",
+    "_meta": {
+      "title": "EmptyLTXVLatentVideo"
+    }
+  },
+  "71": {
+    "inputs": {
+      "steps": 30,
+      "max_shift": 2.05,
+      "base_shift": 0.95,
+      "stretch": true,
+      "terminal": 0.1,
+      "latent": [
+        "70",
+        0
+      ]
+    },
+    "class_type": "LTXVScheduler",
+    "_meta": {
+      "title": "LTXVScheduler"
+    }
+  },
+  "72": {
+    "inputs": {
+      "add_noise": true,
+      "noise_seed": 1050898993812872,
+      "cfg": 3,
+      "model": [
+        "44",
+        0
+      ],
+      "positive": [
+        "69",
+        0
+      ],
+      "negative": [
+        "69",
+        1
+      ],
+      "sampler": [
+        "73",
+        0
+      ],
+      "sigmas": [
+        "71",
+        0
+      ],
+      "latent_image": [
+        "70",
+        0
+      ]
+    },
+    "class_type": "SamplerCustom",
+    "_meta": {
+      "title": "SamplerCustom"
+    }
+  },
+  "73": {
+    "inputs": {
+      "sampler_name": "res_multistep"
+    },
+    "class_type": "KSamplerSelect",
+    "_meta": {
+      "title": "KSamplerSelect"
+    }
+  }
+}

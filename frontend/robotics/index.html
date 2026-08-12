@@ -1,0 +1,345 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Robotics — n0th1ng ai</title>
+  <meta name="description" content="Robotics - The physical layer of intelligence." />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@200;300;400;500;600&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="robotics.css" />
+  <link rel="stylesheet" href="../assets/page-transitions.css" />
+  <link rel="stylesheet" href="../assets/liquid-select.css" />
+  <script src="../assets/nav.js" defer></script>
+  <link rel="stylesheet" href="../assets/nav.css">
+</head>
+<body class="dashboard-mode">
+
+  <header class="nav-wrap scrolled" id="navWrap">
+    <nav class="nav glass-liquid" id="nav">
+      <a href="../../index.html" class="brand">
+        <span class="brand-logo glass-strong">
+          <img src="../assets/logo.png" alt="n0th1ng logo" onerror="this.style.display='none'"/>
+          <span class="brand-logo-bg" aria-hidden="true"></span>
+        </span>
+        <span class="brand-text">
+          <span class="brand-name">n0th1ng</span>
+          <span class="brand-tag">AI · WORKSTATION</span>
+        </span>
+      </a>
+
+      <div class="nav-links">
+        <a class="nav-link" href="../../index.html">Home</a>
+        <div class="nav-dd" id="ddFeatures">
+          <button class="nav-link nav-dd-btn">Features
+            <svg width="10" height="10" viewBox="0 0 10 10"><path d="M2 3.5 L5 6.5 L8 3.5" stroke="currentColor" fill="none" stroke-width="1.4" stroke-linecap="round"/></svg>
+          </button>
+                          <div class="nav-dd-menu glass-liquid">
+          <a href="../chatspace/index.html"><b>Chatspace</b><i>Ideas &rarr; reality</i></a>
+          <a href="../studio/index.html"><b>Image Studio</b><i>Visualize imagination</i></a>
+          <a href="../framesx/index.html"><b>FramesX</b><i>Cinematic generation</i></a>
+          <a href="../files/index.html"><b>Files</b><i>Knowledge & Documents</i></a>
+          <a href="../voice/index.html"><b>Voice Studio</b><i>Speech Intelligence</i></a>
+          <a href="../personastudio/index.html"><b>Persona Studio</b><i>NVIDIA PersonaPlex</i></a>
+          <a href="../forge/index.html"><b>Forge</b><i>Autonomous build agent</i></a>
+          <a href="../forgex/index.html"><b>ForgeX</b><i>Advanced autonomous agentic coding</i></a>
+          <a href="../monitor/index.html"><b>Monitor</b><i>Workstation pulse</i></a>
+          <a href="../robotics/index.html"><b>Robotics</b><i>Beyond software</i></a>
+          <a href="../settings/index.html"><b>Settings</b><i>Configure workspace</i></a>
+        </div>
+        </div>
+        <a class="nav-link" href="../../index.html#about">About</a>
+        <a class="nav-link" href="../settings/index.html">Settings</a>
+      </div>
+
+      <button class="nav-burger glass-strong" id="burger" aria-label="Open menu">
+        <svg width="20" height="20" viewBox="0 0 22 22" fill="none"><path d="M3 6h16M3 11h16M3 16h16" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+      </button>
+    </nav>
+  </header>
+
+  <div class="drawer-wrap" id="drawer">
+    <div class="drawer-bg"></div>
+    <aside class="drawer glass-liquid">
+      <div class="drawer-head">
+        <div class="brand">
+          <span class="brand-name">n0th1ng</span>
+        </div>
+        <button class="drawer-close glass" data-close>×</button>
+      </div>
+                        <nav class="drawer-links">
+        <a href="../../index.html" data-close>Home <span>&rarr;</span></a>
+        <a href="../../index.html#features" data-close>Features <span>&rarr;</span></a>
+        <a href="../chatspace/index.html" data-close>Chatspace <span>&rarr;</span></a>
+        <a href="../studio/index.html" data-close>Image Studio <span>&rarr;</span></a>
+        <a href="../framesx/index.html" data-close>FramesX <span>&rarr;</span></a>
+        <a href="../files/index.html" data-close>Files <span>&rarr;</span></a>
+        <a href="../voice/index.html" data-close>Voice Studio <span>&rarr;</span></a>
+        <a href="../personastudio/index.html" data-close>Persona Studio <span>&rarr;</span></a>
+        <a href="../forge/index.html" data-close>Forge <span>&rarr;</span></a>
+        <a href="../forgex/index.html" data-close>ForgeX <span>&rarr;</span></a>
+        <a href="../monitor/index.html" data-close>Monitor <span>&rarr;</span></a>
+        <a href="../robotics/index.html" data-close>Robotics <span>&rarr;</span></a>
+        <a href="../../index.html#about" data-close>About <span>&rarr;</span></a>
+        <a href="../settings/index.html" data-close>Settings <span>&rarr;</span></a>
+      </nav>
+    </aside>
+  </div>
+ </div>
+
+  <main class="dashboard noise">
+    <div class="dash-container">
+      
+      <header class="dash-header fade-up">
+        <div class="dh-left">
+          <h1 class="mega-title">Robotics <span class="title-tag glass-strong">v0.1.0-alpha</span></h1>
+          <p class="subtitle text-muted">The Physical Layer of Intelligence.</p>
+        </div>
+        <div class="dh-right hide-mobile">
+          <div class="quick-actions">
+            <button class="qa-btn glass" onclick="triggerAction(this)">⌕ Scan Devices</button>
+            <button class="qa-btn glass" onclick="triggerAction(this)">⟳ Refresh Network</button>
+            <button class="qa-btn glass" onclick="triggerAction(this)">⚡ Deploy Workflow</button>
+          </div>
+        </div>
+      </header>
+
+      <div class="dash-grid mt-24">
+
+        <div class="card glass-liquid col-span-12 fade-up map-card" style="animation-delay: 0.1s;">
+          <div class="card-header">
+            <h3>Device Topology</h3>
+            <span class="mono text-muted">AUK-NET-01 [ SIMULATION MODE ]</span>
+          </div>
+          
+          <div class="topology-stage">
+            <svg class="topo-lines" preserveAspectRatio="none">
+              <path class="t-line" id="line1" d="M50%,50% L20%,30%" />
+              <path class="t-line" id="line2" d="M50%,50% L80%,30%" />
+              <path class="t-line" id="line3" d="M50%,50% L25%,80%" />
+              <path class="t-line" id="line4" d="M50%,50% L75%,80%" />
+            </svg>
+
+            <div class="node core-node" id="n-core" style="top: 50%; left: 50%;">
+              <div class="node-ping"></div>
+              <div class="node-dot bg-aurora"></div>
+              <span class="node-lbl">CORE</span>
+            </div>
+            
+            <div class="node sub-node" id="n-1" style="top: 30%; left: 20%;">
+              <div class="node-dot healthy"></div>
+              <span class="node-lbl">ESP-ALPHA</span>
+            </div>
+            <div class="node sub-node" id="n-2" style="top: 30%; left: 80%;">
+              <div class="node-dot healthy"></div>
+              <span class="node-lbl">ESP-BETA</span>
+            </div>
+            <div class="node sub-node" id="n-3" style="top: 80%; left: 25%;">
+              <div class="node-dot warning"></div>
+              <span class="node-lbl">CAM-01</span>
+            </div>
+            <div class="node sub-node" id="n-4" style="top: 80%; left: 75%;">
+              <div class="node-dot healthy"></div>
+              <span class="node-lbl">SENS-HUB</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="card glass col-span-8 fade-up" style="animation-delay: 0.2s;">
+          <div class="card-header">
+            <h3>Connected Endpoints</h3>
+            <span class="status-dot healthy"></span>
+          </div>
+          <div class="device-grid">
+            
+            <div class="dev-card glass-strong">
+              <div class="dev-head">
+                <span class="dev-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="4" width="16" height="16" rx="2" ry="2"/><rect x="9" y="9" width="6" height="6"/><line x1="9" y1="1" x2="9" y2="4"/><line x1="15" y1="1" x2="15" y2="4"/><line x1="9" y1="20" x2="9" y2="23"/><line x1="15" y1="20" x2="15" y2="23"/><line x1="20" y1="9" x2="23" y2="9"/><line x1="20" y1="14" x2="23" y2="14"/><line x1="1" y1="9" x2="4" y2="9"/><line x1="1" y1="14" x2="4" y2="14"/></svg></span>
+                <span class="status-dot healthy"></span>
+              </div>
+              <h4>ESP32 Node Alpha</h4>
+              <p class="mono text-muted">192.168.1.104</p>
+              <div class="dev-metrics mono">
+                <span>Signal: 94%</span>
+                <span>Batt: 88%</span>
+              </div>
+            </div>
+
+            <div class="dev-card glass-strong">
+              <div class="dev-head">
+                <span class="dev-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="4" width="16" height="16" rx="2" ry="2"/><rect x="9" y="9" width="6" height="6"/><line x1="9" y1="1" x2="9" y2="4"/><line x1="15" y1="1" x2="15" y2="4"/><line x1="9" y1="20" x2="9" y2="23"/><line x1="15" y1="20" x2="15" y2="23"/><line x1="20" y1="9" x2="23" y2="9"/><line x1="20" y1="14" x2="23" y2="14"/><line x1="1" y1="9" x2="4" y2="9"/><line x1="1" y1="14" x2="4" y2="14"/></svg></span>
+                <span class="status-dot healthy"></span>
+              </div>
+              <h4>ESP32 Node Beta</h4>
+              <p class="mono text-muted">192.168.1.105</p>
+              <div class="dev-metrics mono">
+                <span>Signal: 82%</span>
+                <span>Batt: 45%</span>
+              </div>
+            </div>
+
+            <div class="dev-card glass-strong disabled">
+              <div class="dev-head">
+                <span class="dev-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12h4l3-9 5 18 3-9h5"/></svg></span>
+                <span class="status-dot inactive"></span>
+              </div>
+              <h4 class="text-muted">Automation Ctrl</h4>
+              <p class="mono text-muted">OFFLINE</p>
+              <div class="dev-metrics mono text-muted">
+                <span>Signal: --</span>
+                <span>Batt: --</span>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        <div class="card glass col-span-4 fade-up" style="animation-delay: 0.2s;">
+          <div class="card-header">
+            <h3>Environment</h3>
+            <span class="mono text-muted">[ SIM ]</span>
+          </div>
+          <div class="sensor-list">
+            <div class="s-item">
+              <div class="s-info">
+                <span>Temperature</span>
+                <i class="mono text-muted">Node Alpha</i>
+              </div>
+              <div class="s-val mono healthy" id="simTemp">24.2 °C</div>
+            </div>
+            <div class="s-item">
+              <div class="s-info">
+                <span>Humidity</span>
+                <i class="mono text-muted">Node Alpha</i>
+              </div>
+              <div class="s-val mono" id="simHum">45.0 %</div>
+            </div>
+            <div class="s-item">
+              <div class="s-info">
+                <span>Air Quality (VOC)</span>
+                <i class="mono text-muted">Sens-Hub</i>
+              </div>
+              <div class="s-val mono text-aurora" id="simVoc">Excellent</div>
+            </div>
+            <div class="s-item">
+              <div class="s-info">
+                <span>Ambient Light</span>
+                <i class="mono text-muted">Sens-Hub</i>
+              </div>
+              <div class="s-val mono">320 lx</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card glass-liquid col-span-12 fade-up" style="animation-delay: 0.3s;">
+          <div class="card-header">
+            <h3>Vision Nodes</h3>
+            <span class="mono text-muted">RTSP STREAM DISABLED</span>
+          </div>
+          <div class="cam-grid">
+            
+            <div class="cam-frame glass-strong noise">
+              <div class="cam-overlay">
+                <div class="co-top">
+                  <span class="mono warning-text">● STANDBY</span>
+                  <span class="mono">CAM-01 (MAIN)</span>
+                </div>
+                <div class="co-center">
+                  <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.2)" stroke-width="1"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+                </div>
+                <div class="co-bottom mono text-muted">
+                  <span>MOTION: FALSE</span>
+                  <span>AWAITING CONNECTION</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="cam-frame glass-strong noise">
+              <div class="cam-overlay">
+                <div class="co-top">
+                  <span class="mono text-muted">○ OFFLINE</span>
+                  <span class="mono text-muted">CAM-02 (EXT)</span>
+                </div>
+                <div class="co-center">
+                  <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="1"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><line x1="2" y1="2" x2="22" y2="22"/></svg>
+                </div>
+                <div class="co-bottom mono text-muted">
+                  <span>NODE UNREACHABLE</span>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        <div class="card glass col-span-6 fade-up" style="animation-delay: 0.4s;">
+          <div class="card-header">
+            <h3>Automation Workflows</h3>
+          </div>
+          <div class="workflow-list">
+            
+            <div class="wf-item glass-strong">
+              <div class="wf-head">
+                <h4>Adaptive Studio Lighting</h4>
+                <label class="switch"><input type="checkbox" checked><span class="slider"></span></label>
+              </div>
+              <div class="wf-path mono text-muted">
+                <span>Trigger: Ambient Light &lt; 200lx</span>
+                <span class="arrow">↳</span>
+                <span class="action text-aurora">Action: Enable Keylight (ESP-BETA)</span>
+              </div>
+            </div>
+
+            <div class="wf-item glass-strong">
+              <div class="wf-head">
+                <h4>Motion Security Logging</h4>
+                <label class="switch"><input type="checkbox"><span class="slider"></span></label>
+              </div>
+              <div class="wf-path mono text-muted">
+                <span>Trigger: CAM-01 Motion == TRUE</span>
+                <span class="arrow">↳</span>
+                <span class="action">Action: Capture Frame &amp; Log</span>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        <div class="card glass col-span-6 fade-up" style="animation-delay: 0.4s;">
+          <div class="card-header">
+            <h3>Future Architecture</h3>
+            <span class="status-dot inactive"></span>
+          </div>
+          <div class="future-grid">
+            
+            <div class="f-module">
+              <div class="fm-icon text-aurora"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg></div>
+              <h4>Robotic Arms</h4>
+              <p>Precision physical manipulation and automated desk tooling.</p>
+            </div>
+            
+            <div class="f-module">
+              <div class="fm-icon text-aurora"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg></div>
+              <h4>Edge AI Nodes</h4>
+              <p>Distributed inference clusters running lightweight LLMs locally.</p>
+            </div>
+
+            <div class="f-module">
+              <div class="fm-icon text-aurora"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="22"/></svg></div>
+              <h4>Voice Control</h4>
+              <p>Ambient wake-word processing without external API reliance.</p>
+            </div>
+
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </main>
+
+  <script src="../assets/page-transitions.js"></script>
+  <script src="robotics.js"></script>
+  <script src="../assets/liquid-select.js"></script>
+</body>
+</html>

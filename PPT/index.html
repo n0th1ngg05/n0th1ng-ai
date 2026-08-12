@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Distributed LLM Workstation — System Topology</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="scanline"></div>
+
+<header class="hdr">
+  <div class="hdr-left">
+    <span class="hdr-mark">⌬</span>
+    <div>
+      <h1>n0th1ng AI - LOCAL LLM CHATBOT WORKSTATION</h1>
+      <p class="hdr-sub">Distributed Multi-Agent Inference Cluster — Master/Worker Topology</p>
+    </div>
+  </div>
+  <div class="hdr-right">
+    <div class="stat"><span class="stat-num" id="statNodes">9</span><span class="stat-lbl">Nodes</span></div>
+    <div class="stat"><span class="stat-num" id="statTools">18</span><span class="stat-lbl">Agent Tools</span></div>
+    <div class="stat"><span class="stat-num" id="statEngines">7</span><span class="stat-lbl">Speech Engines</span></div>
+    <div class="stat"><span class="stat-num" id="statTables">25</span><span class="stat-lbl">DB Tables</span></div>
+  </div>
+</header>
+
+<nav class="tabs" id="tabs">
+  <button class="tab active" data-view="topology">Topology Map</button>
+  <button class="tab" data-view="chat">Chat Request Lifecycle</button>
+  <button class="tab" data-view="cluster">Cluster Protocol</button>
+  <button class="tab" data-view="speech">Speech Pipeline</button>
+</nav>
+
+<main>
+  <section class="view active" id="view-topology">
+    <div class="canvas-wrap">
+      <svg id="topoSvg" viewBox="0 0 1600 900" preserveAspectRatio="xMidYMid meet"></svg>
+      <div class="legend">
+        <div class="legend-title">Link Protocol</div>
+        <div class="legend-row"><span class="dot dot-http"></span> HTTP / tRPC</div>
+        <div class="legend-row"><span class="dot dot-ws"></span> WebSocket</div>
+        <div class="legend-row"><span class="dot dot-proc"></span> Local Subprocess</div>
+        <div class="legend-row"><span class="dot dot-heartbeat"></span> Heartbeat / Registration</div>
+      </div>
+    </div>
+    <aside class="inspector" id="inspector">
+      <div class="insp-empty">
+        <p class="insp-hint">◈ SELECT A NODE</p>
+        <p class="insp-sub">Click any box in the topology to inspect its real source files, responsibilities, and connections.</p>
+      </div>
+    </aside>
+  </section>
+
+  <section class="view" id="view-chat">
+    <div class="flow-scroll">
+      <svg id="chatSvg" viewBox="0 0 1200 2200" preserveAspectRatio="xMidYMid meet"></svg>
+    </div>
+  </section>
+
+  <section class="view" id="view-cluster">
+    <div class="flow-scroll">
+      <svg id="clusterSvg" viewBox="0 0 1200 1500" preserveAspectRatio="xMidYMid meet"></svg>
+    </div>
+  </section>
+
+  <section class="view" id="view-speech">
+    <div class="flow-scroll">
+      <svg id="speechSvg" viewBox="0 0 1200 1600" preserveAspectRatio="xMidYMid meet"></svg>
+    </div>
+  </section>
+</main>
+
+<footer class="ftr">
+  <span>boot.ts → router.ts → middleware.ts (Hono + tRPC/superjson)</span>
+  <span class="ftr-dim">Generated from actual source — every node below traces to a real file in the codebase.</span>
+</footer>
+
+<script src="data.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

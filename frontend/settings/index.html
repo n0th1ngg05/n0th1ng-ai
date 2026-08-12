@@ -1,0 +1,531 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Settings — n0th1ng ai</title>
+  <meta name="description" content="Settings - Workstation configuration." />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@200;300;400;500;600&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="settings.css" />
+  <link rel="stylesheet" href="../assets/page-transitions.css" />
+  <link rel="stylesheet" href="../assets/liquid-select.css" />
+  <script src="../assets/nav.js" defer></script>
+  <link rel="stylesheet" href="../assets/nav.css">
+</head>
+<body class="workspace-mode">
+
+  <header class="nav-wrap scrolled" id="navWrap">
+    <nav class="nav glass-liquid" id="nav">
+      <a href="../../index.html" class="brand">
+        <span class="brand-logo glass-strong">
+          <img src="../assets/logo.png" alt="n0th1ng logo" onerror="this.style.display='none'"/>
+          <span class="brand-logo-bg" aria-hidden="true"></span>
+        </span>
+        <span class="brand-text">
+          <span class="brand-name">n0th1ng</span>
+          <span class="brand-tag">AI · WORKSTATION</span>
+        </span>
+      </a>
+
+      <div class="nav-links">
+        <a class="nav-link" href="../../index.html">Home</a>
+        <div class="nav-dd" id="ddFeatures">
+          <button class="nav-link nav-dd-btn">Features
+            <svg width="10" height="10" viewBox="0 0 10 10"><path d="M2 3.5 L5 6.5 L8 3.5" stroke="currentColor" fill="none" stroke-width="1.4" stroke-linecap="round"/></svg>
+          </button>
+                          <div class="nav-dd-menu glass-liquid">
+          <a href="../chatspace/index.html"><b>Chatspace</b><i>Ideas &rarr; reality</i></a>
+          <a href="../studio/index.html"><b>Image Studio</b><i>Visualize imagination</i></a>
+          <a href="../framesx/index.html"><b>FramesX</b><i>Cinematic generation</i></a>
+          <a href="../files/index.html"><b>Files</b><i>Knowledge & Documents</i></a>
+          <a href="../voice/index.html"><b>Voice Studio</b><i>Speech Intelligence</i></a>
+          <a href="../personastudio/index.html"><b>Persona Studio</b><i>NVIDIA PersonaPlex</i></a>
+          <a href="../forge/index.html"><b>Forge</b><i>Autonomous build agent</i></a>
+          <a href="../forgex/index.html"><b>ForgeX</b><i>Advanced autonomous agentic coding</i></a>
+          <a href="../monitor/index.html"><b>Monitor</b><i>Workstation pulse</i></a>
+          <a href="../robotics/index.html"><b>Robotics</b><i>Beyond software</i></a>
+          <a href="../settings/index.html"><b>Settings</b><i>Configure workspace</i></a>
+        </div>
+        </div>
+        <a class="nav-link" href="../../index.html#about">About</a>
+        <a class="nav-link" href="index.html">Settings</a>
+      </div>
+
+      <button class="nav-burger glass-strong" id="burger" aria-label="Open menu">
+        <svg width="20" height="20" viewBox="0 0 22 22" fill="none"><path d="M3 6h16M3 11h16M3 16h16" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+      </button>
+    </nav>
+  </header>
+
+  <div class="drawer-wrap" id="drawer">
+    <div class="drawer-bg"></div>
+    <aside class="drawer glass-liquid">
+      <div class="drawer-head">
+        <div class="brand">
+          <span class="brand-name">n0th1ng</span>
+        </div>
+        <button class="drawer-close glass" data-close>×</button>
+      </div>
+                        <nav class="drawer-links">
+        <a href="../../index.html" data-close>Home <span>&rarr;</span></a>
+        <a href="../../index.html#features" data-close>Features <span>&rarr;</span></a>
+        <a href="../chatspace/index.html" data-close>Chatspace <span>&rarr;</span></a>
+        <a href="../studio/index.html" data-close>Image Studio <span>&rarr;</span></a>
+        <a href="../framesx/index.html" data-close>FramesX <span>&rarr;</span></a>
+        <a href="../files/index.html" data-close>Files <span>&rarr;</span></a>
+        <a href="../voice/index.html" data-close>Voice Studio <span>&rarr;</span></a>
+        <a href="../personastudio/index.html" data-close>Persona Studio <span>&rarr;</span></a>
+        <a href="../forge/index.html" data-close>Forge <span>&rarr;</span></a>
+        <a href="../forgex/index.html" data-close>ForgeX <span>&rarr;</span></a>
+        <a href="../monitor/index.html" data-close>Monitor <span>&rarr;</span></a>
+        <a href="../robotics/index.html" data-close>Robotics <span>&rarr;</span></a>
+        <a href="../../index.html#about" data-close>About <span>&rarr;</span></a>
+        <a href="../settings/index.html" data-close>Settings <span>&rarr;</span></a>
+      </nav>
+    </aside>
+  </div>
+ </div>
+
+  <main class="workspace noise">
+    
+    <aside class="sidebar left-sidebar glass-liquid" id="leftSidebar">
+      <div class="sidebar-header">
+        <h4>Configuration</h4>
+        <button class="btn-icon glass hide-desktop" id="closeLeftSidebar">×</button>
+      </div>
+
+      <div class="sidebar-search glass">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+        <input type="text" id="settingsSearch" placeholder="Search settings..." />
+      </div>
+
+      <div class="sidebar-scroll">
+        <ul class="cat-list" id="settingsNav">
+          <li class="active" data-target="sec-general"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 3v18M15 3v18M3 9h18M3 15h18"/></svg> General</li>
+          <li data-target="sec-appearance"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg> Appearance</li>
+          <li data-target="sec-models"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg> AI Models</li>
+          <li data-target="sec-vision"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg> Image Generation</li>
+          <li data-target="sec-python"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a5 5 0 0 0-5 5v2H5a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2v-2H5v-6h9V9h2V7a5 5 0 0 0-4-5z"/><circle cx="9" cy="6" r="1"/><path d="M12 22a5 5 0 0 0 5-5v-2h2a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2v2h4v6h-9v2H8v2a5 5 0 0 0 4 5z"/><circle cx="15" cy="18" r="1"/></svg> Python Tools</li>
+          <li data-target="sec-speech"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2M12 19v4M8 23h8"/></svg> Speech Tools</li>
+          <li data-target="sec-monitor"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg> Monitor</li>
+          <li data-target="sec-storage"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg> Storage</li>
+          <li data-target="sec-security"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg> Security</li>
+          <li data-target="sec-system"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="4" width="16" height="16" rx="2" ry="2"/><rect x="9" y="9" width="6" height="6"/></svg> System</li>
+          <li data-target="sec-cluster"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="8" height="6" rx="1"/><rect x="14" y="4" width="8" height="6" rx="1"/><rect x="2" y="14" width="8" height="6" rx="1"/><rect x="14" y="14" width="8" height="6" rx="1"/></svg> Cluster System</li>
+          <li data-target="sec-integrations"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg> Integrations</li>
+          <li data-target="sec-advanced"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg> Advanced</li>
+        </ul>
+      </div>
+    </aside>
+
+    <section class="config-area">
+      
+      <header class="config-header glass-liquid">
+        <div class="ch-left">
+          <button class="btn-icon glass hide-desktop" id="openLeftSidebar">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12h18M3 6h18M3 18h18"/></svg>
+          </button>
+          <div class="ch-info">
+            <h2 id="currentCategoryTitle">General Settings</h2>
+          </div>
+        </div>
+        <div class="ch-right hide-mobile">
+          <div class="quick-actions">
+            <button class="qa-btn glass" onclick="triggerAction(this)">⟳ Restart Services</button>
+            <button class="qa-btn glass" onclick="triggerAction(this)">⛁ Backup Config</button>
+          </div>
+        </div>
+      </header>
+
+      <div class="config-scroll">
+        <div class="config-content" id="configContent">
+          
+          <div class="settings-section fade-up" id="sec-general">
+            
+            <div class="setting-group glass">
+              <div class="sg-header">
+                <h3>Identity</h3>
+                <p>Workstation naming and identification on the local network.</p>
+              </div>
+              <div class="sg-body">
+                <div class="form-row">
+                  <label>Workstation Name</label>
+                  <input type="text" class="form-input" value="n0th1ng-core" />
+                </div>
+                <div class="form-row">
+                  <label>System Identity</label>
+                  <input type="text" class="form-input" value="Primary Intelligence Node" />
+                </div>
+              </div>
+            </div>
+
+            <div class="setting-group glass">
+              <div class="sg-header">
+                <h3>Localization</h3>
+                <p>Language and region preferences.</p>
+              </div>
+              <div class="sg-body">
+                <div class="form-row">
+                  <label>Language</label>
+                  <select class="form-select">
+                    <option>English (US)</option>
+                    <option>English (UK)</option>
+                  </select>
+                </div>
+                <div class="form-row">
+                  <label>Timezone</label>
+                  <select class="form-select">
+                    <option>Asia/Kolkata (IST)</option>
+                    <option>UTC</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <div class="setting-group glass">
+              <div class="sg-header">
+                <h3>Startup Behaviors</h3>
+                <p>Determine which modules initialize on boot.</p>
+              </div>
+              <div class="sg-body">
+                <div class="toggle-row">
+                  <div class="tr-info">
+                    <span class="tr-title">Auto-Launch Chatspace Engine</span>
+                    <span class="tr-desc">Load primary LLM into VRAM on startup.</span>
+                  </div>
+                  <label class="switch"><input type="checkbox" checked><span class="slider"></span></label>
+                </div>
+                <div class="toggle-row">
+                  <div class="tr-info">
+                    <span class="tr-title">Auto-Launch Image Studio</span>
+                    <span class="tr-desc">Pre-warm Stable Diffusion / FLUX models.</span>
+                  </div>
+                  <label class="switch"><input type="checkbox"><span class="slider"></span></label>
+                </div>
+                <div class="toggle-row">
+                  <div class="tr-info">
+                    <span class="tr-title">Enable Telemetry Monitor</span>
+                    <span class="tr-desc">Start system metrics collection on boot.</span>
+                  </div>
+                  <label class="switch"><input type="checkbox" checked><span class="slider"></span></label>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="settings-section hidden" id="sec-models">
+
+            <div class="setting-group glass">
+              <div class="sg-header">
+                <h3>Startup Behaviors</h3>
+                <p>Determine which modules initialize on boot.</p>
+              </div>
+              <div class="sg-body">
+                <div class="toggle-row">
+                  <div class="tr-info">
+                    <span class="tr-title">Keep model loaded when idle</span>
+                    <span class="tr-desc">Pass keep_alive: -1 on load so Ollama never auto-unloads due to inactivity.</span>
+                  </div>
+                  <label class="switch"><input type="checkbox" id="keepAliveToggle"><span class="slider"></span></label>
+                </div>
+              </div>
+            </div>
+
+            <div class="setting-group glass">
+              <div class="sg-header">
+                <h3>Active Models</h3>
+                <p>Models currently loaded into VRAM, live from Ollama.</p>
+              </div>
+              <div class="sg-body" id="activeModelsList">
+                <p class="text-muted mono" style="font-size:.8rem;">Loading…</p>
+              </div>
+            </div>
+
+            <div class="setting-group glass">
+              <div class="sg-header">
+                <h3>Installed Models</h3>
+                <p>Available on disk but not currently loaded, live from Ollama.</p>
+              </div>
+              <div class="sg-body">
+                <ul class="model-list" id="installedModelsList">
+                  <li><span class="ml-desc mono text-muted">Loading…</span></li>
+                </ul>
+              </div>
+            </div>
+          </div>
+
+          <div class="settings-section hidden" id="sec-python">
+            <div class="setting-group glass">
+              <div class="sg-header">
+                <h3>Python Runtime</h3>
+                <p>Local FastAPI runtime (OCR, layout analysis, PDF pipeline, document tools).</p>
+              </div>
+              <div class="sg-body">
+                <div class="model-card glass-strong" id="pythonRuntimeCard">
+                  <div class="mc-head">
+                    <div class="mc-title">
+                      <span class="status-dot" id="pythonStatusDot"></span> <h4 id="pythonStatusText">Checking…</h4>
+                    </div>
+                    <div class="ml-actions">
+                      <button class="action-btn" id="pythonStartBtn">Start</button>
+                      <button class="action-btn text-danger" id="pythonStopBtn">Stop</button>
+                    </div>
+                  </div>
+                  <div class="mc-stats mono text-muted">Port 8002 · restarts automatically on unexpected exit</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="setting-group glass">
+              <div class="sg-header">
+                <h3>Registered Python Tools</h3>
+                <p>Tools routed to this runtime (or a cluster worker) when called.</p>
+              </div>
+              <div class="sg-body">
+                <ul class="model-list" id="pythonToolsList">
+                  <li><span class="ml-desc mono text-muted">local_vision_ocr</span></li>
+                  <li><span class="ml-desc mono text-muted">layout_analyzer</span></li>
+                  <li><span class="ml-desc mono text-muted">marker_pdf_pipeline</span></li>
+                  <li><span class="ml-desc mono text-muted">semantic_docx_reader</span></li>
+                  <li><span class="ml-desc mono text-muted">pandas_spreadsheet_engine</span></li>
+                  <li><span class="ml-desc mono text-muted">local_vision_analyzer</span></li>
+                  <li><span class="ml-desc mono text-muted">document_analysis</span></li>
+                </ul>
+              </div>
+            </div>
+          </div>
+
+          <div class="settings-section hidden" id="sec-speech">
+            <div class="setting-group glass">
+              <div class="sg-header">
+                <h3>Speech Runtime</h3>
+                <p>Shared runtime process serving every TTS/STT provider. Lazy-boots on first request unless forced here.</p>
+              </div>
+              <div class="sg-body">
+                <div class="model-card glass-strong" id="speechRuntimeCard">
+                  <div class="mc-head">
+                    <div class="mc-title">
+                      <span class="status-dot" id="speechStatusDot"></span> <h4 id="speechStatusText">Checking…</h4>
+                    </div>
+                    <div class="ml-actions">
+                      <button class="action-btn" id="speechStartBtn">Force Start</button>
+                      <button class="action-btn text-danger" id="speechStopBtn">Force Kill</button>
+                    </div>
+                  </div>
+                  <div class="mc-stats mono text-muted" id="speechRuntimeMeta">Port 9000</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="setting-group glass">
+              <div class="sg-header">
+                <h3>Providers</h3>
+                <p>TTS/STT engines available on this runtime.</p>
+              </div>
+              <div class="sg-body">
+                <ul class="model-list" id="speechProvidersList">
+                  <li><span class="ml-desc mono text-muted">Loading…</span></li>
+                </ul>
+              </div>
+            </div>
+          </div>
+
+          <div class="settings-section hidden" id="sec-storage">
+            
+            <div class="setting-group glass">
+              <div class="sg-header">
+                <h3>Disk Usage</h3>
+                <p>Allocation of local storage across workstation modules.</p>
+              </div>
+              <div class="sg-body">
+                <div class="storage-bar-wrap">
+                  <div class="storage-bar">
+                    <div style="width: 45%; background: var(--gold-bright);" title="Models"></div>
+                    <div style="width: 25%; background: #60a5fa;" title="Images"></div>
+                    <div style="width: 10%; background: #4ade80;" title="Cache"></div>
+                    <div style="width: 5%; background: #94a3b8;" title="Logs"></div>
+                  </div>
+                  <div class="storage-labels mono text-muted">
+                    <span>850 GB Used</span>
+                    <span>1.15 TB Free</span>
+                  </div>
+                </div>
+
+                <div class="storage-breakdown">
+                  <div class="sb-item">
+                    <div class="sb-color" style="background: var(--gold-bright);"></div>
+                    <div class="sb-info"><span>AI Models</span> <span class="mono">380 GB</span></div>
+                    <button class="action-btn">Manage</button>
+                  </div>
+                  <div class="sb-item">
+                    <div class="sb-color" style="background: #60a5fa;"></div>
+                    <div class="sb-info"><span>Image Generations</span> <span class="mono">212 GB</span></div>
+                    <button class="action-btn">Clear Old</button>
+                  </div>
+                  <div class="sb-item">
+                    <div class="sb-color" style="background: #4ade80;"></div>
+                    <div class="sb-info"><span>System Cache</span> <span class="mono">85 GB</span></div>
+                    <button class="action-btn">Empty</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="settings-section hidden" id="sec-system">
+            
+            <div class="setting-group glass">
+              <div class="sg-header">
+                <h3>Hardware Information</h3>
+                <p>Detected physical components.</p>
+              </div>
+              <div class="sg-body">
+                <ul class="hw-list mono">
+                  <li><span>CPU</span> AMD Ryzen 7 7735HS</li>
+                  <li><span>GPU</span> NVIDIA GeForce RTX 4050 Laptop GPU</li>
+                  <li><span>VRAM</span> 6 GB Dedicated + Shared Allocation</li>
+                  <li><span>RAM</span> 32.0 GB DDR5</li>
+                  <li><span>Storage</span> 2 TB NVMe SSD</li>
+                </ul>
+              </div>
+            </div>
+
+            <div class="setting-group glass">
+              <div class="sg-header">
+                <h3>Software Information</h3>
+                <p>Core platform versions.</p>
+              </div>
+              <div class="sg-body">
+                <ul class="hw-list mono">
+                  <li><span>OS</span> n0th1ng OS v2.1.4 (Arch-based)</li>
+                  <li><span>Kernel</span> 6.8.9-zen1-1-zen</li>
+                  <li><span>CUDA</span> Version 12.4</li>
+                  <li><span>Workstation Build</span> 2026.06.05-release</li>
+                </ul>
+                <div class="mt-16">
+                  <button class="action-btn w-full">Check for Updates</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="settings-section hidden" id="sec-cluster">
+            <div class="setting-group glass">
+              <div class="sg-header">
+                <h3>Cluster Workers</h3>
+                <p>Remote worker nodes, live from heartbeat registrations.</p>
+              </div>
+              <div class="sg-body" id="clusterWorkersList">
+                <p class="text-muted mono" style="font-size:.8rem;">Loading…</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="settings-section hidden" id="sec-appearance"><div class="setting-group glass"><div class="sg-header"><h3>Appearance</h3><p>Visual settings configuration.</p></div></div></div>
+          <div class="settings-section hidden" id="sec-vision"><div class="setting-group glass"><div class="sg-header"><h3>Image Generation</h3><p>Default parameters for Image Studio.</p></div></div></div>
+          <div class="settings-section hidden" id="sec-monitor"><div class="setting-group glass"><div class="sg-header"><h3>Monitor</h3><p>Telemetry collection and polling rates.</p></div></div></div>
+          <div class="settings-section hidden" id="sec-security"><div class="setting-group glass"><div class="sg-header"><h3>Security</h3><p>API keys and access control.</p></div></div></div>
+          <div class="settings-section hidden" id="sec-integrations"><div class="setting-group glass"><div class="sg-header"><h3>Integrations</h3><p>Connection state for external services.</p></div></div></div>
+          
+          <div class="settings-section hidden" id="sec-advanced">
+            <div class="setting-group glass danger-border">
+              <div class="sg-header">
+                <h3 class="text-danger">Developer Options</h3>
+                <p>Proceed with caution. Modifying these may destabilize the environment.</p>
+              </div>
+              <div class="sg-body">
+                <div class="toggle-row">
+                  <div class="tr-info">
+                    <span class="tr-title">Debug Mode</span>
+                    <span class="tr-desc">Output verbose logs to terminal stream.</span>
+                  </div>
+                  <label class="switch"><input type="checkbox"><span class="slider danger-slider"></span></label>
+                </div>
+                <div class="toggle-row mt-12">
+                  <div class="tr-info">
+                    <span class="tr-title">Bypass VRAM Limits</span>
+                    <span class="tr-desc">Allow models to overflow into system RAM (Slow).</span>
+                  </div>
+                  <label class="switch"><input type="checkbox" checked><span class="slider danger-slider"></span></label>
+                </div>
+                <div class="mt-16">
+                   <button class="action-btn text-danger w-full">Reset Workstation to Factory Defaults</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Cluster worker detail modal — populated entirely by settings.js -->
+  <div class="worker-modal-overlay" id="workerModalOverlay">
+    <div class="worker-modal glass-strong">
+      <div class="worker-modal-head">
+        <h3><span class="status-dot" id="wmStatusDot"></span> <span id="wmHostname">Worker</span></h3>
+        <button class="worker-modal-close" id="wmCloseBtn">&times;</button>
+      </div>
+      <div class="worker-modal-body">
+
+        <div>
+          <div class="wm-section-title">Resource Usage</div>
+          <div class="wm-metrics-grid">
+            <div class="wm-metric-card glass">
+              <div class="wm-metric-head"><span class="wm-metric-label">CPU</span><span class="wm-metric-value" id="wmCpuValue">—</span></div>
+              <canvas class="wm-sparkline" id="wmCpuChart"></canvas>
+            </div>
+            <div class="wm-metric-card glass">
+              <div class="wm-metric-head"><span class="wm-metric-label">RAM</span><span class="wm-metric-value" id="wmRamValue">—</span></div>
+              <canvas class="wm-sparkline" id="wmRamChart"></canvas>
+            </div>
+            <div class="wm-metric-card glass">
+              <div class="wm-metric-head"><span class="wm-metric-label">GPU</span><span class="wm-metric-value" id="wmGpuValue">—</span></div>
+              <canvas class="wm-sparkline" id="wmGpuChart"></canvas>
+            </div>
+            <div class="wm-metric-card glass">
+              <div class="wm-metric-head"><span class="wm-metric-label">CPU Temp</span><span class="wm-metric-value" id="wmCpuTempValue">—</span></div>
+              <canvas class="wm-sparkline" id="wmCpuTempChart"></canvas>
+            </div>
+            <div class="wm-metric-card glass">
+              <div class="wm-metric-head"><span class="wm-metric-label">GPU Temp</span><span class="wm-metric-value" id="wmGpuTempValue">—</span></div>
+              <canvas class="wm-sparkline" id="wmGpuTempChart"></canvas>
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <div class="wm-section-title">Network Activity</div>
+          <div class="wm-metrics-grid">
+            <div class="wm-metric-card glass">
+              <div class="wm-metric-head"><span class="wm-metric-label">Download</span><span class="wm-metric-value" id="wmRxValue">—</span></div>
+              <canvas class="wm-sparkline" id="wmRxChart"></canvas>
+            </div>
+            <div class="wm-metric-card glass">
+              <div class="wm-metric-head"><span class="wm-metric-label">Upload</span><span class="wm-metric-value" id="wmTxValue">—</span></div>
+              <canvas class="wm-sparkline" id="wmTxChart"></canvas>
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <div class="wm-section-title">Live Logs</div>
+          <div class="wm-log-tabs">
+            <button class="wm-log-tab active" data-log-source="worker">Worker</button>
+            <button class="wm-log-tab" data-log-source="kokoro">Kokoro</button>
+          </div>
+          <div class="wm-log-pane mono" id="wmLogPane"></div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <script src="../assets/page-transitions.js"></script>
+  <script src="settings.js"></script>
+  <script src="../assets/liquid-select.js"></script>
+</body>
+</html>

@@ -1,0 +1,211 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>ForgeX — n0th1ng ai</title>
+  <meta name="description" content="ForgeX - Enhanced Coding Workplace, bridging n0th1ng to the real Claude Code CLI on local models." />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@200;300;400;500;600&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="forgex.css" />
+  <link rel="stylesheet" href="../assets/page-transitions.css" />
+  <link rel="stylesheet" href="../assets/liquid-select.css" />
+  <script src="../assets/nav.js" defer></script>
+  <link rel="stylesheet" href="../assets/nav.css">
+</head>
+<body class="forge-mode">
+
+  <canvas id="liquidField"></canvas>
+  <canvas id="particles"></canvas>
+
+  <!-- =========================== NAV =========================== -->
+  <header class="nav-wrap scrolled" id="navWrap">
+    <nav class="nav glass-liquid" id="nav">
+      <a href="../../index.html" class="brand">
+        <span class="brand-logo glass-strong">
+          <img src="../assets/logo.png" alt="n0th1ng logo" onerror="this.style.display='none'"/>
+          <span class="brand-logo-bg" aria-hidden="true"></span>
+        </span>
+        <span class="brand-text">
+          <span class="brand-name">n0th1ng</span>
+          <span class="brand-tag">AI · WORKSTATION</span>
+        </span>
+      </a>
+
+      <div class="nav-links">
+        <a class="nav-link" href="../../index.html">Home</a>
+        <div class="nav-dd" id="ddFeatures">
+          <button class="nav-link nav-dd-btn">Features
+            <svg width="10" height="10" viewBox="0 0 10 10"><path d="M2 3.5 L5 6.5 L8 3.5" stroke="currentColor" fill="none" stroke-width="1.4" stroke-linecap="round"/></svg>
+          </button>
+                  <div class="nav-dd-menu glass-liquid">
+          <a href="../chatspace/index.html"><b>Chatspace</b><i>Ideas &rarr; reality</i></a>
+          <a href="../studio/index.html"><b>Image Studio</b><i>Visualize imagination</i></a>
+          <a href="../framesx/index.html"><b>FramesX</b><i>Cinematic generation</i></a>
+          <a href="../files/index.html"><b>Files</b><i>Knowledge & Documents</i></a>
+          <a href="../voice/index.html"><b>Voice Studio</b><i>Speech Intelligence</i></a>
+          <a href="../personastudio/index.html"><b>Persona Studio</b><i>NVIDIA PersonaPlex</i></a>
+          <a href="../forge/index.html"><b>Forge</b><i>Autonomous build agent</i></a>
+          <a href="../forgex/index.html"><b>ForgeX</b><i>Advanced autonomous agentic coding</i></a>
+          <a href="../monitor/index.html"><b>Monitor</b><i>Workstation pulse</i></a>
+          <a href="../robotics/index.html"><b>Robotics</b><i>Beyond software</i></a>
+          <a href="../settings/index.html"><b>Settings</b><i>Configure workspace</i></a>
+        </div>
+        </div>
+        <a class="nav-link" href="../../index.html#about">About</a>
+        <a class="nav-link" href="../settings/index.html">Settings</a>
+      </div>
+
+      <button class="nav-burger glass-strong" id="burger" aria-label="Open menu">
+        <svg width="20" height="20" viewBox="0 0 22 22" fill="none"><path d="M3 6h16M3 11h16M3 16h16" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+      </button>
+    </nav>
+  </header>
+
+  <div class="drawer-wrap" id="drawer">
+    <div class="drawer-bg"></div>
+    <aside class="drawer glass-liquid">
+      <div class="drawer-head">
+        <div class="brand"><span class="brand-name">n0th1ng</span></div>
+        <button class="drawer-close glass" data-close>×</button>
+      </div>
+            <nav class="drawer-links">
+        <a href="../../index.html" data-close>Home <span>&rarr;</span></a>
+        <a href="../../index.html#features" data-close>Features <span>&rarr;</span></a>
+        <a href="../chatspace/index.html" data-close>Chatspace <span>&rarr;</span></a>
+        <a href="../studio/index.html" data-close>Image Studio <span>&rarr;</span></a>
+        <a href="../framesx/index.html" data-close>FramesX <span>&rarr;</span></a>
+        <a href="../files/index.html" data-close>Files <span>&rarr;</span></a>
+        <a href="../voice/index.html" data-close>Voice Studio <span>&rarr;</span></a>
+        <a href="../personastudio/index.html" data-close>Persona Studio <span>&rarr;</span></a>
+        <a href="../forge/index.html" data-close>Forge <span>&rarr;</span></a>
+        <a href="../forgex/index.html" data-close>ForgeX <span>&rarr;</span></a>
+        <a href="../monitor/index.html" data-close>Monitor <span>&rarr;</span></a>
+        <a href="../robotics/index.html" data-close>Robotics <span>&rarr;</span></a>
+        <a href="../../index.html#about" data-close>About <span>&rarr;</span></a>
+        <a href="../settings/index.html" data-close>Settings <span>&rarr;</span></a>
+      </nav>
+    </aside>
+  </div>
+ </div>
+
+  <!-- =========================== FORGEX WORKSPACE =========================== -->
+  <main class="forge noise">
+    <div class="forge-container">
+
+      <header class="forge-header fade-up">
+        <div class="fh-left">
+          <h1 class="mega-title">ForgeX</h1>
+          <div class="fh-status">
+            <span class="status-dot healthy" id="engineStatusDot"></span>
+            <span class="status-text" id="engineStatusText">IDLE</span>
+            <span class="divider">/</span>
+            <span>Model: <span class="mono" id="engineModelText">—</span></span>
+            <span class="divider">/</span>
+            <span class="mono" style="font-size:.75rem;color:var(--fg-dim);">bridging to real Claude Code CLI</span>
+          </div>
+        </div>
+        <div class="fh-right">
+          <button class="fh-btn glass" id="newSessionBtn">
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 1v12M1 7h12" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+            New Session
+          </button>
+        </div>
+      </header>
+
+      <div class="forge-grid fade-up">
+
+        <aside class="session-rail glass">
+          <div class="rail-head"><h4>Sessions</h4></div>
+          <div class="rail-scroll" id="sessionList">
+            <div class="rail-empty" id="railEmpty">
+              <p>No sessions yet.</p>
+              <span>Start one to see it here.</span>
+            </div>
+          </div>
+        </aside>
+
+        <section class="session-view">
+
+          <div class="session-empty glass" id="sessionEmptyState">
+            <div class="se-glyph">
+              <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 17l6-6-6-6"/><path d="M12 19h8"/></svg>
+            </div>
+            <h3>No active session</h3>
+            <p>Start a new session to launch the real Claude Code CLI against a local Ollama model.</p>
+          </div>
+
+          <div class="session-content" id="sessionContent" style="display:none;">
+
+            <div class="sv-subhead glass">
+              <div class="sv-goal">
+                <span class="sv-goal-label">Goal</span>
+                <span class="sv-goal-text" id="svGoalText">—</span>
+              </div>
+              <div class="sv-controls">
+                <button class="qa-btn glass" id="stopBtn">⏹ Stop</button>
+              </div>
+            </div>
+
+            <div class="panel card glass" id="terminalPanel" style="margin-top:20px;">
+              <div class="card-header">
+                <h3>Claude Code — Live Terminal</h3>
+                <span class="live-indicator" id="liveIndicator">
+                  <span class="pulse-dot"></span> LIVE
+                </span>
+              </div>
+              <div class="forge-terminal" id="forgexTerminal" style="height:520px;">
+                <!-- populated by forgex.js via SSE -->
+              </div>
+            </div>
+
+            <div class="followup-bar glass" id="followupBar">
+              <input
+                type="text"
+                id="followupInput"
+                class="followup-input"
+                placeholder="Send a follow-up to continue the conversation…"
+              />
+              <button class="fh-btn glass" id="followupSendBtn">Send</button>
+            </div>
+
+          </div>
+        </section>
+      </div>
+    </div>
+  </main>
+
+  <!-- =========================== NEW SESSION MODAL =========================== -->
+  <div class="modal-backdrop" id="newSessionModal">
+    <div class="modal glass-liquid">
+      <div class="modal-head">
+        <h3>New ForgeX Session</h3>
+        <button class="drawer-close glass" id="closeModalBtn">×</button>
+      </div>
+      <div class="modal-body">
+        <label class="modal-label">Goal</label>
+        <textarea id="goalInput" class="modal-textarea" placeholder="e.g. Build a CLI tool that converts CSV to JSON with tests"></textarea>
+
+        <label class="modal-label">Model (from your local Ollama)</label>
+        <select id="modelSelect" class="modal-select">
+          <!-- populated by forgex.js from forgex.listModels -->
+        </select>
+        <p style="font-size:.75rem;color:var(--fg-dim);margin-top:8px;">
+          Claude Code's own harness needs a real context window to stay coherent —
+          32K+ is the documented floor, 64K+ is the sweet spot. Smaller/weaker
+          models may work for short sessions but degrade faster than in Forge.
+        </p>
+      </div>
+      <div class="modal-foot">
+        <button class="qa-btn glass" id="cancelSessionBtn">Cancel</button>
+        <button class="fh-btn bg-aurora" id="createSessionBtn">Launch Claude Code</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="../assets/page-transitions.js"></script>
+  <script src="forgex.js"></script>
+  <script src="../assets/liquid-select.js"></script>
+</body>
+</html>

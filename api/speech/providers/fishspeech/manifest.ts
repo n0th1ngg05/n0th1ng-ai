@@ -1,0 +1,106 @@
+import { ProviderManifest, ModelStatus } from '../../types.js';
+import { defaultFishSpeechConfig } from './config.js';
+
+/** Fish Speech provider manifest */
+export const fishSpeechManifest: ProviderManifest = {
+  id: 'fishspeech',
+  name: 'Fish Speech',
+  type: 'tts',
+  version: '1.5.0',
+  description: 'Multilingual TTS with voice cloning',
+  author: 'Fish Audio',
+  license: 'MIT',
+  supportedLanguages: defaultFishSpeechConfig.languages,
+  models: [
+    {
+      id: 'fishspeech-1.5',
+      providerId: 'fishspeech',
+      name: 'Fish Speech 1.5',
+      version: '1.5.0',
+      size: 750000000,
+      checksum: '',
+      checksumAlgorithm: 'sha256',
+      downloadUrl: 'https://huggingface.co/fishaudio/fish-speech-1.5/resolve/main/model.pth',
+      status: ModelStatus.AVAILABLE,
+      languages: defaultFishSpeechConfig.languages,
+      capabilities: ['tts', 'voice-cloning'],
+      minProviderVersion: '1.5.0',
+    },
+    {
+      id: 'fishspeech-v1',
+      providerId: 'fishspeech',
+      name: 'Fish Speech 1.0',
+      version: '1.0.0',
+      size: 800000000,
+      checksum: '',
+      checksumAlgorithm: 'sha256',
+      downloadUrl: 'https://huggingface.co/fishaudio/fish-speech-1/resolve/main/model.pth',
+      status: ModelStatus.AVAILABLE,
+      languages: defaultFishSpeechConfig.languages,
+      capabilities: ['tts', 'voice-cloning'],
+      minProviderVersion: '1.0.0',
+    },
+  ],
+  voices: [
+    {
+      id: 'default',
+      modelId: 'fishspeech-1.5',
+      providerId: 'fishspeech',
+      name: 'Default',
+      language: 'en',
+      gender: 'neutral',
+      description: 'Default Fish Speech voice',
+      sampleRate: 44100,
+      isDefault: true,
+    },
+    {
+      id: 'expressive',
+      modelId: 'fishspeech-1.5',
+      providerId: 'fishspeech',
+      name: 'Expressive',
+      language: 'en',
+      gender: 'neutral',
+      description: 'High-expressiveness voice mode',
+      sampleRate: 44100,
+      isDefault: false,
+    },
+    {
+      id: 'calm',
+      modelId: 'fishspeech-1.5',
+      providerId: 'fishspeech',
+      name: 'Calm',
+      language: 'en',
+      gender: 'neutral',
+      description: 'Calm, measured voice mode',
+      sampleRate: 44100,
+      isDefault: false,
+    },
+    {
+      id: 'narrator',
+      modelId: 'fishspeech-1.5',
+      providerId: 'fishspeech',
+      name: 'Narrator',
+      language: 'en',
+      gender: 'neutral',
+      description: 'Storytelling narrator style',
+      sampleRate: 44100,
+      isDefault: false,
+    },
+    {
+      id: 'default_v1',
+      modelId: 'fishspeech-v1',
+      providerId: 'fishspeech',
+      name: 'Default (1.0)',
+      language: 'en',
+      gender: 'neutral',
+      description: 'Default Fish Speech 1.0 voice',
+      sampleRate: 44100,
+      isDefault: false,
+    },
+  ],
+};
+
+/** Gets the Fish Speech manifest */
+export function getFishSpeechManifest(): ProviderManifest {
+  return JSON.parse(JSON.stringify(fishSpeechManifest));
+}

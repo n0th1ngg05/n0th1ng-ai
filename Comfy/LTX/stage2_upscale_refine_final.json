@@ -1,0 +1,197 @@
+{
+  "6": {
+    "inputs": {
+      "text": "Cinematic 8k video, eye-level tracking shot following a vintage motorcycle rider along a misty mountain highway at dawn. Golden sunrise light filters through tall pine trees, casting long shadows across wet asphalt. Distant snow-capped peaks rise beyond the treeline under a pale blue sky. Ultra-realistic environmental textures, natural fluid motion, volumetric sunlight, 35mm lens look, hyper-detailed, masterpiece quality.",
+      "clip": [
+        "38",
+        0
+      ]
+    },
+    "class_type": "CLIPTextEncode",
+    "_meta": {
+      "title": "CLIP Text Encode (Positive - same core prompt + detail emphasis)"
+    }
+  },
+  "7": {
+    "inputs": {
+      "text": "low quality, worst quality, deformed, distorted, disfigured, motion smear, motion artifacts, fused fingers, bad anatomy, weird hand, ugly, jittery, blurry, watermark, inconsistent motion, text, logo, oversaturated, flat lighting",
+      "clip": [
+        "38",
+        0
+      ]
+    },
+    "class_type": "CLIPTextEncode",
+    "_meta": {
+      "title": "CLIP Text Encode (Negative)"
+    }
+  },
+  "8": {
+    "inputs": {
+      "samples": [
+        "103",
+        0
+      ],
+      "vae": [
+        "44",
+        2
+      ]
+    },
+    "class_type": "VAEDecode",
+    "_meta": {
+      "title": "VAE Decode"
+    }
+  },
+  "38": {
+    "inputs": {
+      "clip_name": "t5xxl_fp8_e4m3fn.safetensors",
+      "type": "ltxv",
+      "device": "default"
+    },
+    "class_type": "CLIPLoader",
+    "_meta": {
+      "title": "Load CLIP"
+    }
+  },
+  "44": {
+    "inputs": {
+      "ckpt_name": "ltxv-2b-0.9.8-distilled-fp8.safetensors"
+    },
+    "class_type": "CheckpointLoaderSimple",
+    "_meta": {
+      "title": "Load Checkpoint"
+    }
+  },
+  "69": {
+    "inputs": {
+      "frame_rate": 24,
+      "positive": [
+        "6",
+        0
+      ],
+      "negative": [
+        "7",
+        0
+      ]
+    },
+    "class_type": "LTXVConditioning",
+    "_meta": {
+      "title": "LTXVConditioning"
+    }
+  },
+  "71": {
+    "inputs": {
+      "steps": 8,
+      "max_shift": 1.15,
+      "base_shift": 0.95,
+      "stretch": true,
+      "terminal": 0.1,
+      "latent": [
+        "102",
+        0
+      ]
+    },
+    "class_type": "LTXVScheduler",
+    "_meta": {
+      "title": "LTXVScheduler (fewer steps - this is a light refine pass, not a full regen)"
+    }
+  },
+  "73": {
+    "inputs": {
+      "sampler_name": "euler"
+    },
+    "class_type": "KSamplerSelect",
+    "_meta": {
+      "title": "KSamplerSelect"
+    }
+  },
+  "100": {
+    "inputs": {
+      "directory": "output/Gen3/",
+      "image_load_cap": 0,
+      "skip_first_images": 0,
+      "select_every_nth": 1
+    },
+    "class_type": "VHS_LoadImagesPath",
+    "_meta": {
+      "title": "Load Frame Sequence from Stage 1 (requires ComfyUI-VideoHelperSuite; point directory at your stage1 output folder)"
+    }
+  },
+  "101": {
+    "inputs": {
+      "pixels": [
+        "100",
+        0
+      ],
+      "vae": [
+        "44",
+        2
+      ]
+    },
+    "class_type": "VAEEncode",
+    "_meta": {
+      "title": "VAE Encode (frames -> latent for refinement pass)"
+    }
+  },
+  "102": {
+    "inputs": {
+      "upscale_method": "bicubic",
+      "scale_by": 1.5,
+      "samples": [
+        "101",
+        0
+      ]
+    },
+    "class_type": "LatentUpscaleBy",
+    "_meta": {
+      "title": "Latent Upscale 1.5x (spatial upscale before refine; keep modest on 6GB)"
+    }
+  },
+  "103": {
+    "inputs": {
+      "add_noise": true,
+      "noise_seed": 180205142581549,
+      "cfg": 1.5,
+      "model": [
+        "44",
+        0
+      ],
+      "positive": [
+        "69",
+        0
+      ],
+      "negative": [
+        "69",
+        1
+      ],
+      "sampler": [
+        "73",
+        0
+      ],
+      "sigmas": [
+        "71",
+        0
+      ],
+      "latent_image": [
+        "102",
+        0
+      ]
+    },
+    "class_type": "SamplerCustom",
+    "_meta": {
+      "title": "SamplerCustom (denoise=0.35 - refines/adds detail, doesn't regenerate from scratch)"
+    }
+  },
+  "104": {
+    "inputs": {
+      "filename_prefix": "ltx_stage2_upscaled",
+      "images": [
+        "8",
+        0
+      ]
+    },
+    "class_type": "SaveImage",
+    "_meta": {
+      "title": "Save Frame Sequence (feeds stage 3)"
+    }
+  }
+}

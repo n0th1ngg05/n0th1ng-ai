@@ -1,0 +1,390 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+  <title>Image Studio — n0th1ng ai</title>
+  <meta name="description" content="Image Studio - Visualize imagination." />
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@200;300;400;500;600&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+  
+  <link rel="stylesheet" href="studio.css" />
+  <link rel="stylesheet" href="../assets/page-transitions.css" />
+  <link rel="stylesheet" href="../assets/liquid-select.css" />
+</head>
+<body>
+
+  <!-- Global Navbar -->
+  <header class="nav-wrap scrolled" id="navWrap">
+    <nav class="nav glass-liquid" id="nav">
+      <a href="../../index.html" class="brand">
+        <span class="brand-logo glass-strong">
+          <img src="../assets/logo.png" alt="logo" onerror="this.style.display='none'"/>
+          <span class="brand-logo-bg" aria-hidden="true"></span>
+        </span>
+        <span class="brand-text">
+          <span class="brand-name text-aurora">n0th1ng</span>
+          <span class="brand-tag">AI · WORKSTATION</span>
+        </span>
+      </a>
+
+      <div class="nav-links">
+        <a class="nav-link" href="../../index.html">Home</a>
+        <div class="nav-dd" id="ddFeatures">
+          <button class="nav-link nav-dd-btn">Features
+            <svg width="10" height="10" viewBox="0 0 10 10"><path d="M2 3.5 L5 6.5 L8 3.5" stroke="currentColor" fill="none" stroke-width="1.4" stroke-linecap="round"/></svg>
+          </button>
+                  <div class="nav-dd-menu glass-liquid">
+          <a href="../chatspace/index.html"><b>Chatspace</b><i>Ideas &rarr; reality</i></a>
+          <a href="../studio/index.html"><b>Image Studio</b><i>Visualize imagination</i></a>
+          <a href="../framesx/index.html"><b>FramesX</b><i>Cinematic generation</i></a>
+          <a href="../files/index.html"><b>Files</b><i>Knowledge & Documents</i></a>
+          <a href="../voice/index.html"><b>Voice Studio</b><i>Speech Intelligence</i></a>
+          <a href="../personastudio/index.html"><b>Persona Studio</b><i>NVIDIA PersonaPlex</i></a>
+          <a href="../forge/index.html"><b>Forge</b><i>Autonomous build agent</i></a>
+          <a href="../forgex/index.html"><b>ForgeX</b><i>Advanced autonomous agentic coding</i></a>
+          <a href="../monitor/index.html"><b>Monitor</b><i>Workstation pulse</i></a>
+          <a href="../robotics/index.html"><b>Robotics</b><i>Beyond software</i></a>
+          <a href="../settings/index.html"><b>Settings</b><i>Configure workspace</i></a>
+        </div>
+        </div>
+        <a class="nav-link" href="../../index.html#about">About</a>
+        <a class="nav-link" href="../settings/index.html">Settings</a>
+      </div>
+
+      <button class="nav-burger glass-strong" id="burger" aria-label="Open menu">
+        <svg width="20" height="20" viewBox="0 0 22 22" fill="none"><path d="M3 6h16M3 11h16M3 16h16" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+      </button>
+    </nav>
+  </header>
+
+  <!-- Mobile Drawer -->
+  <div class="drawer-wrap" id="drawer">
+    <div class="drawer-bg"></div>
+    <aside class="drawer glass-liquid">
+      <div class="drawer-head">
+        <div class="brand">
+          <span class="brand-name text-aurora">n0th1ng</span>
+        </div>
+        <button class="drawer-close glass" data-close>×</button>
+      </div>
+            <nav class="drawer-links">
+        <a href="../../index.html" data-close>Home <span>&rarr;</span></a>
+        <a href="../../index.html#features" data-close>Features <span>&rarr;</span></a>
+        <a href="../chatspace/index.html" data-close>Chatspace <span>&rarr;</span></a>
+        <a href="../studio/index.html" data-close>Image Studio <span>&rarr;</span></a>
+        <a href="../framesx/index.html" data-close>FramesX <span>&rarr;</span></a>
+        <a href="../files/index.html" data-close>Files <span>&rarr;</span></a>
+        <a href="../voice/index.html" data-close>Voice Studio <span>&rarr;</span></a>
+        <a href="../personastudio/index.html" data-close>Persona Studio <span>&rarr;</span></a>
+        <a href="../forge/index.html" data-close>Forge <span>&rarr;</span></a>
+        <a href="../forgex/index.html" data-close>ForgeX <span>&rarr;</span></a>
+        <a href="../monitor/index.html" data-close>Monitor <span>&rarr;</span></a>
+        <a href="../robotics/index.html" data-close>Robotics <span>&rarr;</span></a>
+        <a href="../../index.html#about" data-close>About <span>&rarr;</span></a>
+        <a href="../settings/index.html" data-close>Settings <span>&rarr;</span></a>
+      </nav>
+    </aside>
+  </div>
+
+  <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
+
+  <!-- Modern Workspace -->
+  <main class="workspace-modern">
+    <div class="void-background"></div>
+
+    <div class="top-actions-left">
+      <button id="openLeftSidebar" class="tool-btn glass-liquid">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+        Library
+      </button>
+    </div>
+
+    <div class="top-actions">
+      <button id="openRightSidebar" class="tool-btn glass-liquid">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        Generation Settings
+      </button>
+    </div>
+
+    <div class="stage" id="mainStage">
+      
+      <!-- Empty State / Hero -->
+      <div id="emptyState" class="empty-view">
+        <div class="hero-text">
+          <h1>Visualize with <span class="text-aurora">Image Studio</span></h1>
+          <p>Develop breathtaking artwork powered by advanced latent diffusion.</p>
+        </div>
+
+        <div class="inspire-grid">
+          <div class="inspire-card" onclick="document.getElementById('promptInput').value='A towering futuristic city built into a massive canyon, dense atmospheric fog, cinematic lighting, ultra-detailed'">
+            <img src="https://placehold.co/400x300/111/444?text=Futuristic" alt="Inspire 1">
+            <span class="inspire-badge">Cityscape</span>
+          </div>
+          <div class="inspire-card" style="animation-delay: 0.1s;" onclick="document.getElementById('promptInput').value='Portrait of a stoic warrior in ornate dark armor, soft studio lighting, 85mm lens, photorealistic'">
+            <img src="https://placehold.co/400x300/111/444?text=Portrait" alt="Inspire 2">
+            <span class="inspire-badge">Character</span>
+          </div>
+          <div class="inspire-card" style="animation-delay: 0.2s;" onclick="document.getElementById('promptInput').value='Abstract fluid simulation, deep blacks and vibrant gold colors, macro photography, shallow depth of field'">
+            <img src="https://placehold.co/400x300/111/444?text=Abstract" alt="Inspire 3">
+            <span class="inspire-badge">Fluid</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Result / Player State -->
+      <div id="previewStage" class="gen-view hidden">
+        <div class="player-container">
+          
+          <!-- Loading Overlay -->
+          <div id="genProgress" class="loader-overlay hidden">
+            <div class="spinner"></div>
+            <div class="loader-text text-aurora">Rendering Image...</div>
+            <div class="loader-subtext">Step <span id="stepCount">0</span> / <span id="stepTotal">30</span> · <span id="timeEst">Queued</span></div>
+            <div class="gp-bar"><div id="progressBar"></div></div>
+          </div>
+          
+          <div class="preview-frame glass">
+            <div class="preview-img" style="background: linear-gradient(45deg, #0a0a0a, #111, #050505);">
+              <div class="preview-noise"></div>
+              <!-- In the new layout we don't have a specific ID for the image because we use modalImage, but we will put it here anyway if needed, actually gallery items are clicked to view -->
+            </div>
+            
+            <div class="preview-actions">
+              <button class="action-btn" title="Download"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg></button>
+              <button class="action-btn" title="Fullscreen"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg></button>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Composer Island -->
+    <div class="composer-island glass-strong" id="composerIsland">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--gold)" stroke-width="2" style="flex-shrink: 0;"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+      <input type="text" id="promptInput" placeholder="Describe the image you want to create..." style="flex:1; background:transparent; border:none; color:var(--fg); font-family:var(--font); font-size:1rem; outline:none; height:24px;">
+      
+      <div class="composer-tools" style="display:flex; gap:6px;">
+        <button class="tool-btn glass" id="btnToggleNeg" title="Negative Prompt" style="width:38px; height:38px; padding:0; border-radius:50%; justify-content:center;" onclick="document.getElementById('negPromptWrap').classList.toggle('hidden')">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14"/></svg>
+        </button>
+        <button class="tool-btn glass" onclick="document.getElementById('openRightSidebar').click()" title="Settings" style="width:38px; height:38px; padding:0; border-radius:50%; justify-content:center;">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="9" y1="3" x2="9" y2="21"/></svg>
+        </button>
+      </div>
+      
+      <button class="btn-run bg-aurora" id="btnGenerate" style="height:40px; padding:0 20px; border-radius:9999px; font-weight:500; display:flex; align-items:center; gap:8px; border:none; cursor:pointer;">
+        <span>Run</span>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#000" stroke-width="2.5"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+      </button>
+    </div>
+    
+    <!-- Negative Prompt Floating Bar -->
+    <div id="negPromptWrap" class="hidden glass" style="position:absolute; bottom:100px; left:50%; transform:translateX(-50%); padding:10px 20px; border-radius:9999px; display:flex; gap:12px; align-items:center; width:90%; max-width:500px; z-index:90;">
+      <span class="mono" style="font-size: 0.7rem; color: #ff5555; border: 1px solid rgba(255,85,85,0.3); padding: 2px 4px; border-radius: 4px;">NEG</span>
+      <input type="text" id="negativePrompt" placeholder="Elements to exclude..." style="flex:1; background:transparent; color:var(--fg-muted); font-size: 0.9rem; border:none; outline:none;">
+    </div>
+
+    <!-- Left sidebar: history -->
+    <aside class="sidebar left-sidebar glass-liquid" id="leftSidebar">
+      <div class="sidebar-header">
+        <h4>Library</h4>
+        <button class="btn-icon glass " id="closeLeftSidebar">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+        </button>
+      </div>
+
+      <div class="sidebar-scroll">
+        <div class="sidebar-section">
+          <div class="history-search-wrap" style="margin-bottom:12px;">
+            <input id="historySearch" type="text" placeholder="Search prompts..." class="history-search glass" style="width: 100%; box-sizing: border-box;" />
+          </div>
+          <div class="gallery-grid" id="galleryGrid" >
+            <!-- History populated by loadHistory() but we map it to galleryGrid for visual consistency -->
+          </div>
+          <div id="galleryEmpty" class="gallery-empty hidden">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+            <p>No images in gallery yet.</p>
+          </div>
+          <ul id="historyList" class="history-list">
+            <!-- Hidden original history list to not break studio.js if it appends here, but we will ideally populate galleryGrid -->
+          </ul>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Right sidebar: Inspector -->
+    <aside class="sidebar right-sidebar glass-liquid" id="rightSidebar">
+      <div class="sidebar-header">
+        <h4>Inspector</h4>
+        <button class="btn-icon glass " id="closeRightSidebar">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+        </button>
+      </div>
+      <div class="sidebar-scroll">
+
+        <div class="sidebar-section">
+          <h4>Provider</h4>
+          <select class="form-select glass" id="providerSelect">
+            <option value="" disabled selected>Loading providers...</option>
+          </select>
+        </div>
+
+        <div class="sidebar-section">
+          <h4>Aspect Ratio</h4>
+          <div class="ar-grid">
+            <button class="ar-btn glass active" title="1:1">
+              <div class="ar-box" style="width:18px;height:18px;"></div>
+            </button>
+            <button class="ar-btn glass" title="16:9">
+              <div class="ar-box" style="width:24px;height:14px;"></div>
+            </button>
+            <button class="ar-btn glass" title="9:16">
+              <div class="ar-box" style="width:14px;height:24px;"></div>
+            </button>
+            <button class="ar-btn glass" title="4:3">
+              <div class="ar-box" style="width:20px;height:15px;"></div>
+            </button>
+          </div>
+        </div>
+
+        <div class="sidebar-section">
+          <div class="slider-header">
+            <h4>Steps</h4>
+            <span class="slider-val">30</span>
+          </div>
+          <input id="stepsSlider" type="range" class="form-slider" min="1" max="100" value="30">
+        </div>
+
+        <div class="sidebar-section">
+          <div class="slider-header">
+            <h4>CFG Scale</h4>
+            <span class="slider-val">7.0</span>
+          </div>
+          <input id="cfgSlider" type="range" class="form-slider" min="1" max="20" step="0.5" value="7.0">
+        </div>
+
+        <div class="sidebar-section">
+          <div class="slider-header">
+            <h4>Denoise</h4>
+            <span class="slider-val">1.0</span>
+          </div>
+          <input id="denoiseSlider" type="range" class="form-slider" min="0" max="1" step="0.05" value="1">
+        </div>
+
+        <div class="sidebar-section">
+          <div class="slider-header">
+            <h4>Batch Size</h4>
+            <span class="slider-val">1</span>
+          </div>
+          <input id="batchSlider" type="range" class="form-slider" min="1" max="8" step="1" value="1">
+        </div>
+
+        <div class="sidebar-section">
+          <h4>Sampler</h4>
+          <select id="samplerSelect" class="form-select glass">
+            <option value="euler">Euler</option>
+            <option value="euler_ancestral">Euler A</option>
+            <option value="dpmpp_2m">DPM++ 2M</option>
+            <option value="dpmpp_sde">DPM++ SDE</option>
+          </select>
+        </div>
+
+        <div class="sidebar-section">
+          <h4>Scheduler</h4>
+          <select id="schedulerSelect" class="form-select glass">
+            <option value="simple">Simple</option>
+            <option value="normal">Normal</option>
+            <option value="karras">Karras</option>
+            <option value="sgm_uniform">SGM Uniform</option>
+          </select>
+        </div>
+
+        <div class="sidebar-section">
+          <h4>Seed</h4>
+          <div class="seed-wrap glass">
+            <input type="text" placeholder="Random" value="-1" id="seedInput" />
+            <button title="Randomize" id="btnRandomSeed"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.92-10.26l5.08 5.08"/></svg></button>
+          </div>
+        </div>
+
+        <div class="sidebar-section hidden" id="metaSection">
+          <h4>Generation Metadata</h4>
+          <ul class="meta-list">
+            <li><span>Provider</span> <strong id="metaProvider" style="font-weight: normal; color: var(--fg);"></strong></li>
+            <li><span>Prompt</span> <strong id="metaPrompt" class="truncate" style="max-width: 140px; display:inline-block; font-weight: normal; color: var(--fg);"></strong></li>
+            <li><span>Resolution</span> <strong id="metaResolution" style="font-weight: normal; color: var(--fg);"></strong></li>
+            <li><span>Steps</span> <strong id="metaSteps" style="font-weight: normal; color: var(--fg);"></strong></li>
+            <li><span>CFG</span> <strong id="metaCfg" style="font-weight: normal; color: var(--fg);"></strong></li>
+            <li><span>Sampler</span> <strong id="metaSampler" style="font-weight: normal; color: var(--fg);"></strong></li>
+            <li><span>Scheduler</span> <strong id="metaScheduler" style="font-weight: normal; color: var(--fg);"></strong></li>
+            <li><span>Seed</span> <strong id="metaSeed" style="font-weight: normal; color: var(--fg);"></strong></li>
+            <li><span>Time</span> <strong id="metaTime" style="font-weight: normal; color: var(--fg);"></strong></li>
+          </ul>
+        </div>
+
+      </div>
+    </aside>
+
+  </main>
+
+  <!-- Fullscreen image modal -->
+  <div id="imageModal" class="image-modal">
+    <div class="modal-backdrop" onclick="closeImageModal()" title="Click to close"></div>
+    
+    <div class="modal-content">
+      <img id="modalImage" class="modal-image" onclick="event.stopPropagation()" />
+
+      <button class="modal-btn modal-close" onclick="closeImageModal()" title="Close (ESC)">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+      </button>
+
+      <button class="modal-btn modal-prev" onclick="previousImage()" title="Previous (Left Arrow)">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>
+      </button>
+
+      <button class="modal-btn modal-next" onclick="nextImage()" title="Next (Right Arrow)">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
+      </button>
+
+      <div class="modal-bottom-bar glass-strong" onclick="event.stopPropagation()">
+        <div class="mb-details">
+          <p id="modalPromptText" class="mb-prompt">Loading prompt...</p>
+          <div class="mb-meta mono text-muted">
+            <span id="modalResTag">1024x1024</span>
+            <span class="mb-divider">/</span>
+            <span id="modalStepsTag">30 Steps</span>
+            <span class="mb-divider">/</span>
+            <span id="modalCfgTag">CFG 7.0</span>
+          </div>
+        </div>
+        
+        <div class="mb-actions">
+          <button id="copyPromptBtn" class="action-btn glass" title="Copy Prompt">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+            Copy
+          </button>
+          <button id="reuseConfigBtn" class="action-btn glass" title="Reuse Settings">↻ Reuse</button>
+          <button id="downloadBtn" class="action-btn bg-aurora" title="Download Image">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#000" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+            Save
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="../assets/page-transitions.js"></script>
+  <script src="../assets/liquid-select.js"></script>
+  <script src="studio.js"></script>
+</body>
+</html>
+
+
+
+
+

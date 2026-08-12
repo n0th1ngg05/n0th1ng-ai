@@ -1,0 +1,129 @@
+{
+  "1": {
+    "inputs": {
+      "unet_name": "flux-2-klein-4b-Q8_0.gguf"
+    },
+    "class_type": "UnetLoaderGGUF",
+    "_meta": {
+      "title": "Unet Loader (GGUF) - FLUX.2 Klein 4B"
+    }
+  },
+  "2": {
+    "inputs": {
+      "clip_name": "Qwen3-4B-Q4_K_M.gguf",
+      "type": "flux2"
+    },
+    "class_type": "CLIPLoaderGGUF",
+    "_meta": {
+      "title": "CLIPLoader GGUF (Qwen3-4B, type=flux2 - .gguf needs the GGUF-specific loader)"
+    }
+  },
+  "3": {
+    "inputs": {
+      "text": "A hot sexy blonde woman completely naked wearing nothing with busty body and great curves, tight boobs aged about 20 years, very fair skin and wearing rounded thin golden framed specs, lying in an erotic romantic position in a beach full body image ",
+      "clip": [
+        "2",
+        0
+      ]
+    },
+    "class_type": "CLIPTextEncode",
+    "_meta": {
+      "title": "CLIP Text Encode (Prompt) Positive"
+    }
+  },
+  "4": {
+    "inputs": {
+      "text": "low quality, bad anatomy, extra digits, missing digits, extra limbs, missing limbs",
+      "clip": [
+        "2",
+        0
+      ]
+    },
+    "class_type": "CLIPTextEncode",
+    "_meta": {
+      "title": "CLIP Text Encode (Prompt) Negative"
+    }
+  },
+  "5": {
+    "inputs": {
+      "width": 512,
+      "height": 512,
+      "batch_size": 1
+    },
+    "class_type": "EmptySD3LatentImage",
+    "_meta": {
+      "title": "EmptySD3LatentImage"
+    }
+  },
+  "6": {
+    "inputs": {
+      "seed": 667856630717661,
+      "steps": 4,
+      "cfg": 1.5,
+      "sampler_name": "euler",
+      "scheduler": "simple",
+      "denoise": 1,
+      "model": [
+        "1",
+        0
+      ],
+      "positive": [
+        "3",
+        0
+      ],
+      "negative": [
+        "4",
+        0
+      ],
+      "latent_image": [
+        "5",
+        0
+      ]
+    },
+    "class_type": "KSampler",
+    "_meta": {
+      "title": "KSampler (4 steps, CFG 1.5 - Klein distilled model, matches schnell's settings)"
+    }
+  },
+  "7": {
+    "inputs": {
+      "vae_name": "flux2-vae.safetensors"
+    },
+    "class_type": "VAELoader",
+    "_meta": {
+      "title": "Load VAE (flux2-vae.safetensors - Klein-specific, NOT the old ae.safetensors)"
+    }
+  },
+  "8": {
+    "inputs": {
+      "samples": [
+        "6",
+        0
+      ],
+      "vae": [
+        "7",
+        0
+      ]
+    },
+    "class_type": "VAEDecode",
+    "_meta": {
+      "title": "VAE Decode"
+    }
+  },
+  "9": {
+    "inputs": {
+      "filename_prefix": "ComfyUI",
+      "format": "png",
+      "format.bit_depth": "8-bit",
+      "format.input_color_space": "sRGB",
+      "images": [
+        "8",
+        0
+      ]
+    },
+    "class_type": "SaveImageAdvanced",
+    "_meta": {
+      "title": "Save Image (Advanced)"
+    }
+  }
+}

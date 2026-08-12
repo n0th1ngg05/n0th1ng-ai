@@ -1,0 +1,494 @@
+Distributed Compute Architecture — Development Reference
+
+The distributed architecture of n0th1ng AI follows a Master–Worker model where the Laptop (Master) owns all application state and orchestration, while one or more Workers act purely as execution nodes for computationally expensive tasks. Workers never own conversations, databases, memory, embeddings, RAG, or application state. They simply execute requests and return results.
+
+                  USER
+
+                    │
+
+                    ▼
+
+          Frontend (Electron)
+
+                    │
+
+                    ▼
+
+        Laptop (Master Backend)
+
+    Conversation
+    Memory
+    RAG
+    SQL
+    Embeddings
+    Tool Router
+    Model Router
+    Cluster Manager
+
+                    │
+        HTTP over LAN (Cluster)
+
+                    ▼
+
+          Desktop Worker(s)
+
+    Execute Heavy Tasks
+
+                    │
+
+                    ▼
+
+           Return JSON Result
+Design Philosophy
+
+The Master is always the single source of truth.
+
+Everything related to user state remains on the laptop:
+
+Conversation history
+SQL database
+Knowledge Base
+Memory
+Embeddings
+RAG
+Prompt building
+Model routing
+UI
+
+Workers never know who the user is or what conversation is happening. They simply receive a job, execute it using local hardware, and return the output.
+
+Because of this separation, workers are completely disposable. If a worker disappears, the Master automatically falls back to local execution.
+
+Cluster Architecture
+
+Every worker runs its own lightweight backend.
+
+On startup it registers itself with the Master.
+
+Worker Starts
+
+        │
+
+        ▼
+
+POST /cluster/register
+
+        │
+
+        ▼
+
+Master stores
+
+Worker ID
+Hostname
+IP
+Port
+Supported Tools
+Hardware
+Heartbeat
+
+Workers then periodically send heartbeats over LAN.
+
+Worker
+
+    │
+
+POST /cluster/heartbeat
+
+    │
+
+Master updates
+
+Online Status
+CPU
+RAM
+GPU
+Jobs
+Last Seen
+
+The Master maintains an in-memory registry of every available worker.
+
+Tool Execution Pipeline
+
+Every distributed tool follows exactly the same execution pipeline.
+
+User Request
+
+      │
+
+      ▼
+
+Tool Router
+
+      │
+
+selectWorker(tool)
+
+      │
+
+Worker Available?
+
+ ┌──────────────┐
+ │              │
+YES            NO
+ │              │
+ ▼              ▼
+
+Remote       Local
+Execution    Execution
+
+ │              │
+ └──────┬───────┘
+
+        ▼
+
+Return Result
+
+Higher-level code never knows whether execution happened locally or remotely.
+
+Remote Execution Flow
+
+For every distributed tool:
+
+Tool
+
+      │
+
+Cluster Client
+
+      │
+
+HTTP POST
+
+      │
+
+Worker
+
+      │
+
+Gateway
+
+      │
+
+Local Runtime
+
+      │
+
+Execution
+
+      │
+
+JSON Response
+
+      │
+
+Worker
+
+      │
+
+Master
+
+      │
+
+Tool
+
+      │
+
+UI
+
+Communication happens entirely over HTTP within the local network.
+
+The Master sends only:
+
+endpoint
+method
+headers
+payload
+
+The Worker reconstructs the request and executes it locally.
+
+Speech Architecture
+
+Speech is the reference implementation for distributed compute.
+
+The laptop still owns:
+
+SpeechManager
+Providers
+Profiles
+Runtime selection
+Voice selection
+
+When a provider needs inference:
+
+Provider
+
+      │
+
+PythonRuntime.start()
+
+      │
+
+selectWorker("speech")
+
+      │
+
+Worker Exists?
+
+YES
+
+      │
+
+ClusterHttpClient
+
+      │
+
+Worker
+
+      │
+
+Speech Gateway
+
+      │
+
+Python Runtime
+
+      │
+
+TTS/STT
+
+      │
+
+Response
+
+If no worker exists:
+
+Provider
+
+↓
+
+Local Python Runtime
+
+The provider code never changes.
+
+Worker Responsibilities
+
+A worker only contains execution logic.
+
+Typical worker structure:
+
+worker/
+
+src/
+
+    server.ts
+
+    speechGateway.ts
+
+    toolGateway.ts
+
+speech-runtime/
+
+    .venv
+
+    main.py
+
+    providers/
+
+    runtime/
+
+    models/
+
+The worker does not contain:
+
+Conversation
+SQL
+Memory
+Embeddings
+RAG
+Frontend
+Prompt Builder
+Runtime Lifecycle
+
+For Python-based tools:
+
+Incoming Request
+
+      │
+
+Runtime Running?
+
+YES
+
+      │
+
+Forward
+
+NO
+
+      │
+
+Spawn Python
+
+      │
+
+Wait /health
+
+      │
+
+Healthy
+
+      │
+
+Execute Request
+
+The worker owns runtime startup and shutdown.
+
+The Master never manages remote Python processes.
+
+Adding a New Distributed Tool
+
+Every new heavy-compute tool should follow the same architecture.
+
+Step 1
+
+Keep all application logic on the Master.
+
+Examples:
+
+deciding when to call the tool
+validating arguments
+prompt construction
+database access
+conversation updates
+Step 2
+
+Move only execution to the Worker.
+
+Examples:
+
+AI inference
+image generation
+OCR
+vision models
+PDF parsing
+research crawling
+speech synthesis
+Step 3
+
+Create a worker gateway.
+
+Example:
+
+POST /vision
+
+POST /ocr
+
+POST /marker
+
+POST /image
+
+The gateway should:
+
+receive payload
+ensure runtime is running
+execute locally
+return JSON
+
+Nothing more.
+
+Step 4
+
+Register the tool.
+
+Worker registration advertises:
+
+tools:
+
+vision
+
+ocr
+
+marker
+
+image_generation
+
+The Master will now automatically discover that capability.
+
+Step 5
+
+Route through the cluster.
+
+Inside the Master:
+
+selectWorker("vision")
+
+↓
+
+Worker Exists?
+
+YES
+
+↓
+
+Cluster Client
+
+↓
+
+Worker
+
+↓
+
+JSON
+
+NO
+
+↓
+
+Local Execution
+
+No UI changes are required.
+
+What Should Stay Local
+
+Never distribute components that own application state.
+
+Keep on the Master:
+
+SQL
+Conversation
+Memory
+Knowledge Base
+Embeddings
+RAG
+Prompt Building
+Model Routing
+File Upload Pipeline
+
+These are lightweight compared to AI inference and rely on centralized data.
+
+What Should Be Distributed
+
+Distribute components that primarily consume CPU, GPU, RAM, or network bandwidth without needing centralized state.
+
+Examples:
+
+Speech Runtime
+Vision Models
+OCR
+Marker PDF
+Layout Analysis
+Internet Search
+Research Queries
+URL Reading
+Image Generation
+Large AI Models
+Future YOLO Pipelines
+
+These tasks are ideal because they are stateless: the Master sends input, the Worker computes, and the result is returned immediately.
+
+Core Principle
+
+Move computation, never ownership.
+
+The Master should always own the application's state and decision-making. Workers should only perform isolated, resource-intensive computations and return results. This keeps the architecture modular, fault-tolerant, horizontally scalable, and ensures that adding a new distributed tool follows the same predictable pattern with minimal changes to the rest of the system.

@@ -1,0 +1,5 @@
+{
+    "ocr": {
+        "provider": "paddle"
+    }
+}

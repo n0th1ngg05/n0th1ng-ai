@@ -1,0 +1,232 @@
+// ═══════════════════════════════════════════════════════════════════════
+// Every node, file reference, and route below is taken directly from the
+// uploaded codebase (api-master, db-master, frontend-master, src-worker,
+// python-runtime-*, speech-runtime-*, kokoro-engines-worker).
+// ═══════════════════════════════════════════════════════════════════════
+
+const TOPOLOGY = {
+  nodes: [
+    // ── Frontend tier ──────────────────────────────────────────────
+    {
+      id: "frontend", tier: "client", x: 90, y: 90, w: 210, h: 74,
+      label: "Frontend (Static)", sub: "9 pages · vanilla JS",
+      tag: "worker",
+      desc: "Static multi-page frontend served by boot.ts in production. No framework — hand-rolled HTML/CSS/JS per page, each talking to the tRPC endpoint or REST routes directly with fetch().",
+      files: ["chatspace/chat.js", "voice/voice.js (86KB)", "studio/studio.js", "monitor/monitor.js", "settings/settings.js", "robotics/robotics.js"],
+      points: [
+        "9 route folders: home, chatspace, voice, studio, model, files, monitor, robotics, settings",
+        "chatspace/chat.js drives the main streaming chat UI against POST /api/chat/stream",
+        "voice/voice.js is the largest single file in the repo (86KB) — full duplex voice conversation UI",
+        "monitor/monitor.js polls /api/cluster/workers + /api/system/* for the live ops dashboard",
+        "No React/Vue — served as static files via lib/vite.ts's serveStaticFiles()",
+      ],
+    },
+    // ── Master tier ──────────────────────────────────────────────
+    {
+      id: "boot", tier: "master", x: 500, y: 40, w: 230, h: 78,
+      label: "boot.ts", sub: "Hono HTTP entrypoint",
+      tag: "master",
+      desc: "The single composition root. 1,786 lines. Mounts every REST route, boots the tRPC handler, starts the Python runtime, the telemetry collector, the companion service, and the worker-offline reaper — all before the server ever calls app.fetch().",
+      files: ["api/boot.ts (1786 lines)"],
+      points: [
+        "await initializeSpeechSystem() → await runtimeManager.start() → startCompanionService() → startTelemetryCollector()",
+        "app.route('/api/files', ...) and app.route('/api/chat-files', ...) mount dedicated upload routers",
+        "app.use('/api/trpc/*', fetchRequestHandler({router: appRouter, createContext})) bridges Hono → tRPC",
+        "35 hand-written REST endpoints live directly in this file (chat, speech, voice, cluster, image, system)",
+        "setInterval(removeOfflineWorkers, 5000) — the cluster reaper runs from right here",
+        "app.all('/api/*', 404) catch-all must stay declared last or later routes become unreachable",
+      ],
+    },
+    {
+      id: "router", tier: "master", x: 500, y: 150, w: 230, h: 66,
+      label: "router.ts", sub: "tRPC AppRouter",
+      tag: "master",
+      desc: "Composes 12 typed sub-routers into one appRouter, exported as AppRouter for end-to-end type inference on the frontend.",
+      files: ["api/router.ts"],
+      points: [
+        "model, chat, conversation, message, system, image, file, research, knowledge, workflow, activity, fileContent, speech",
+        "publicQuery.query(() => ({ok:true, ts:Date.now()})) exposes a bare ping procedure",
+        "export type AppRouter = typeof appRouter is the contract the frontend would import for typed calls",
+      ],
+    },
+    {
+      id: "middleware", tier: "master", x: 500, y: 246, w: 230, h: 60,
+      label: "middleware.ts", sub: "Hono ↔ tRPC bridge",
+      tag: "master",
+      desc: "10 lines that wire tRPC's initTRPC to a shared TrpcContext and configure superjson as the wire transformer (so Dates/Maps/etc. survive JSON serialization intact).",
+      files: ["api/middleware.ts", "api/context.ts"],
+      points: [
+        "t = initTRPC.context<TrpcContext>().create({ transformer: superjson })",
+        "context.ts's TrpcContext is just { req, resHeaders } from the raw Fetch Request",
+        "createRouter = t.router, publicQuery = t.procedure — the two primitives every router file imports",
+      ],
+    },
+    {
+      id: "chatpipeline", tier: "master", x: 500, y: 344, w: 230, h: 92,
+      label: "Chat Pipeline", sub: "5-stage tool router → RAG → Ollama",
+      tag: "master",
+      desc: "The core generation path (POST /api/chat/stream). Resolves memory, RAG, tool calls, and conversation summaries into one prompt, then streams tokens from Ollama with live sentence-boundary detection for parallel TTS.",
+      files: ["services/toolRouter.ts", "services/toolPipeline.ts", "services/rag.ts", "services/memoryContext.ts"],
+      points: [
+        "Stage 0: cheap heuristic catches obvious non-tool chat, skips all LLM calls",
+        "Stage 1: yes/no gate on the main chat model — 'does this need tools?'",
+        "Stage 2: regex pattern match (toolPattern.ts) resolves tool + args directly when unambiguous",
+        "Stage 3: qwen3:0.6b native tool-calling fills in anything Stage 2 couldn't resolve",
+        "Stage 4: execution — merged tool list flows to toolPipeline.ts → toolExecutor.ts → cluster.ts",
+        "supportsThinking() flags qwen3:*/qwen3.5:* models to pass think:true to Ollama",
+        "Streams sentence-by-sentence to TTS mid-generation when responseMode is voice/text+voice",
+      ],
+    },
+    {
+      id: "cluster", tier: "master", x: 500, y: 460, w: 230, h: 86,
+      label: "cluster.ts", sub: "Worker registry + dispatcher",
+      tag: "master",
+      desc: "In-memory Map<string, Worker> tracking every connected worker node. Selects the least-busy worker advertising a given tool, dispatches over HTTP, and falls back to local execution (or the local Python runtime) on failure.",
+      files: ["services/cluster.ts", "services/workerClient.ts"],
+      points: [
+        "registerWorker() dedupes repeat registrations — only logs the full banner for a genuinely new worker",
+        "selectWorker(tool) filters online workers advertising the tool, sorts by currentJobs ascending",
+        "executeClusterTool(): worker found → executeRemote() over HTTP → PYTHON_TOOLS fallback → local fallback",
+        "HEARTBEAT_TIMEOUT = 15000ms; a 5s setInterval in boot.ts prunes stale workers via removeOfflineWorkers()",
+      ],
+    },
+    {
+      id: "ollama", tier: "master", x: 220, y: 470, w: 200, h: 66,
+      label: "Ollama", sub: "localhost:11434",
+      tag: "worker",
+      desc: "Local LLM inference server. Every chat completion, tool-routing decision, and embedding call goes through Ollama's HTTP API — this project runs no cloud LLM calls for core chat.",
+      files: ["boot.ts fetch('http://localhost:11434/api/generate')", "embeddingService.ts → /api/embeddings"],
+      points: [
+        "POST /api/generate — streamed NDJSON, transformed into {response, thinking} for the frontend",
+        "POST /api/embeddings with model: 'nomic-embed-text' backs RAG, memory search, and chat-attachment search",
+        "120s AbortController timeout guards against a GPU-starved Ollama hanging the request indefinitely",
+        "ollamaControl.ts service exposes model load/unload as an agent tool (ollama_control)",
+      ],
+    },
+    {
+      id: "comfy", tier: "master", x: 220, y: 560, w: 200, h: 66,
+      label: "ComfyUI", sub: "localhost:8188",
+      tag: "worker",
+      desc: "Local Stable Diffusion / Flux image generation backend, driven by a programmatically-built workflow graph matching the uploaded RTX_4050_Workflow.json (Flux1-schnell GGUF, 4-step Euler sampler).",
+      files: ["services/comfy.ts", "services/comfyWorkflow.ts", "routers/image.ts"],
+      points: [
+        "buildWorkflow() constructs the same 9-node graph as RTX_4050_Workflow.json: UnetLoaderGGUF → DualCLIPLoader → CLIPTextEncode(x2) → EmptySD3LatentImage → KSampler → VAEDecode → SaveImageAdvanced",
+        "POST {COMFY_URL}/prompt submits the graph, then polls GET /history/{promptId} up to 1200× at 1s intervals",
+        "Model: flux1-schnell-Q4_0.gguf (quantized for the RTX 4050's 6GB VRAM) + t5xxl_fp8_e4m3fn text encoder",
+        "Finished PNG is copied from ComfyUI's output dir into public/generated and tracked via generationJobs Map",
+      ],
+    },
+    {
+      id: "db", tier: "master", x: 220, y: 650, w: 200, h: 66,
+      label: "MySQL", sub: "Drizzle ORM",
+      tag: "db",
+      desc: "25-table relational schema covering conversations, files, RAG chunks, embeddings, memories, voice conversations, and system telemetry snapshots.",
+      files: ["db/schema.ts (13.4KB)", "db/relations.ts", "db/migrations/"],
+      points: [
+        "Embeddings stored as raw JSON columns (chunkEmbeddings, memoryChunkEmbeddings, chatAttachmentEmbeddings) — cosine similarity computed in application code, not a native vector index",
+        "Separate memory subsystem: memories → memoryChunks → memoryChunkEmbeddings, independent of the RAG knowledge base",
+        "voiceConversations / voiceMessages tables mirror the text conversations/messages tables for the voice mode",
+        "systemSnapshots table backs the /api/system/current telemetry endpoint",
+      ],
+    },
+    {
+      id: "speechmod", tier: "master", x: 780, y: 344, w: 230, h: 92,
+      label: "Speech Module", sub: "speech/ — 9 managers, 7 providers",
+      tag: "master",
+      desc: "A self-contained orchestration layer (speechManager.ts) with its own manager/provider/runtime plugin system, mirroring the python-runtime's registry pattern.",
+      files: ["speech/manager/speechManager.ts", "speech/providers/*", "speech/runtimes/pythonRuntime.ts"],
+      points: [
+        "9 managers: provider, model, profile, runtime, download, device, health, benchmark + speechManager itself",
+        "7 TTS/STT providers registered: kokoro, whisper, xtts, fishspeech, dia, chatterbox, piper",
+        "synthesize()/transcribe() resolve a profile → pick provider → runtimeManager.startRuntime() → call provider",
+        "PythonRuntime.getHttpClient() checks selectWorker('speech') first; only falls back to local 127.0.0.1:9000",
+      ],
+    },
+    {
+      id: "runtimemgr", tier: "master", x: 780, y: 460, w: 230, h: 66,
+      label: "runtime/manager.ts", sub: "Local Python runtime supervisor",
+      tag: "master",
+      desc: "Spawns and supervises the local Python tool runtime as a child process, restarting it automatically on unexpected exit.",
+      files: ["services/runtime/manager.ts", "services/runtime/process.ts", "services/runtime/health.ts"],
+      points: [
+        "startPythonRuntime() spawns the child process; onExit handler auto-restarts and re-waits for /health",
+        "waitForHealth('http://127.0.0.1:8002/health') blocks boot.ts until the runtime is actually ready",
+        "Only Python starts eagerly at boot — Speech is intentionally lazy (see PythonRuntime.start())",
+      ],
+    },
+    // ── Worker tier ──────────────────────────────────────────────
+    {
+      id: "srcworker", tier: "worker", x: 500, y: 630, w: 230, h: 86,
+      label: "src-worker/server.ts", sub: "Remote worker node (Hono)",
+      tag: "worker",
+      desc: "A standalone Hono server (14.8KB) that runs on a second machine, registers itself with the master, and executes offloaded tool/speech jobs. Self-healing registration loop survives master restarts.",
+      files: ["src-worker/src/server.ts", "src-worker/src/capabilities.ts", "src-worker/src/executor.ts"],
+      points: [
+        "register() posts to {LAPTOP}/api/cluster/register; retries every 5s forever until accepted — never process.exit()s",
+        "Connection-state machine: registration loop and heartbeat loop are mutually exclusive, never both ticking at once",
+        "POST /execute → executeTool() → PYTHON_TOOLS forwarded to local runtime; else native worker tools (calculator, internet_search, url_reader, research_query)",
+        "POST /speech and POST /tool are raw proxies into the worker's own local runtimes via speechGateway.ts / toolGateway.ts",
+        "getCapabilities() reports GPU model via systeminformation, advertises tools: surya OCR, qwen3_vl/minicpm vision, marker PDF, 7 speech engines",
+      ],
+    },
+    {
+      id: "workerpyruntime", tier: "worker", x: 220, y: 740, w: 200, h: 66,
+      label: "Python Runtime (worker)", sub: "FastAPI :8002",
+      tag: "worker",
+      desc: "Identical plugin architecture to the master's copy — OCR/vision/layout/PDF providers behind a Registry — running on the worker machine's own GPU.",
+      files: ["python-runtime-worker/app/main.py", "app/providers/*"],
+      points: [
+        "OCR providers: surya, easyocr, paddle, tesseract (providers/ocr/*)",
+        "Vision providers: qwen3vl, minicpm, florence2, internvl (providers/vision/*)",
+        "Layout providers: surya, doclayout — PDF provider: marker",
+        "Nearly byte-identical to python-runtime-master; only 3 files differ (vision/layout tool wrappers)",
+      ],
+    },
+    {
+      id: "workerspeechruntime", tier: "worker", x: 780, y: 630, w: 230, h: 78,
+      label: "Speech Runtime", sub: "FastAPI :9000, manual start",
+      tag: "worker",
+      desc: "A full 74-file FastAPI service (speech-runtime/) that wraps 7 independent TTS/STT engines behind one provider registry, plus a WebSocket manager for streaming synthesis.",
+      files: ["speech-runtime/runtime/app.py", "speech-runtime/providers/*.py", "speech-runtime/main.py"],
+      points: [
+        "Started manually by the operator (`.venv/Scripts/python.exe main.py`) — never auto-spawned, to avoid GPU contention",
+        "providers/registry.py exposes: kokoro, whisper, xtts, fishspeech, dia, chatterbox, piper",
+        "inference/streaming.py + inference/batching.py handle chunked/streamed generation",
+        "audio/ pipeline: vad.py (voice activity detection) → silence.py → resampler.py → converter.py → wav/mp3 encode",
+      ],
+    },
+    {
+      id: "kokoro", tier: "worker", x: 1050, y: 630, w: 210, h: 78,
+      label: "Kokoro Engine", sub: "Standalone FastAPI process",
+      tag: "worker",
+      desc: "A separate, independently-launched FastAPI microservice (api_server.py) implementing just /v1/health and /v1/tts, so it can be swapped in/out without touching the main speech-runtime.",
+      files: ["kokoro-engines-worker/source/api_server.py", "launcher.py"],
+      points: [
+        "Deliberately mirrors chatterbox/fishspeech's exact HTTP contract so providers/kokoro.py talks to all three identically",
+        "\"Launched independently by the user via ../launcher.py — never started automatically by the main speech-runtime\" (source comment)",
+        "Loguru-formatted logs matched byte-for-byte to the other two engines for consistent operator tailing",
+      ],
+    },
+  ],
+
+  edges: [
+    { from: "frontend", to: "boot",       kind: "http",      label: "fetch() / tRPC client" },
+    { from: "boot",     to: "router",     kind: "http",      label: "fetchRequestHandler" },
+    { from: "router",   to: "middleware", kind: "proc",       label: "initTRPC.context()" },
+    { from: "boot",     to: "chatpipeline", kind: "proc",     label: "POST /api/chat/stream" },
+    { from: "chatpipeline", to: "ollama", kind: "http",       label: "/api/generate (stream)" },
+    { from: "chatpipeline", to: "cluster", kind: "proc",      label: "processTools()" },
+    { from: "boot",     to: "comfy",      kind: "http",       label: "/prompt + /history poll" },
+    { from: "chatpipeline", to: "db",     kind: "http",       label: "RAG + memory queries" },
+    { from: "boot",     to: "speechmod",  kind: "proc",       label: "initializeSpeechSystem()" },
+    { from: "speechmod", to: "runtimemgr", kind: "proc",      label: "startRuntime()" },
+    { from: "cluster",  to: "srcworker",  kind: "http",       label: "POST /execute" },
+    { from: "srcworker", to: "cluster",   kind: "heartbeat",  label: "register / heartbeat 5s" },
+    { from: "srcworker", to: "workerpyruntime", kind: "proc", label: "forwardTool()" },
+    { from: "speechmod", to: "srcworker", kind: "http",       label: "POST /speech (cluster route)" },
+    { from: "srcworker", to: "workerspeechruntime", kind: "proc", label: "speechGateway.ts" },
+    { from: "workerspeechruntime", to: "kokoro", kind: "http", label: "/v1/tts" },
+  ],
+};
+
+// tint-adjustable via node.tag: master | worker | db

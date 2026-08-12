@@ -1,0 +1,280 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Forge — n0th1ng ai</title>
+  <meta name="description" content="Forge - Long-horizon autonomous coding." />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@200;300;400;500;600&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="forge.css" />
+  <link rel="stylesheet" href="../assets/page-transitions.css" />
+  <link rel="stylesheet" href="../assets/liquid-select.css" />
+  <script src="../assets/nav.js" defer></script>
+  <link rel="stylesheet" href="../assets/nav.css">
+</head>
+<body class="forge-mode">
+
+  <!-- =========================== AMBIENT BACKGROUND =========================== -->
+  <canvas id="liquidField"></canvas>
+  <canvas id="particles"></canvas>
+
+  <!-- =========================== NAV =========================== -->
+  <header class="nav-wrap scrolled" id="navWrap">
+    <nav class="nav glass-liquid" id="nav">
+      <a href="../../index.html" class="brand">
+        <span class="brand-logo glass-strong">
+          <img src="../assets/logo.png" alt="n0th1ng logo" onerror="this.style.display='none'"/>
+          <span class="brand-logo-bg" aria-hidden="true"></span>
+        </span>
+        <span class="brand-text">
+          <span class="brand-name">n0th1ng</span>
+          <span class="brand-tag">AI · WORKSTATION</span>
+        </span>
+      </a>
+
+      <div class="nav-links">
+        <a class="nav-link" href="../../index.html">Home</a>
+        <div class="nav-dd" id="ddFeatures">
+          <button class="nav-link nav-dd-btn">Features
+            <svg width="10" height="10" viewBox="0 0 10 10"><path d="M2 3.5 L5 6.5 L8 3.5" stroke="currentColor" fill="none" stroke-width="1.4" stroke-linecap="round"/></svg>
+          </button>
+                          <div class="nav-dd-menu glass-liquid">
+          <a href="../chatspace/index.html"><b>Chatspace</b><i>Ideas &rarr; reality</i></a>
+          <a href="../studio/index.html"><b>Image Studio</b><i>Visualize imagination</i></a>
+          <a href="../framesx/index.html"><b>FramesX</b><i>Cinematic generation</i></a>
+          <a href="../files/index.html"><b>Files</b><i>Knowledge & Documents</i></a>
+          <a href="../voice/index.html"><b>Voice Studio</b><i>Speech Intelligence</i></a>
+          <a href="../personastudio/index.html"><b>Persona Studio</b><i>NVIDIA PersonaPlex</i></a>
+          <a href="../forge/index.html"><b>Forge</b><i>Autonomous build agent</i></a>
+          <a href="../forgex/index.html"><b>ForgeX</b><i>Advanced autonomous agentic coding</i></a>
+          <a href="../monitor/index.html"><b>Monitor</b><i>Workstation pulse</i></a>
+          <a href="../robotics/index.html"><b>Robotics</b><i>Beyond software</i></a>
+          <a href="../settings/index.html"><b>Settings</b><i>Configure workspace</i></a>
+        </div>
+        </div>
+        <a class="nav-link" href="../../index.html#about">About</a>
+        <a class="nav-link" href="../settings/index.html">Settings</a>
+      </div>
+
+      <button class="nav-burger glass-strong" id="burger" aria-label="Open menu">
+        <svg width="20" height="20" viewBox="0 0 22 22" fill="none"><path d="M3 6h16M3 11h16M3 16h16" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+      </button>
+    </nav>
+  </header>
+
+  <!-- mobile drawer -->
+  <div class="drawer-wrap" id="drawer">
+    <div class="drawer-bg"></div>
+    <aside class="drawer glass-liquid">
+      <div class="drawer-head">
+        <div class="brand"><span class="brand-name">n0th1ng</span></div>
+        <button class="drawer-close glass" data-close>×</button>
+      </div>
+                        <nav class="drawer-links">
+        <a href="../../index.html" data-close>Home <span>&rarr;</span></a>
+        <a href="../../index.html#features" data-close>Features <span>&rarr;</span></a>
+        <a href="../chatspace/index.html" data-close>Chatspace <span>&rarr;</span></a>
+        <a href="../studio/index.html" data-close>Image Studio <span>&rarr;</span></a>
+        <a href="../framesx/index.html" data-close>FramesX <span>&rarr;</span></a>
+        <a href="../files/index.html" data-close>Files <span>&rarr;</span></a>
+        <a href="../voice/index.html" data-close>Voice Studio <span>&rarr;</span></a>
+        <a href="../personastudio/index.html" data-close>Persona Studio <span>&rarr;</span></a>
+        <a href="../forge/index.html" data-close>Forge <span>&rarr;</span></a>
+        <a href="../forgex/index.html" data-close>ForgeX <span>&rarr;</span></a>
+        <a href="../monitor/index.html" data-close>Monitor <span>&rarr;</span></a>
+        <a href="../robotics/index.html" data-close>Robotics <span>&rarr;</span></a>
+        <a href="../../index.html#about" data-close>About <span>&rarr;</span></a>
+        <a href="../settings/index.html" data-close>Settings <span>&rarr;</span></a>
+      </nav>
+    </aside>
+  </div>
+ </div>
+
+  <!-- =========================== FORGE WORKSPACE =========================== -->
+  <main class="forge noise">
+    <div class="forge-container">
+
+      <!-- HEADER -->
+      <header class="forge-header fade-up">
+        <div class="fh-left">
+          <h1 class="mega-title">Forge</h1>
+          <div class="fh-status">
+            <span class="status-dot healthy" id="engineStatusDot"></span>
+            <span class="status-text" id="engineStatusText">ENGINE IDLE</span>
+            <span class="divider">/</span>
+            <span>Model: <span class="mono" id="engineModelText">—</span></span>
+          </div>
+        </div>
+        <div class="fh-right">
+          <button class="fh-btn glass" id="newSessionBtn">
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 1v12M1 7h12" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+            New Session
+          </button>
+        </div>
+      </header>
+
+      <!-- WORKSPACE GRID -->
+      <div class="forge-grid fade-up">
+
+        <!-- SESSION LIST (left rail) -->
+        <aside class="session-rail glass">
+          <div class="rail-head">
+            <h4>Sessions</h4>
+          </div>
+          <div class="rail-scroll" id="sessionList">
+            <!-- populated by forge.js -->
+            <div class="rail-empty" id="railEmpty">
+              <p>No sessions yet.</p>
+              <span>Start one to see it here.</span>
+            </div>
+          </div>
+        </aside>
+
+        <!-- ACTIVE SESSION VIEW -->
+        <section class="session-view">
+
+          <!-- Empty state (no session selected) -->
+          <div class="session-empty glass" id="sessionEmptyState">
+            <div class="se-glyph">
+              <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 12-8.39 8.38a2.12 2.12 0 1 1-3-3L12 9"/><path d="m18 15 4-4"/><path d="m21.5 11.5-1.91-1.91A2.4 2.4 0 0 1 19 8.16V7.5L16.5 5h-.66a2.4 2.4 0 0 1-1.43-.49L12.5 2.6 11 4l4 4-2 2 2 2 2-2 4 4z"/></svg>
+            </div>
+            <h3>No active session</h3>
+            <p>Start a new build, or select one from the list to watch it think.</p>
+          </div>
+
+          <!-- Active session content -->
+          <div class="session-content" id="sessionContent" style="display:none;">
+
+            <!-- session sub-header -->
+            <div class="sv-subhead glass">
+              <div class="sv-goal">
+                <span class="sv-goal-label">Goal</span>
+                <span class="sv-goal-text" id="svGoalText">—</span>
+              </div>
+              <div class="sv-controls">
+                <span class="stack-pill mono" id="svStackPill">node-express</span>
+                <button class="qa-btn glass" id="pauseResumeBtn">⏸ Pause</button>
+              </div>
+            </div>
+
+            <!-- RAW MODEL ACTIVITY (between Goal and Task Tree / Live Log) -->
+            <!-- Shows the actual raw Ollama request/response as it happens —
+                 distinct from the parsed "reasoning" shown in the Live Log
+                 panel below. Purpose: answer "is the model actually doing
+                 anything right now, or is it stuck/hung" at a glance, and let
+                 you see exactly what a weak/small model returned even when
+                 that output failed to parse into a valid action. -->
+            <div class="panel card glass raw-activity-panel">
+              <div class="card-header">
+                <h3>Raw Model Activity</h3>
+                <span class="raw-activity-status" id="rawActivityStatus">
+                  <span class="raw-status-dot idle" id="rawStatusDot"></span>
+                  <span id="rawStatusText">Idle</span>
+                </span>
+              </div>
+              <div class="raw-activity-body" id="rawActivityBody">
+                <span class="raw-activity-placeholder">No model activity yet.</span>
+              </div>
+            </div>
+
+            <div class="sv-body">
+
+              <!-- TASK TREE PANEL -->
+              <div class="panel card glass" id="taskTreePanel">
+                <div class="card-header">
+                  <h3>Task Tree</h3>
+                  <span class="task-progress mono" id="taskProgress">0 / 0</span>
+                </div>
+                <div class="task-tree" id="taskTree">
+                  <!-- populated by forge.js -->
+                </div>
+              </div>
+
+              <!-- LIVE LOG / THINKING PANEL -->
+              <div class="panel card glass" id="liveLogPanel">
+                <div class="card-header">
+                  <h3>Live Log</h3>
+                  <span class="live-indicator" id="liveIndicator">
+                    <span class="pulse-dot"></span> LIVE
+                  </span>
+                </div>
+                <div class="forge-terminal" id="forgeTerminal">
+                  <!-- populated by forge.js via SSE -->
+                </div>
+              </div>
+
+            </div>
+
+            <!-- FOLLOW-UP CHAT BAR — minimal, single input. Only meaningfully
+                 usable once the session is done/blocked/paused (server-side
+                 enforced in forge/orchestrator.ts's addFollowUp too, not just
+                 here) since a message landing mid-run would race the active
+                 iteration. A follow-up becomes a new task appended after the
+                 current tree, then the session reopens and keeps building. -->
+            <div class="followup-bar glass" id="followupBar">
+              <input
+                type="text"
+                id="followupInput"
+                class="followup-input"
+                placeholder="Ask for a change once the build finishes or pauses…"
+                disabled
+              />
+              <button class="fh-btn glass" id="followupSendBtn" disabled>Send</button>
+            </div>
+          </div>
+
+        </section>
+      </div>
+    </div>
+  </main>
+
+  <!-- =========================== NEW SESSION MODAL =========================== -->
+  <div class="modal-backdrop" id="newSessionModal">
+    <div class="modal glass-liquid">
+      <div class="modal-head">
+        <h3>New Forge Session</h3>
+        <button class="drawer-close glass" id="closeModalBtn">×</button>
+      </div>
+      <div class="modal-body">
+        <label class="modal-label">Goal</label>
+        <textarea id="goalInput" class="modal-textarea" placeholder="e.g. Build a full-stack todo app with auth, Node/Express backend, React frontend"></textarea>
+
+        <label class="modal-label">Stack</label>
+        <div class="stack-options" id="stackOptions">
+          <button class="stack-opt glass" data-stack="node-express">Node / Express</button>
+          <button class="stack-opt glass" data-stack="java-spring-boot">Java / Spring Boot</button>
+          <button class="stack-opt glass" data-stack="mern-stack">MERN Stack</button>
+          <button class="stack-opt glass" data-stack="python-fastapi">Python / FastAPI</button>
+          <button class="stack-opt glass" data-stack="general" style="grid-column: 1 / -1;">General / Custom (any language)</button>
+        </div>
+
+        <div id="customStackWrap" style="display:none;">
+          <label class="modal-label">Language / Stack</label>
+          <input
+            type="text"
+            id="customStackInput"
+            class="followup-input"
+            style="width:100%;"
+            placeholder="e.g. Go with the standard library, C with CMake, Rust + Actix"
+          />
+        </div>
+
+        <label class="modal-label">Model</label>
+        <select id="modelSelect" class="modal-select">
+          <!-- populated by forge.js from forge.listModels -->
+        </select>
+      </div>
+      <div class="modal-foot">
+        <button class="qa-btn glass" id="cancelSessionBtn">Cancel</button>
+        <button class="fh-btn bg-aurora" id="createSessionBtn">Start Forging</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="../assets/page-transitions.js"></script>
+  <script src="forge.js"></script>
+  <script src="../assets/liquid-select.js"></script>
+</body>
+</html>

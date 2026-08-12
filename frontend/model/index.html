@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Model Manager | n0th1ng AI</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@200;300;400;500;600&family=JetBrains+Mono:wght@300;400&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="model-manager.css">
+  <link rel="stylesheet" href="../assets/liquid-select.css" />
+</head>
+<body class="workspace-mode">
+
+  <header class="nav-wrap scrolled" id="navWrap">
+    <nav class="nav glass-liquid" id="nav">
+      <a href="../../index.html" class="brand">
+        <span class="brand-logo glass-strong">
+          <img src="../assets/logo.png" alt="n0th1ng logo" onerror="this.style.display='none'"/>
+          <span class="brand-logo-bg" aria-hidden="true"></span>
+        </span>
+        <span class="brand-text">
+          <span class="brand-name text-aurora">n0th1ng</span>
+          <span class="brand-tag">AI · WORKSTATION · A property of n0th1ng Studios</span>
+        </span>
+      </a>
+
+      <div class="nav-links">
+        <a class="nav-link" href="../../index.html">Home</a>
+        <div class="nav-dd" id="ddFeatures">
+          <button class="nav-link nav-dd-btn">Features
+            <svg width="10" height="10" viewBox="0 0 10 10"><path d="M2 3.5 L5 6.5 L8 3.5" stroke="currentColor" fill="none" stroke-width="1.4" stroke-linecap="round"/></svg>
+          </button>
+          <div class="nav-dd-menu glass-liquid">
+            <a href="index.html"><b>Chatspace</b><i>Ideas → reality</i></a>
+            <a href="../studio/index.html"><b>Image Studio</b><i>Visualize imagination</i></a>
+            <a href="../files/index.html"><b>Files</b><i>Knowledge & Documents</i></a>
+            <a href="../voice/index.html"><b>Voice Studio</b><i>Speech Intelligence</i></a>
+            <a href="../monitor/index.html"><b>Monitor</b><i>Workstation pulse</i></a>
+            <a href="../robotics/index.html"><b>Robotics</b><i>Beyond software</i></a>
+            <a href="../settings/index.html"><b>Settings</b><i>Configure your workspace</i></a>
+          </div>
+        </div>
+        <a class="nav-link" href="../../index.html#about">About</a>
+        <a class="nav-link" href="../settings/index.html">Settings</a>
+      </div>
+
+      <button class="nav-burger glass-strong" id="burger" aria-label="Open menu">
+        <svg width="20" height="20" viewBox="0 0 22 22" fill="none"><path d="M3 6h16M3 11h16M3 16h16" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+      </button>
+    </nav>
+  </header>
+
+  <div class="drawer-wrap" id="drawer">
+    <div class="drawer-bg"></div>
+    <aside class="drawer glass-liquid">
+      <div class="drawer-head">
+        <div class="brand">
+          <span class="brand-name text-aurora">n0th1ng</span>
+        </div>
+        <button class="drawer-close glass" data-close>×</button>
+      </div>
+      <nav class="drawer-links">
+        <a href="../../index.html" data-close>Home <span>→</span></a>
+        <a href="index.html" data-close>Chatspace <span>→</span></a>
+        <a href="../studio/index.html" data-close>Image Studio <span>→</span></a>
+        <a href="../files/index.html" data-close>Files <span>→</span></a>
+        <a href="../monitor/index.html" data-close>Monitor <span>→</span></a>
+        <a href="../robotics/index.html" data-close>Robotics <span>→</span></a>
+        <a href="../settings/index.html" data-close>Settings <span>→</span></a>
+      </nav>
+    </aside>
+  </div>
+
+  <div class="workspace">
+    
+    <aside class="sidebar left-sidebar glass" id="sidebar-root">
+      <div class="sidebar-header">
+        <h4>Library</h4>
+      </div>
+      <div class="sidebar-search glass-strong">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <input type="text" id="global-search" placeholder="Search architecture...">
+      </div>
+      <div class="sidebar-scroll" id="sidebar-categories-root">
+        </div>
+    </aside>
+
+    <main class="main-content" id="main-root">
+      
+      <header class="page-header">
+        <h1 class="mega">Model Manager</h1>
+        <p class="subtitle text-muted">Manage every AI package installed across your cluster.</p>
+        
+        <div class="overview-grid" id="overview-root">
+          </div>
+      </header>
+
+      <section class="workspace-grid" id="workspace-grid-root">
+        </section>
+
+    </main>
+  </div>
+
+  <div class="download-dock glass-liquid hidden" id="download-dock-root">
+    </div>
+
+  <div id="modal-root"></div>
+
+  <script src="model-manager.js"></script>
+  <script src="../assets/liquid-select.js"></script>
+</body>
+</html>

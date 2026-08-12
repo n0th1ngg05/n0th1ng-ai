@@ -1,0 +1,168 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>NVIDIA PersonaPlex — n0th1ng ai</title>
+  <meta name="description" content="Full Duplex Speech-Speech" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@200;300;400;500;600&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="personastudio.css" />
+  <link rel="stylesheet" href="../assets/page-transitions.css" />
+  <script src="../assets/nav.js" defer></script>
+  <link rel="stylesheet" href="../assets/nav.css">
+</head>
+<body class="workspace-mode">
+
+  <header class="nav-wrap scrolled" id="navWrap">
+    <nav class="nav glass-liquid" id="nav">
+      <a href="../../index.html" class="brand">
+        <span class="brand-logo glass-strong">
+          <img src="../assets/logo.png" alt="n0th1ng logo" onerror="this.style.display='none'"/>
+          <span class="brand-logo-bg" aria-hidden="true"></span>
+        </span>
+        <span class="brand-text">
+          <span class="brand-name">n0th1ng</span>
+          <span class="brand-tag">AI · WORKSTATION</span>
+        </span>
+      </a>
+
+      <div class="nav-links">
+        <a class="nav-link" href="../../index.html">Home</a>
+        <div class="nav-dd" id="ddFeatures">
+          <button class="nav-link nav-dd-btn">Features
+            <svg width="10" height="10" viewBox="0 0 10 10"><path d="M2 3.5 L5 6.5 L8 3.5" stroke="currentColor" fill="none" stroke-width="1.4" stroke-linecap="round"/></svg>
+          </button>
+                  <div class="nav-dd-menu glass-liquid">
+          <a href="../chatspace/index.html"><b>Chatspace</b><i>Ideas &rarr; reality</i></a>
+          <a href="../studio/index.html"><b>Image Studio</b><i>Visualize imagination</i></a>
+          <a href="../framesx/index.html"><b>FramesX</b><i>Cinematic generation</i></a>
+          <a href="../files/index.html"><b>Files</b><i>Knowledge & Documents</i></a>
+          <a href="../voice/index.html"><b>Voice Studio</b><i>Speech Intelligence</i></a>
+          <a href="../personastudio/index.html"><b>Persona Studio</b><i>NVIDIA PersonaPlex</i></a>
+          <a href="../forge/index.html"><b>Forge</b><i>Autonomous build agent</i></a>
+          <a href="../forgex/index.html"><b>ForgeX</b><i>Advanced autonomous agentic coding</i></a>
+          <a href="../monitor/index.html"><b>Monitor</b><i>Workstation pulse</i></a>
+          <a href="../robotics/index.html"><b>Robotics</b><i>Beyond software</i></a>
+          <a href="../settings/index.html"><b>Settings</b><i>Configure workspace</i></a>
+        </div>
+        </div>
+        <a class="nav-link" href="../../index.html#about">About</a>
+        <a class="nav-link" href="../settings/index.html">Settings</a>
+      </div>
+
+      <button class="nav-burger glass-strong" id="burger" aria-label="Open menu">
+        <svg width="20" height="20" viewBox="0 0 22 22" fill="none"><path d="M3 6h16M3 11h16M3 16h16" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+      </button>
+    </nav>
+  </header>
+
+  <div class="drawer-wrap" id="drawer">
+    <div class="drawer-bg"></div>
+    <aside class="drawer glass-liquid">
+      <div class="drawer-head">
+        <div class="brand">
+          <span class="brand-name">n0th1ng</span>
+        </div>
+        <button class="drawer-close glass" data-close>×</button>
+      </div>
+            <nav class="drawer-links">
+        <a href="../../index.html" data-close>Home <span>&rarr;</span></a>
+        <a href="../../index.html#features" data-close>Features <span>&rarr;</span></a>
+        <a href="../chatspace/index.html" data-close>Chatspace <span>&rarr;</span></a>
+        <a href="../studio/index.html" data-close>Image Studio <span>&rarr;</span></a>
+        <a href="../framesx/index.html" data-close>FramesX <span>&rarr;</span></a>
+        <a href="../files/index.html" data-close>Files <span>&rarr;</span></a>
+        <a href="../voice/index.html" data-close>Voice Studio <span>&rarr;</span></a>
+        <a href="../personastudio/index.html" data-close>Persona Studio <span>&rarr;</span></a>
+        <a href="../forge/index.html" data-close>Forge <span>&rarr;</span></a>
+        <a href="../forgex/index.html" data-close>ForgeX <span>&rarr;</span></a>
+        <a href="../monitor/index.html" data-close>Monitor <span>&rarr;</span></a>
+        <a href="../robotics/index.html" data-close>Robotics <span>&rarr;</span></a>
+        <a href="../../index.html#about" data-close>About <span>&rarr;</span></a>
+        <a href="../settings/index.html" data-close>Settings <span>&rarr;</span></a>
+      </nav>
+    </aside>
+  </div>
+
+  <main class="workspace noise">
+    <section class="config-area">
+      <header class="config-header glass-liquid">
+        <div class="ch-left">
+          <div class="ch-info">
+            <h2>
+              NVIDIA PersonaPlex
+              <span class="text-muted" style="font-size: 0.8rem; font-weight: normal;">Powered by</span>
+              <img src="../assets/nvidia.png" alt="NVIDIA logo" class="nvidia-logo" />
+            </h2>
+          </div>
+        </div>
+        <div class="ch-right">
+          <div id="topStatusBadge" class="status-badge badge-offline">Offline</div>
+        </div>
+      </header>
+
+      <div class="config-scroll">
+        <div class="config-content">
+          
+          <!-- SERVER/SETUP CARD -->
+          <div class="setting-group glass-nvidia fade-up" id="serverCard">
+            <div class="sg-header">
+              <h3>PersonaPlex Engine</h3>
+              <p>Full Duplex Speech-Speech</p>
+            </div>
+            
+            <div class="sg-body" id="serverStateContainer">
+              <!-- States injected by JS -->
+            </div>
+          </div>
+
+          <!-- PERSONA MANAGEMENT PANEL -->
+          <div class="setting-group glass fade-up" style="animation-delay: 0.1s;">
+            <div class="sg-header">
+              <h3>Persona Management</h3>
+              <p>Configure voices and system prompts for use in PersonaPlex WebUI.</p>
+            </div>
+            
+            <div class="sg-body">
+              <div class="persona-list" id="personaList">
+                <div class="text-muted" style="text-align: center; padding: 20px;">Loading personas...</div>
+              </div>
+
+              <hr style="border-top: 1px solid var(--border-glass); margin: 8px 0;">
+              
+              <h4 style="font-size: 1rem; font-weight: 500; color: var(--fg); margin-top: 8px;">Create New Persona</h4>
+              <form id="createPersonaForm" class="form-row" style="gap: 16px;">
+                <div class="form-row">
+                  <label for="personaName">Persona Name</label>
+                  <input type="text" id="personaName" class="form-input" required maxlength="80" placeholder="e.g. Helpful Tutor">
+                </div>
+                
+                <div class="form-row">
+                  <label for="personaVoice">Voice</label>
+                  <select id="personaVoice" class="form-select" required>
+                    <option value="" disabled selected>Loading voices...</option>
+                  </select>
+                </div>
+                
+                <div class="form-row">
+                  <label for="personaPrompt">System Prompt</label>
+                  <textarea id="personaPrompt" class="form-textarea" required maxlength="1000" placeholder="You are a calm, patient tutor..."></textarea>
+                  <div class="char-counter"><span id="promptCounter">0</span> / 1000</div>
+                  <p class="text-muted" style="font-size: 0.8rem; margin-top: 4px;">Keep this short — PersonaPlex only uses this to shape tone and identity, not to inject facts or instructions it will follow literally.</p>
+                </div>
+                
+                <button type="submit" class="action-btn primary" style="align-self: flex-start; margin-top: 8px;" id="btnCreatePersona">Save Persona</button>
+              </form>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script src="personastudio.js"></script>
+</body>
+</html>

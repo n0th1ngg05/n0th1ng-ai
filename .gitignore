@@ -1,0 +1,101 @@
+# ============================================================
+# Dependencies
+# ============================================================
+node_modules/
+
+# ============================================================
+# Environment & Secrets
+# ============================================================
+.env
+.env.local
+.env.*.local
+
+# ============================================================
+# Python virtual environments (all runtimes)
+# ============================================================
+python-runtime/.venv/
+python-runtime/__pycache__/
+speech-runtime/.venv/
+speech-runtime/__pycache__/
+speech-runtime/engines/
+speech-runtime/models/
+speech-runtime/cache/
+speech-runtime/audio/
+speech-runtime/output/
+speech-runtime/voices/
+speech-runtime/storage/
+speech-runtime/logs/
+speech-runtime/runtime/
+personaplex-runtime/venv/
+personaplex-runtime/__pycache__/
+
+# Generic venv/pycache catch-all (nested too)
+**/.venv/
+**/venv/
+**/__pycache__/
+**/*.pyc
+**/*.pyo
+
+# ============================================================
+# User-generated / runtime data
+# ============================================================
+uploads/
+transfer/
+storage/
+data/
+
+# ============================================================
+# Build outputs
+# ============================================================
+dist/
+dist-ssr/
+build/
+coverage/
+.nyc_output/
+
+# ============================================================
+# Logs
+# ============================================================
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# ============================================================
+# Database files
+# ============================================================
+*.db
+*.sqlite
+*.sqlite3
+db/migrations/*.sql
+
+# ============================================================
+# TypeScript / Vite cache
+# ============================================================
+*.tsbuildinfo
+*.local
+
+# ============================================================
+# Large binary / media files in runtimes
+# ============================================================
+speech-runtime/*.wav
+speech-runtime/*.zip
+python-runtime/*.zip
+python-runtime/printed.png
+
+# ============================================================
+# Editor & OS
+# ============================================================
+.vscode/*
+!.vscode/extensions.json
+.idea/
+.DS_Store
+Thumbs.db
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?

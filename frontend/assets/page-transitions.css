@@ -1,0 +1,112 @@
+/* ==========================================================================
+   PAGE TRANSITIONS — View Transitions API
+   n0th1ng AI Workstation — Shared Navigation UX
+   Compatible: Chrome 111+, Edge 111+, Safari 18+, Firefox 130+
+   ========================================================================== */
+
+/* ── 1. Enable automatic cross-document view transitions ── */
+@view-transition {
+  navigation: auto;
+}
+
+/* ── 2. Exit: old page slides upward and fades out ── */
+::view-transition-old(root) {
+  animation: 280ms cubic-bezier(0.4, 0, 1, 1) both vt-page-out;
+}
+
+/* ── 3. Enter: new page rises up and fades in ── */
+::view-transition-new(root) {
+  animation: 380ms cubic-bezier(0, 0, 0.2, 1) both vt-page-in;
+}
+
+@keyframes vt-page-out {
+  0% {
+    opacity: 1;
+    transform: translateY(0px) scale(1);
+    filter: blur(0px);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-12px) scale(0.985);
+    filter: blur(5px);
+  }
+}
+
+@keyframes vt-page-in {
+  0% {
+    opacity: 0;
+    transform: translateY(16px) scale(0.985);
+    filter: blur(5px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0px) scale(1);
+    filter: blur(0px);
+  }
+}
+
+/* ── 4. Navbar: keep it stable across transitions ──
+   The nav bar has view-transition-name: n0-nav applied
+   in each page CSS so it morphs smoothly (stays put). */
+::view-transition-old(n0-nav),
+::view-transition-new(n0-nav) {
+  animation: none;
+  mix-blend-mode: normal;
+}
+
+/* ── 5. Mobile: slightly snappier timing ── */
+@media (max-width: 900px) {
+  ::view-transition-old(root) {
+    animation-duration: 200ms;
+  }
+  ::view-transition-new(root) {
+    animation-duration: 280ms;
+  }
+}
+
+/* ── 6. Reduced-motion: respect user preference ── */
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-old(root),
+  ::view-transition-new(root) {
+    animation: 120ms ease both vt-fade-only !important;
+    filter: none !important;
+  }
+  ::view-transition-old(n0-nav),
+  ::view-transition-new(n0-nav) {
+    animation: none !important;
+  }
+}
+
+@keyframes vt-fade-only {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+/* ── 7. Transition loading bar ── */
+#vt-bar {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+  z-index: 999999;
+  background: linear-gradient(
+    90deg,
+    rgba(212, 175, 55, 0.9)  0%,
+    rgba(245, 215, 122, 1)   40%,
+    rgba(255, 255, 255, 0.8) 70%,
+    rgba(212, 175, 55, 0.6)  100%
+  );
+  transform: scaleX(0);
+  transform-origin: left center;
+  transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1),
+              opacity  0.3s ease;
+  opacity: 0;
+  pointer-events: none;
+  will-change: transform, opacity;
+  border-radius: 0 2px 2px 0;
+  box-shadow: 0 0 12px rgba(212, 175, 55, 0.6),
+              0 0 4px  rgba(245, 215, 122, 0.8);
+}
+
+#vt-bar.vt-loading {
+  opacity: 1;
+}

@@ -1,0 +1,81 @@
+{
+  "100": {
+    "inputs": {
+      "directory": "output/Gen3/Stage2/",
+      "image_load_cap": 0,
+      "skip_first_images": 0,
+      "select_every_nth": 1
+    },
+    "class_type": "VHS_LoadImagesPath",
+    "_meta": {
+      "title": "Load Frame Sequence from Stage 2"
+    }
+  },
+  "110": {
+    "inputs": {
+      "facedetection": "retinaface_resnet50",
+      "model": "GFPGANv1.4.pth",
+      "visibility": 0.5,
+      "codeformer_weight": 0.7,
+      "image": [
+        "100",
+        0
+      ]
+    },
+    "class_type": "ReActorRestoreFace",
+    "_meta": {
+      "title": "Face Restore (ReActor, GFPGAN v1.4, visibility=0.5 - safe on non-face frames, no-op if no face detected)"
+    }
+  },
+  "120": {
+    "inputs": {
+      "ckpt_name": "rife47.pth",
+      "clear_cache_after_n_frames": 10,
+      "multiplier": 2,
+      "fast_mode": false,
+      "ensemble": false,
+      "scale_factor": 1,
+      "dtype": "float32",
+      "torch_compile": false,
+      "batch_size": 1,
+      "frames": [
+        "110",
+        0
+      ]
+    },
+    "class_type": "RIFE VFI",
+    "_meta": {
+      "title": "RIFE VFI (2x frame interpolation, 24fps -> 48fps for smooth motion)"
+    }
+  },
+  "121": {
+    "inputs": {
+      "filename_prefix": "ltx_stage3_interpolated",
+      "images": [
+        "120",
+        0
+      ]
+    },
+    "class_type": "SaveImage",
+    "_meta": {
+      "title": "Save Frame Sequence (feeds stage 4 grading/encode)"
+    }
+  },
+  "122": {
+    "inputs": {
+      "filename_prefix": "ltx_stage3_preview",
+      "fps": 48,
+      "lossless": false,
+      "quality": 92,
+      "method": "default",
+      "images": [
+        "120",
+        0
+      ]
+    },
+    "class_type": "SaveAnimatedWEBP",
+    "_meta": {
+      "title": "Save Preview WEBP at new 48fps"
+    }
+  }
+}

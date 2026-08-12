@@ -1,0 +1,464 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+  <title>FramesX — Cinematic Generation</title>
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@200;300;400;500;600&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+  
+  <link rel="stylesheet" href="framesx.css">
+  <link rel="stylesheet" href="../assets/nav.css">
+  <link rel="stylesheet" href="../assets/page-transitions.css" />
+  <link rel="stylesheet" href="../assets/liquid-select.css" />
+  <script src="../assets/nav.js" defer></script>
+</head>
+<body>
+
+  <!-- Global Navbar -->
+  <header class="nav-wrap scrolled" id="navWrap">
+    <nav class="nav glass-liquid" id="nav">
+      <a href="../../index.html" class="brand">
+        <span class="brand-logo glass-strong">
+          <img src="../assets/logo.png" alt="logo" onerror="this.style.display='none'"/>
+          <span class="brand-logo-bg" aria-hidden="true"></span>
+        </span>
+        <span class="brand-text">
+          <span class="brand-name text-aurora">n0th1ng</span>
+          <span class="brand-tag">AI · WORKSTATION</span>
+        </span>
+      </a>
+
+      <div class="nav-links">
+        <a class="nav-link" href="../../index.html">Home</a>
+        <div class="nav-dd" id="ddFeatures">
+          <button class="nav-link nav-dd-btn">Features
+            <svg width="10" height="10" viewBox="0 0 10 10"><path d="M2 3.5 L5 6.5 L8 3.5" stroke="currentColor" fill="none" stroke-width="1.4" stroke-linecap="round"/></svg>
+          </button>
+                  <div class="nav-dd-menu glass-liquid">
+          <a href="../chatspace/index.html"><b>Chatspace</b><i>Ideas &rarr; reality</i></a>
+          <a href="../studio/index.html"><b>Image Studio</b><i>Visualize imagination</i></a>
+          <a href="../framesx/index.html"><b>FramesX</b><i>Cinematic generation</i></a>
+          <a href="../files/index.html"><b>Files</b><i>Knowledge & Documents</i></a>
+          <a href="../voice/index.html"><b>Voice Studio</b><i>Speech Intelligence</i></a>
+          <a href="../personastudio/index.html"><b>Persona Studio</b><i>NVIDIA PersonaPlex</i></a>
+          <a href="../forge/index.html"><b>Forge</b><i>Autonomous build agent</i></a>
+          <a href="../forgex/index.html"><b>ForgeX</b><i>Advanced autonomous agentic coding</i></a>
+          <a href="../monitor/index.html"><b>Monitor</b><i>Workstation pulse</i></a>
+          <a href="../robotics/index.html"><b>Robotics</b><i>Beyond software</i></a>
+          <a href="../settings/index.html"><b>Settings</b><i>Configure workspace</i></a>
+        </div>
+        </div>
+        <a class="nav-link" href="../../index.html#about">About</a>
+        <a class="nav-link" href="../settings/index.html">Settings</a>
+      </div>
+
+      <button class="nav-burger glass-strong" id="burger" aria-label="Open menu">
+        <svg width="20" height="20" viewBox="0 0 22 22" fill="none"><path d="M3 6h16M3 11h16M3 16h16" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+      </button>
+    </nav>
+  </header>
+
+  <!-- Mobile Drawer -->
+  <div class="drawer-wrap" id="drawer">
+    <div class="drawer-bg"></div>
+    <aside class="drawer glass-liquid">
+      <div class="drawer-head">
+        <div class="brand">
+          <span class="brand-name text-aurora">n0th1ng</span>
+        </div>
+        <button class="drawer-close glass" id="closeDrawer">×</button>
+      </div>
+            <nav class="drawer-links">
+        <a href="../../index.html" data-close>Home <span>&rarr;</span></a>
+        <a href="../../index.html#features" data-close>Features <span>&rarr;</span></a>
+        <a href="../chatspace/index.html" data-close>Chatspace <span>&rarr;</span></a>
+        <a href="../studio/index.html" data-close>Image Studio <span>&rarr;</span></a>
+        <a href="../framesx/index.html" data-close>FramesX <span>&rarr;</span></a>
+        <a href="../files/index.html" data-close>Files <span>&rarr;</span></a>
+        <a href="../voice/index.html" data-close>Voice Studio <span>&rarr;</span></a>
+        <a href="../personastudio/index.html" data-close>Persona Studio <span>&rarr;</span></a>
+        <a href="../forge/index.html" data-close>Forge <span>&rarr;</span></a>
+        <a href="../forgex/index.html" data-close>ForgeX <span>&rarr;</span></a>
+        <a href="../monitor/index.html" data-close>Monitor <span>&rarr;</span></a>
+        <a href="../robotics/index.html" data-close>Robotics <span>&rarr;</span></a>
+        <a href="../../index.html#about" data-close>About <span>&rarr;</span></a>
+        <a href="../settings/index.html" data-close>Settings <span>&rarr;</span></a>
+      </nav>
+    </aside>
+  </div>
+ </div>
+
+
+  <!-- Modern Workspace -->
+  <main class="workspace-modern">
+    <div class="void-background"></div>
+
+    <div class="top-actions-left">
+      <button id="toggleGallery" class="tool-btn glass-liquid">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+        Library
+      </button>
+    </div>
+
+    <div class="top-actions">
+      <button id="toggleInspector" class="tool-btn glass-liquid">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        Generation Settings
+      </button>
+    </div>
+
+    <div class="stage" id="mainStage">
+      
+      <!-- Empty State / Hero -->
+      <div id="emptyView">
+        <div class="hero-text">
+          <h1>Generate videos with <span class="text-aurora">FramesX</span></h1>
+          <p>Develop cinematic ideas powered by advanced latent diffusion and physics.</p>
+        </div>
+
+        <div class="inspire-grid">
+          <div class="inspire-card" onclick="setPrompt('Wide tracking shot of a glowing jellyfish floating through a neon-lit cyberpunk street, cinematic lighting')">
+            <img src="https://placehold.co/400x300/111/444?text=Cyberpunk" alt="Inspire 1">
+            <span class="inspire-badge">Tracking Shot</span>
+          </div>
+          <div class="inspire-card" style="animation-delay: 0.1s;" onclick="setPrompt('Macro photography of a water drop splashing into liquid gold, extreme slow motion')">
+            <img src="https://placehold.co/400x300/111/444?text=Macro" alt="Inspire 2">
+            <span class="inspire-badge">Slow Motion</span>
+          </div>
+          <div class="inspire-card" style="animation-delay: 0.2s;" onclick="setPrompt('Aerial drone shot flying over a majestic alien landscape with twin suns setting')">
+            <img src="https://placehold.co/400x300/111/444?text=Landscape" alt="Inspire 3">
+            <span class="inspire-badge">Aerial Drone</span>
+          </div>
+          <div class="inspire-card" style="animation-delay: 0.3s;" onclick="setPrompt('Fast pan across a futuristic race track with hovering vehicles leaving light trails')">
+            <img src="https://placehold.co/400x300/111/444?text=Motion" alt="Inspire 4">
+            <span class="inspire-badge">Fast Pan</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Result / Player State -->
+      <div id="genView" class="gen-view">
+        <div class="player-container">
+          <!-- Loading Overlay -->
+          <div id="loaderOverlay" class="loader-overlay">
+            <div class="spinner"></div>
+            <div class="loader-text text-aurora" id="loaderPhase">Initializing Engine...</div>
+            <div class="loader-subtext" id="loaderProgress">0% · QUEUED</div>
+            <div class="gp-bar"><div id="progressBar"></div></div>
+
+            <!-- Live Log — every event the backend's SSE stream emits: LLM
+                 planning tokens as they stream in, which ComfyUI node is
+                 executing, live sampler step/total, per-scene completion,
+                 merge status. Fed by connectLiveStream() in framesx.js via
+                 EventSource on /api/video/stream/:jobId. -->
+            <div class="live-log glass" id="liveLog">
+              <div class="live-log-header">
+                <span class="control-label">Live Log</span>
+                <span class="live-log-dot" id="liveLogDot"></span>
+              </div>
+              <div class="live-log-body mono" id="liveLogBody"></div>
+            </div>
+          </div>
+          
+          <video id="resultVideo" src="" loop muted playsinline style="display:none;"></video>
+          
+          <div id="sceneTracker" class="scene-tracker glass-strong hidden">
+            <!-- Dots injected via JS -->
+          </div>
+        </div>
+
+        <!-- Post-gen actions -->
+        <div id="resultActions" class="result-actions hidden">
+          <div class="ra-left">
+            <button class="action-btn-lg glass" onclick="resetView()">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+              New Prompt
+            </button>
+          </div>
+          <div class="ra-right">
+            <button class="action-btn-lg glass" id="btnReuse">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+            </button>
+            <button class="action-btn-lg bg-aurora" id="btnDownload">
+              Download Output
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#000" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+            </button>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="composer-island glass-strong" id="composerIsland" style="flex-direction: row; align-items: center; border-radius: 9999px; padding: 8px 12px 8px 20px; gap: 12px; height: 60px; max-width: 760px; margin: 0 auto; bottom: 32px;">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--gold)" stroke-width="2" style="flex-shrink: 0;"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+      <input type="text" id="promptInput" placeholder="Plan a script, storyboard or video..." style="flex:1; background:transparent; border:none; color:var(--fg); font-family:var(--font); font-size:1rem; outline:none; height:24px;">
+      
+      <div class="composer-tools" style="display:flex; gap:6px;">
+        <button class="tool-btn glass" id="btnToggleNeg" title="Negative Prompt" style="width:38px; height:38px; padding:0; border-radius:50%; justify-content:center;">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14"/></svg>
+        </button>
+        <button class="tool-btn glass" onclick="document.getElementById('toggleInspector').click()" title="Aspect Ratio" style="width:38px; height:38px; padding:0; border-radius:50%; justify-content:center;">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="9" y1="3" x2="9" y2="21"/></svg>
+        </button>
+      </div>
+      
+      <button class="btn-run bg-aurora" id="btnGenerate" style="height:40px; padding:0 20px; border-radius:9999px; font-weight:500; display:flex; align-items:center; gap:8px; border:none; cursor:pointer;">
+        Run
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#000" stroke-width="2.5"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+      </button>
+    </div>
+    
+    <div id="negPromptWrap" class="hidden glass" style="position:absolute; bottom:100px; left:50%; transform:translateX(-50%); padding:10px 20px; border-radius:9999px; display:flex; gap:12px; align-items:center; width:90%; max-width:500px; z-index:90;">
+      <span class="mono" style="font-size: 0.7rem; color: #ff5555; border: 1px solid rgba(255,85,85,0.3); padding: 2px 4px; border-radius: 4px;">NEG</span>
+      <input type="text" id="negPromptInput" placeholder="Elements to exclude..." style="flex:1; background:transparent; color:var(--fg-muted); font-size: 0.9rem; border:none; outline:none;">
+    </div>
+
+    <!-- Library panel -->
+    <aside class="gallery-panel glass-liquid" id="galleryPanel">
+      <div class="inspector-header">
+        <h3>Library</h3>
+        <button class="tool-btn glass" style="width:32px;height:32px;padding:0;justify-content:center;" id="closeGallery">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+        </button>
+      </div>
+      <div class="inspector-body" style="padding: 16px;">
+        <div class="gallery-grid" id="galleryGrid">
+          <!-- Populated live from GET /api/video/list — see loadGallery()
+               in framesx.js. No hardcoded/mock items here; this is the
+               real generated_videos table. -->
+        </div>
+      </div>
+    </aside>
+
+    <!-- Generation Settings inspector panel -->
+    <aside class="inspector glass-liquid" id="inspectorPanel">
+      <div class="inspector-header">
+        <h3>Run Settings</h3>
+        <button class="tool-btn glass" style="width:32px;height:32px;padding:0;justify-content:center;" id="closeInspector">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+        </button>
+      </div>
+
+      <div class="inspector-body">
+
+        <!-- ── Video Provider ─────────────────────────────────────────────
+             Populated live from GET /api/trpc/providers.list?input={"mediaType":"video"}
+             on page load. Selecting a provider auto-updates steps/cfg defaults.
+             The providerId is sent as part of the POST /api/video/generate body.
+             Never hardcode provider names here — the list is server-authoritative. -->
+        <div class="control-group">
+          <div class="control-header">
+            <span class="control-label">Video Provider</span>
+          </div>
+          <select class="form-select glass" id="providerSelect">
+            <option value="" disabled selected>Loading providers...</option>
+          </select>
+          <!-- Shown only when the selected provider uses the ltx-3-stage executor -->
+          <div id="ltxBadge" class="hidden" style="margin-top:8px; padding:6px 10px; background:rgba(212,175,55,0.08); border:1px solid rgba(212,175,55,0.2); border-radius:8px; font-size:0.68rem; color:var(--gold-bright); line-height:1.5;">
+            <strong style="display:block; margin-bottom:2px;">3-Stage Pipeline</strong>
+            Base gen → Upscale/Refine → Interpolate/Restore → Encode
+          </div>
+        </div>
+
+        <div class="control-group">
+          <div class="control-header">
+            <span class="control-label">Aspect Ratio</span>
+          </div>
+          <select class="form-select glass" id="aspectSelect">
+            <option value="16:9">16:9 (Landscape)</option>
+            <option value="9:16">9:16 (Portrait)</option>
+            <option value="1:1">1:1 (Square)</option>
+            <option value="custom">Custom</option>
+          </select>
+
+          <!-- Custom resolution — hidden until "Custom" is picked above.
+               Values snap to the nearest multiple of 32 on blur/change
+               (LTX-Video and most diffusion video models need dims
+               divisible by 32) — see snapTo32() in framesx.js. -->
+          <div id="customResBlock" class="hidden" style="display:flex; gap:8px; margin-top: 10px;">
+            <input type="number" class="form-select glass mono" id="customWidth" placeholder="Width" min="256" max="1920" step="32" style="flex:1;">
+            <span style="align-self:center; color:var(--fg-dim); font-size:0.8rem;">×</span>
+            <input type="number" class="form-select glass mono" id="customHeight" placeholder="Height" min="256" max="1920" step="32" style="flex:1;">
+          </div>
+        </div>
+
+        <div class="control-group">
+          <div class="control-header">
+            <span class="control-label">Video Duration</span>
+            <span class="control-value" id="valDuration">8s</span>
+          </div>
+          <input type="range" class="form-slider" id="sliderDuration" min="2" max="20" step="1" value="8">
+        </div>
+
+        <div class="scene-plan-block glass" id="sceneBlock">
+          <div class="control-header">
+            <span class="control-label" style="color:var(--gold-bright);">Scene Planning</span>
+          </div>
+          <select class="form-select glass" id="planModeSelect">
+            <option value="auto">Auto (AI Directed)</option>
+            <option value="manual">Manual Count</option>
+          </select>
+
+          <!-- Auto mode: which local model plans/breaks down the scenes.
+               Populated live from GET /api/models/list (your installed
+               Ollama models) — see loadPlanningModels() in framesx.js.
+               Never hardcode model names; what's installed varies machine
+               to machine. -->
+          <div id="autoSceneConfig" style="margin-top: 12px;">
+            <div class="control-header" style="margin-bottom: 8px;">
+              <span class="control-label" style="font-size:0.65rem;">Planning Model</span>
+            </div>
+            <select class="form-select glass" id="planningModel">
+              <option value="" disabled selected>Loading models...</option>
+            </select>
+          </div>
+
+          <div id="manualSceneConfig" class="hidden" style="margin-top: 12px;">
+            <div class="control-header" style="margin-bottom: 8px;">
+              <span class="control-label" style="font-size:0.65rem;">Scenes</span>
+              <span class="control-value" id="valScenes" style="background:transparent; border:none; padding:0;">3</span>
+            </div>
+            <input type="range" class="form-slider" id="sliderScenes" min="2" max="10" step="1" value="3">
+          </div>
+        </div>
+
+        <div class="control-group">
+          <div class="control-header">
+            <span class="control-label">Frame Rate</span>
+          </div>
+          <select class="form-select glass" id="fpsSelect">
+            <option value="24">24 fps (Cinematic)</option>
+            <option value="30">30 fps (Standard)</option>
+            <option value="60">60 fps (Smooth)</option>
+          </select>
+        </div>
+
+        <div class="control-group">
+          <div class="control-header">
+            <span class="control-label">Format</span>
+          </div>
+          <div class="segmented-control" id="formatControl">
+            <button class="segment-btn active" data-val="mp4">MP4</button>
+            <button class="segment-btn" data-val="webp">WEBP</button>
+          </div>
+        </div>
+
+        <div class="control-group">
+          <div class="control-header">
+            <span class="control-label">Steps</span>
+            <span class="control-value" id="valSteps">30</span>
+          </div>
+          <input type="range" class="form-slider" id="sliderSteps" min="10" max="60" step="1" value="30">
+        </div>
+
+        <div class="control-group">
+          <div class="control-header">
+            <span class="control-label">CFG Scale</span>
+            <span class="control-value" id="valCfg">3.0</span>
+          </div>
+          <input type="range" class="form-slider" id="sliderCfg" min="1" max="10" step="0.1" value="3">
+        </div>
+
+        <div class="control-group">
+          <div class="control-header">
+            <span class="control-label">Seed</span>
+          </div>
+          <div style="display:flex; gap:8px;">
+            <input type="number" class="form-select glass mono" id="seedInput" placeholder="Random" style="flex:1;">
+            <button class="tool-btn glass" id="btnRandomSeed" title="Randomize" style="width:38px; height:38px; padding:0; justify-content:center; flex-shrink:0;">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 3h5v5M4 20L21 3M21 16v5h-5M15 15l6 6M4 4l5 5"/></svg>
+            </button>
+          </div>
+        </div>
+
+      </div>
+    </aside>
+
+    <!-- VIDEO DETAILS MODAL -->
+    <div id="videoModalOverlay" class="v-modal-overlay hidden">
+      <div class="v-modal-content">
+        <button class="v-modal-close" id="videoModalClose">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+        </button>
+        
+        <div class="v-modal-layout">
+          <div class="v-modal-left">
+            <video id="videoModalPlayer" class="v-modal-video" controls loop playsinline></video>
+          </div>
+          
+          <div class="v-modal-right">
+            <h2 class="v-modal-title">Generation Details</h2>
+            <div class="v-modal-metadata">
+              <div class="v-meta-group">
+                <span class="v-meta-label">Prompt</span>
+                <p id="vModalPrompt" class="v-meta-value v-prompt-text"></p>
+              </div>
+              <div class="v-meta-group">
+                <span class="v-meta-label">Negative Prompt</span>
+                <p id="vModalNegative" class="v-meta-value dim"></p>
+              </div>
+              <div class="v-meta-grid">
+                <div class="v-meta-item">
+                  <span class="v-meta-label">Model</span>
+                  <span id="vModalModel" class="v-meta-value badge"></span>
+                </div>
+                <div class="v-meta-item">
+                  <span class="v-meta-label">Resolution</span>
+                  <span id="vModalRes" class="v-meta-value"></span>
+                </div>
+                <div class="v-meta-item">
+                  <span class="v-meta-label">Steps</span>
+                  <span id="vModalSteps" class="v-meta-value"></span>
+                </div>
+                <div class="v-meta-item">
+                  <span class="v-meta-label">CFG</span>
+                  <span id="vModalCFG" class="v-meta-value"></span>
+                </div>
+                <div class="v-meta-item">
+                  <span class="v-meta-label">Seed</span>
+                  <span id="vModalSeed" class="v-meta-value mono"></span>
+                </div>
+                <div class="v-meta-item">
+                  <span class="v-meta-label">Duration</span>
+                  <span id="vModalDuration" class="v-meta-value"></span>
+                </div>
+                <div class="v-meta-item">
+                  <span class="v-meta-label">FPS</span>
+                  <span id="vModalFPS" class="v-meta-value"></span>
+                </div>
+                <div class="v-meta-item">
+                  <span class="v-meta-label">Format</span>
+                  <span id="vModalFormat" class="v-meta-value badge"></span>
+                </div>
+                <div class="v-meta-item">
+                  <span class="v-meta-label">Gen Time</span>
+                  <span id="vModalGenTime" class="v-meta-value"></span>
+                </div>
+              </div>
+            </div>
+            
+            <div class="v-modal-footer" style="display:flex; flex-direction:column; gap:12px;">
+              <a id="videoModalDownload" href="#" download class="btn-primary" style="width:100%; justify-content:center; padding:12px; font-weight:600; background:var(--grad-aurora); color:#000; border:none; box-shadow: 0 4px 15px rgba(212, 175, 55, 0.4);">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:8px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+                Download Video
+              </a>
+              <button id="videoModalReuseBtn" class="btn-primary glass" style="width:100%; justify-content:center; padding:12px; font-weight:600;">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:8px;"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+                Reuse Parameters
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <script src="../assets/page-transitions.js"></script>
+  <script src="../assets/liquid-select.js"></script>
+  <script src="framesx.js"></script>
+</body>
+</html>
