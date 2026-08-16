@@ -5,6 +5,37 @@ let attachedFiles = [];
 let useRag = false;
 let agentMode = false;
 
+/* ===================== THINKING TIMER ===================== */
+
+function createThinkingTimer(summaryEl, label = 'Thinking') {
+  const startTime = performance.now();
+
+  let timerInterval = null;
+
+  const updateTimer = () => {
+    const elapsed = (performance.now() - startTime) / 1000;
+    summaryEl.textContent = `${label} · ${elapsed.toFixed(1)}s`;
+  };
+
+  updateTimer();
+
+  timerInterval = setInterval(updateTimer, 100);
+
+  return {
+    stop() {
+      if (timerInterval) {
+        clearInterval(timerInterval);
+        timerInterval = null;
+      }
+
+      const elapsed = (performance.now() - startTime) / 1000;
+      summaryEl.textContent = `${label} · ${elapsed.toFixed(1)}s`;
+
+      return elapsed;
+    }
+  };
+}
+
 /* ===================== NAV & DRAWER ===================== */
 const drawer = document.getElementById('drawer');
 document.getElementById('burger').addEventListener('click', () => drawer.classList.add('open'));
@@ -255,7 +286,7 @@ async function generateRealResponse(prompt, uploadedAttachments = []) {
       <div class="msg-body">
         <div class="msg-content">
           <details class="thinking-box" id="${streamId}-thinking-box" open>
-            <summary>Thinking...</summary>
+            <summary>Thinking · 0.0s</summary>
             <div id="${streamId}-thinking"></div>
           </details>
           <div id="${streamId}-answer"></div>
@@ -271,6 +302,11 @@ async function generateRealResponse(prompt, uploadedAttachments = []) {
   const thinkingTarget = document.getElementById(`${streamId}-thinking`);
   const answerTarget = document.getElementById(`${streamId}-answer`);
   const thinkingBox = document.getElementById(`${streamId}-thinking-box`);
+  const thinkingSummary = thinkingBox?.querySelector('summary');
+  const thinkingTimer = createThinkingTimer(
+  thinkingSummary,
+  'Thinking'
+  );
 
   let thinkingText = '';
   let answerText = '';
@@ -342,6 +378,7 @@ async function generateRealResponse(prompt, uploadedAttachments = []) {
         });
 
         if (thinkingText.length > 0 && !thinkingClosed) {
+          thinkingTimer.stop();
           thinkingBox.open = false;
           thinkingClosed = true;
         }
@@ -376,7 +413,19 @@ async function generateRealResponse(prompt, uploadedAttachments = []) {
       for (const line of lines) safeProcessLine(line);
     }
 
-    await saveMessage('assistant', fullResponse);
+    // Hide the thinking box entirely if the model produced no thinking tokens
+    // (e.g. plain OpenRouter models that don't expose delta.reasoning).
+    // Without this, non-thinking models always leave an empty "Thinking..." box.
+    if (thinkingBox && !thinkingText.trim()) {
+      thinkingBox.style.display = 'none';
+    }
+
+    if (!thinkingClosed) {
+      thinkingTimer.stop();
+      thinkingClosed = true;
+    }
+
+    await saveMessage('assistant', fullResponse, thinkingText || undefined);
     
     // Fetch and render sources after streaming
     const sourceResponse = await fetch("/api/chat/sources");
@@ -474,7 +523,7 @@ async function generateAgentResponse(prompt, uploadedAttachments = []) {
 
     const roundHTML = `
       <details class="thinking-box" id="${streamId}-round-${roundNumber}-box" open>
-        <summary>Thinking (round ${roundNumber})...</summary>
+        <summary>Thinking (round ${roundNumber}) · 0.0s</summary>
         <div id="${streamId}-round-${roundNumber}-thinking"></div>
       </details>
       <div id="${streamId}-round-${roundNumber}-tool"></div>
@@ -483,6 +532,7 @@ async function generateAgentResponse(prompt, uploadedAttachments = []) {
 
     currentThinkingEl = document.getElementById(`${streamId}-round-${roundNumber}-thinking`);
     currentThinkingBoxEl = document.getElementById(`${streamId}-round-${roundNumber}-box`);
+    currentThinkingTimer = createThinkingTimer(currentThinkingBoxEl.querySelector('summary'),'Thinking (round${roundNumber})');
   };
 
   // Round 1 starts immediately — the backend also sends an explicit
@@ -535,6 +585,10 @@ async function generateAgentResponse(prompt, uploadedAttachments = []) {
 
       if (json.tool_call) {
         if (currentThinkingBoxEl && currentThinkingText.length > 0) {
+          if (currentThinkingTimer){
+            currentThinkingTimer.stop();
+            currentThinkingTimer = null;
+          }
           currentThinkingBoxEl.open = false;
         }
 
@@ -644,6 +698,10 @@ async function generateAgentResponse(prompt, uploadedAttachments = []) {
         // Once the final round starts writing a plain answer (no tool
         // call), collapse its thinking box, same as the normal flow.
         if (currentThinkingBoxEl && currentThinkingText.length > 0) {
+          if (currentThinkingTimer){
+            currentThinkingTimer.stop();
+            currentThinkingTimer = null;
+          }
           currentThinkingBoxEl.open = false;
         }
 
@@ -1090,7 +1148,7 @@ async function createConversation(firstPrompt) {
   return data.result.data.json.id;
 }
 
-async function saveMessage(role, content) {
+async function saveMessage(role, content, thinking) {
   if (!currentConversationId) return;
 
   await fetch('/api/trpc/message.create', {
@@ -1101,6 +1159,10 @@ async function saveMessage(role, content) {
         conversationId: currentConversationId,
         role,
         content,
+        // Forward the accumulated thinking trace so the DB thinking column
+        // is populated and the thinking box reappears on conversation reload.
+        // Omitted (undefined) for plain non-thinking model responses.
+        ...(thinking ? { thinking } : {}),
       },
     }),
   });

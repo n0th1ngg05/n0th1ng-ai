@@ -54,7 +54,7 @@ import { resolveAgentToolCall } from "./toolRouter";
 import type { ToolCall } from "./toolSelector";
 import { PhaseTrackerService } from "./phaseTracker";
 import { buildTemporalContext } from "../lib/temporalContext";
-import { isOpenRouterModel, streamOpenRouterGenerate } from "./openRouter";
+import { isOpenRouterModel, streamOpenRouterGenerate, streamOpenRouterTyped } from "./openRouter";
 
 const OLLAMA_GENERATE_URL = "http://localhost:11434/api/generate";
 const OLLAMA_CHAT_URL     = "http://localhost:11434/api/chat";
@@ -804,6 +804,8 @@ async function runOneRound(
     ` — ~${Math.ceil(promptChars / 3.5)} est. tokens (${promptChars} chars)`
   );
 
+
+
   // Always request native thinking mode. Ollama silently no-ops this for
   // models that don't support it (no error, `thinking` field just never
   // populates) — so this is safe for every model, not just qwen3/qwen3.5.
@@ -838,12 +840,17 @@ async function runOneRound(
   const GENERATE_TIMEOUT_MS = 120_000;
   const timeoutId = setTimeout(() => controller.abort(), GENERATE_TIMEOUT_MS);
 
-  // ── Route: OpenRouter or Ollama ──────────────────────────────────────────
+  // ── Route: OpenRouter or Ollama ────────────────────────────────────────
+  // Now that timeoutId and GENERATE_TIMEOUT_MS are declared, it's safe to
+  // branch on OpenRouter before making the Ollama fetch.
   if (isOpenRouterModel(model)) {
     clearTimeout(timeoutId);
-    // OpenRouter path: stream tokens directly through the same emit() sink
-    // as Ollama. No thinking channel support (OpenRouter models don't expose
-    // a `thinking` field), so all tokens go straight to `response`.
+    // OpenRouter path: stream typed tokens (response + thinking) through the
+    // emit() sink. Extended-thinking models (Claude Sonnet 4.6 Thinking etc.)
+    // surface reasoning in delta.reasoning; streamOpenRouterTyped yields those
+    // as { type:'thinking' } so they reach the frontend's thinking box and get
+    // accumulated into overallThinking for persistence — previously they were
+    // silently dropped by the legacy generator which only read delta.content.
     const orController = new AbortController();
     const orTimeoutId = setTimeout(() => orController.abort(), GENERATE_TIMEOUT_MS);
     try {
@@ -854,8 +861,16 @@ async function runOneRound(
         await emit({ response: text });
       }, round);
 
-      for await (const token of streamOpenRouterGenerate(model, prompt, undefined, orController.signal)) {
-        await fence.push(token);
+      for await (const tok of streamOpenRouterTyped(model, prompt, undefined, orController.signal)) {
+        if (tok.type === 'thinking') {
+          // Forward reasoning trace to the frontend thinking box and let it
+          // accumulate into overallThinking via the caller's existing logic.
+          await emit({ thinking: tok.text });
+        } else {
+          // Visible response token — run through FenceWatcher so tool_call
+          // fences embedded in the answer are detected and extracted.
+          await fence.push(tok.text);
+        }
       }
       const fenceResult = await fence.finish();
       clearTimeout(orTimeoutId);

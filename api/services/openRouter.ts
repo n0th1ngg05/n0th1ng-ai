@@ -144,18 +144,33 @@ export async function chatWithOpenRouter(
 }
 
 /**
- * Higher-level: takes a single prompt string + optional system prompt,
- * calls OpenRouter in streaming mode, and asynchronously yields text chunks.
- *
- * Mimics the shape of Ollama's NDJSON stream so callers can treat both
- * the same way: each yielded value is a plain text token (not JSON).
+ * Typed token emitted by streamOpenRouterTyped.
+ * - 'response' : visible answer text (delta.content)
+ * - 'thinking'  : reasoning/thinking trace (delta.reasoning), emitted by
+ *                 extended-thinking models such as Claude Sonnet 4.6 Thinking.
  */
-export async function* streamOpenRouterGenerate(
+export type OpenRouterToken =
+  | { type: 'response'; text: string }
+  | { type: 'thinking'; text: string };
+
+/**
+ * Higher-level: takes a single prompt string + optional system prompt,
+ * calls OpenRouter in streaming mode, and asynchronously yields TYPED tokens.
+ *
+ * Unlike the legacy streamOpenRouterGenerate below, this yields both
+ * delta.content tokens (type='response') AND delta.reasoning tokens
+ * (type='thinking'), so callers can route each into the correct channel
+ * (e.g. Ollama's `thinking` field vs `response` field) without losing
+ * the model's reasoning trace.
+ *
+ * Use this in any caller that wants to surface thinking to the frontend.
+ */
+export async function* streamOpenRouterTyped(
   modelId: string,
   prompt: string,
   systemPrompt?: string,
   signal?: AbortSignal
-): AsyncGenerator<string> {
+): AsyncGenerator<OpenRouterToken> {
   const messages: OpenRouterMessage[] = [];
   if (systemPrompt) {
     messages.push({ role: "system", content: systemPrompt });
@@ -191,13 +206,37 @@ export async function* streamOpenRouterGenerate(
 
       try {
         const parsed = JSON.parse(json);
-        const token: string | undefined =
-          parsed?.choices?.[0]?.delta?.content;
-        if (token) yield token;
+        const delta = parsed?.choices?.[0]?.delta;
+        if (!delta) continue;
+
+        // delta.reasoning is used by Claude extended-thinking models;
+        // some OpenRouter variants may also use delta.thinking — check both.
+        const thinkToken: string | undefined = delta.reasoning ?? delta.thinking;
+        if (thinkToken) yield { type: 'thinking', text: thinkToken };
+
+        const contentToken: string | undefined = delta.content;
+        if (contentToken) yield { type: 'response', text: contentToken };
       } catch {
         // Malformed line — skip silently
       }
     }
+  }
+}
+
+/**
+ * Legacy generator — yields only visible response tokens (delta.content).
+ * Kept for callers (e.g. generateWithOpenRouter, conversation summarisation)
+ * that don't need a thinking channel. New callers should use
+ * streamOpenRouterTyped instead.
+ */
+export async function* streamOpenRouterGenerate(
+  modelId: string,
+  prompt: string,
+  systemPrompt?: string,
+  signal?: AbortSignal
+): AsyncGenerator<string> {
+  for await (const tok of streamOpenRouterTyped(modelId, prompt, systemPrompt, signal)) {
+    if (tok.type === 'response') yield tok.text;
   }
 }
 

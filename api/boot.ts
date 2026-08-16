@@ -59,7 +59,7 @@ import { runtimeManager } from "./services/runtime/manager";
 import { startCompanionService } from "./services/companion";
 import { forgeStreamRouter } from "./forge/routes";
 import { forgexStreamRouter } from "./forgex/routes";
-import { isOpenRouterModel, streamOpenRouterGenerate } from "./services/openRouter";
+import { isOpenRouterModel, streamOpenRouterGenerate, streamOpenRouterTyped } from "./services/openRouter";
 
 
 
@@ -889,16 +889,20 @@ ${ragResult.prompt}
     (async () => {
       let fullResponse = "";
       try {
-        for await (const token of streamOpenRouterGenerate(body.model, ragPrompt, undefined, orController.signal)) {
-          fullResponse += token;
-          await orFlush({ response: token, thinking: "", done: false });
+        for await (const tok of streamOpenRouterTyped(body.model, ragPrompt, undefined, orController.signal)) {
+          if (tok.type === 'thinking') {
+            // Route thinking/reasoning tokens (delta.reasoning) into the same
+            // { thinking } event shape the Ollama branch uses so the frontend
+            // thinkingText accumulator and thinking box fill in live.
+            await orFlush({ thinking: tok.text });
+          } else {
+            // Visible response token.
+            fullResponse += tok.text;
+            await orFlush({ response: tok.text, done: false });
 
-          // Same per-sentence TTS dispatch the Ollama branch uses — this
-          // was previously missing entirely from the OpenRouter branch,
-          // which is why voice mode never produced any audio for
-          // OpenRouter models: the branch returned before ever touching
-          // isVoiceMode, sentence-boundary detection, or synthesize().
-          dispatchSentenceChunks(token, orFlushRaw);
+            // Same per-sentence TTS dispatch the Ollama branch uses.
+            dispatchSentenceChunks(tok.text, orFlushRaw);
+          }
         }
         await orFlush({ response: "", thinking: "", done: true });
 
