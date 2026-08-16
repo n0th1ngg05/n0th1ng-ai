@@ -117,7 +117,7 @@ The server runs on Node.js and is served locally on port 3000.
 | Component | Technology |
 |-----------|------------|
 | LLM Serving | Ollama — local model server supporting LLaMA, Qwen, DeepSeek, Mistral, and more |
-| Cloud LLMs | OpenRouter — optional cloud model bridge |
+| Cloud LLMs | OpenRouter — optional cloud model bridge (supports extended-thinking models like Claude 3.7 Sonnet) |
 | Image Generation | ComfyUI — node-based generation pipeline |
 | Video Generation | LTX-Video 2B distilled and Wan2.1 1.3B T2V via ComfyUI |
 | Embeddings | Ollama embedding models such as nomic-embed-text and mxbai-embed-large |
@@ -770,7 +770,7 @@ DATABASE_URL=mysql://user:password@localhost:3306/n0th1ng_ai
 | npm | 10 or higher | Package management |
 | MySQL | 8 or higher | Database |
 | Ollama | Latest | Local LLM serving |
-| Python | 3.10 or higher | Python runtimes |
+| Python | 3.10 - 3.12 | Python runtimes (PersonaPlex specifically requires <= 3.12 for pre-built wheels) |
 | CUDA | 12 or higher, optional | GPU acceleration |
 | ComfyUI | Latest, optional | Image and video generation |
 
@@ -818,7 +818,22 @@ python -m venv .venv
 pip install -r requirements.txt
 ```
 
-### Step 7: Install and Configure Ollama
+### Step 7: Set Up the PersonaPlex Runtime — Optional, for Persona Studio
+
+PersonaPlex uses NVIDIA Moshi and requires **Python 3.12 max** (3.13+ will fail to build `sentencepiece`).
+If your default `python` is 3.12, the UI's automatic setup will work. If not, set it up manually:
+
+```bash
+cd personaplex-runtime
+python3.12 -m venv venv
+venv\Scripts\activate
+python -m pip install --upgrade pip
+pip install torch --index-url https://download.pytorch.org/whl/cu121
+pip install "numpy>=1.26,<2.2" "sentencepiece==0.2" "sphn>=0.1.4,<0.2" "safetensors>=0.4.0,<0.5" "huggingface-hub>=0.24,<0.25" "einops==0.7" "sounddevice==0.5" "aiohttp>=3.10.5,<3.11" accelerate
+pip install -e moshi/
+```
+
+### Step 8: Install and Configure Ollama
 
 ```bash
 # Install Ollama from https://ollama.com
@@ -826,7 +841,7 @@ ollama pull qwen3:8b
 ollama pull nomic-embed-text
 ```
 
-### Step 8: Set Up ComfyUI — Optional, for image and video generation
+### Step 9: Set Up ComfyUI — Optional, for image and video generation
 
 Follow the ComfyUI installation guide at https://github.com/comfyanonymous/ComfyUI and run it on http://localhost:8188.
 
