@@ -362,19 +362,25 @@ app.post("/tool", async (c) => {
 
 });
 
+// ── Boot ─────────────────────────────────────────────────────────────────
+// Top-level await is ESM-only. package.json uses "commonjs" so we wrap
+// everything in an async IIFE instead.
 
-// Start the Python + Speech runtimes before accepting requests.
-await runtimeManager.start();
+(async () => {
+    // Start the Python + Speech runtimes before accepting requests.
+    await runtimeManager.start();
 
-serve({
-    fetch: app.fetch,
-    port: 3001,
+    serve({
+        fetch: app.fetch,
+        port: 3001,
+    });
+
+    console.log("[WORKER] Running on :3001");
+    console.log("[WORKER] Pull-based registration active — master polls GET /capabilities every 5 s.");
+})().catch(err => {
+    console.error("[WORKER] Fatal boot error:", err);
+    process.exit(1);
 });
-
-console.log("[WORKER] Running on :3001");
-
-console.log("[WORKER] Pull-based registration active — master polls GET /capabilities every 5 s.");
-
 
 // The ONLY intentional way this process should ever stop is the user
 // hitting Ctrl+C in the terminal it was started from. Handle SIGINT (and
@@ -402,4 +408,4 @@ process.on("unhandledRejection", (reason) => {
 
 process.on("uncaughtException", (err) => {
     console.error("[WORKER] Uncaught exception (ignored, staying alive):", err);
-});
+});
