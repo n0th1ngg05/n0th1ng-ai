@@ -55,6 +55,8 @@ import { shouldUseTools } from "./services/toolRouter";
 import { removeOfflineWorkers } from "./services/cluster";
 import {registerWorker,heartbeat,getWorkers,} from "./services/cluster";
 import { recordMetricPoint } from "./services/clusterMetricsHistory";
+import { startWorkerPoller } from "./services/workerPoller";
+
 import { runtimeManager } from "./services/runtime/manager";
 import { startCompanionService } from "./services/companion";
 import { forgeStreamRouter } from "./forge/routes";
@@ -130,6 +132,8 @@ try {
 await runtimeManager.start();
 startCompanionService();
 startTelemetryCollector();
+startWorkerPoller();
+
 
 app.use(bodyLimit({ maxSize: 50 * 1024 * 1024 }));
 app.route("/api/files", fileUploadRouter);
@@ -2544,12 +2548,15 @@ app.get("/api/cluster/:id/logs/stream", async (c) => {
         return c.json({ error: "Worker not found" }, 404);
     }
 
-    const url = new URL(`http://${worker.ip}:${worker.port}/logs/stream`);
+    const baseUrl = (worker.internetUrl ?? `http://${worker.ip}:${worker.port}`).replace(/\/$/, "");
+    const url = new URL(`${baseUrl}/logs/stream`);
     if (source) url.searchParams.set("source", source);
+
+    const authHeaders = worker.apiKey ? { Authorization: `Bearer ${worker.apiKey}` } : {};
 
     let upstream: Response;
     try {
-        upstream = await fetch(url.toString());
+        upstream = await fetch(url.toString(), { headers: authHeaders });
     } catch (err) {
         return c.json({ error: `Worker unreachable: ${err instanceof Error ? err.message : String(err)}` }, 502);
     }

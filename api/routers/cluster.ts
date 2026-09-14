@@ -51,10 +51,13 @@ export const clusterRouter = createRouter({
       if (!worker) return { lines: [] };
 
       try {
-        const url = new URL(`http://${worker.ip}:${worker.port}/logs`);
+        const baseUrl = (worker.internetUrl ?? `http://${worker.ip}:${worker.port}`).replace(/\/$/, "");
+        const url = new URL(`${baseUrl}/logs`);
         if (input.source) url.searchParams.set("source", input.source);
 
-        const res = await fetch(url.toString());
+        const authHeaders = worker.apiKey ? { Authorization: `Bearer ${worker.apiKey}` } : {};
+
+        const res = await fetch(url.toString(), { headers: authHeaders });
         if (!res.ok) return { lines: [] };
         return await res.json();
       } catch {

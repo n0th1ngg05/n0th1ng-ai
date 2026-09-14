@@ -75,14 +75,18 @@ export class ClusterHttpClient extends HttpClient {
             console.log("========================================");
             console.log("[CLUSTER SPEECH]");
             console.log("Worker :", worker.hostname);
+            console.log("Via    :", worker.internetUrl ? "internet (Cloudflare)" : "LAN");
             console.log("Method :", method);
             console.log("Target :", path);
             console.log("========================================");
             console.log("");
 
+            const baseUrl = (worker.internetUrl ?? `http://${worker.ip}:${worker.port}`).replace(/\/$/, "");
+            const authHeaders = worker.apiKey ? { Authorization: `Bearer ${worker.apiKey}` } : {};
+
             const response = await fetch(
 
-                `http://${worker.ip}:${worker.port}/speech`,
+                `${baseUrl}/speech`,
 
                 {
 
@@ -91,6 +95,7 @@ export class ClusterHttpClient extends HttpClient {
                     headers: {
 
                         "Content-Type": "application/json",
+                        ...authHeaders,
 
                     },
 

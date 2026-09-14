@@ -28,6 +28,15 @@ speech-runtime/logs/
 speech-runtime/runtime/
 personaplex-runtime/venv/
 personaplex-runtime/__pycache__/
+personaplex-runtime/offload_weights/
+personaplex-runtime/models/
+personaplex-runtime/cache/
+personaplex-runtime/**/*.dat
+personaplex-runtime/**/*.bin
+personaplex-runtime/**/*.safetensors
+personaplex-runtime/**/*.gguf
+personaplex-runtime/**/*.pt
+personaplex-runtime/**/*.pth
 
 # Generic venv/pycache catch-all (nested too)
 **/.venv/

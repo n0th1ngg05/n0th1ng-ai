@@ -2,6 +2,20 @@
 //
 // Remote execution client for the distributed cluster.
 //
+// ROUTING
+// ───────
+// Workers can be reached two ways:
+//
+//   LAN (default): http://<worker.ip>:<worker.port>/...
+//     Used when the worker is on the same local network as the master.
+//     No auth header needed — LAN is trusted.
+//
+//   Internet (Cloudflare tunnel): <worker.internetUrl>/...
+//     Used when the worker has registered with an internetUrl (e.g.
+//     https://worker.nothingstudios.co.in). All requests must include
+//     Authorization: Bearer <worker.apiKey> so the exposure service's
+//     security proxy accepts them.
+//
 // FILE EMBEDDING
 // ─────────────
 // Vision and PDF tools reference files by an absolute path that exists on the
@@ -35,6 +49,24 @@ const FILE_ARG_MAP: Record<string, {
     local_vision_analyzer: { pathArg: "image_path", dataArg: "image_data", filenameArg: "image_filename" },
     marker_pdf_pipeline:   { pathArg: "pdf_path",   dataArg: "pdf_data",   filenameArg: "pdf_filename"   },
 };
+
+/**
+ * Returns the base URL and auth headers to use when talking to this worker.
+ * Uses the Cloudflare internet tunnel if the worker registered with one,
+ * otherwise falls back to the direct LAN ip:port.
+ */
+function workerTarget(worker: Worker): { baseUrl: string; authHeaders: Record<string, string> } {
+    if (worker.internetUrl && worker.apiKey) {
+        return {
+            baseUrl: worker.internetUrl.replace(/\/$/, ""),
+            authHeaders: { Authorization: `Bearer ${worker.apiKey}` },
+        };
+    }
+    return {
+        baseUrl: `http://${worker.ip}:${worker.port}`,
+        authHeaders: {},
+    };
+}
 
 /**
  * For tools that operate on a local file, read that file off disk and inject
@@ -93,13 +125,14 @@ export async function executeRemote(
     toolCall: ToolCall
 ): Promise<ExecutionResult> {
 
-    const url = `http://${worker.ip}:${worker.port}/execute`;
+    const { baseUrl, authHeaders } = workerTarget(worker);
+    const url = `${baseUrl}/execute`;
+    const via = worker.internetUrl ? "internet (Cloudflare)" : "LAN";
 
     console.log("========================================");
     console.log("[CLUSTER] Remote Execution");
     console.log("Worker :", worker.hostname);
-    console.log("IP     :", worker.ip);
-    console.log("Port   :", worker.port);
+    console.log("Via    :", via);
     console.log("URL    :", url);
     console.log("Tool   :", toolCall.tool);
     console.log("========================================");
@@ -114,49 +147,26 @@ export async function executeRemote(
     }
 
     const controller = new AbortController();
-
-    const timeout = setTimeout(() => {
-
-        controller.abort();
-
-    }, REQUEST_TIMEOUT);
+    const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT);
 
     try {
 
-        const response = await fetch(
-
-            url,
-
-            {
-
-                method: "POST",
-
-                headers: {
-
-                    "Content-Type": "application/json",
-
-                },
-
-                body: JSON.stringify(preparedCall),
-
-                signal: controller.signal,
-
-            }
-
-        );
+        const response = await fetch(url, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                ...authHeaders,
+            },
+            body: JSON.stringify(preparedCall),
+            signal: controller.signal,
+        });
 
         if (!response.ok) {
-
             const message = await response.text().catch(() => "");
-
             return {
-
                 success: false,
-
                 error: message || `HTTP ${response.status}`,
-
             };
-
         }
 
         const result = await response.json();
@@ -166,15 +176,10 @@ export async function executeRemote(
             result === null ||
             typeof result.success !== "boolean"
         ) {
-
             return {
-
                 success: false,
-
-                error: "Worker returned an invalid response."
-
+                error: "Worker returned an invalid response.",
             };
-
         }
 
         return result as ExecutionResult;
@@ -182,11 +187,8 @@ export async function executeRemote(
     } catch (err: any) {
 
         return {
-
             success: false,
-
             error: err?.message ?? "Worker unreachable",
-
         };
 
     } finally {
@@ -201,13 +203,14 @@ export async function pingWorker(
     worker: Worker
 ): Promise<boolean> {
 
-    const url = `http://${worker.ip}:${worker.port}/ping`;
+    const { baseUrl, authHeaders } = workerTarget(worker);
+    const url = `${baseUrl}/ping`;
 
     try {
 
         console.log(`[CLUSTER] Pinging ${worker.hostname} (${url})`);
 
-        const response = await fetch(url);
+        const response = await fetch(url, { headers: authHeaders });
 
         console.log("[CLUSTER] Ping Status:", response.status);
 

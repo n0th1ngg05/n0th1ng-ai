@@ -53,6 +53,12 @@ export interface Worker {
         speech: string;
     };
 
+    // Internet exposure — set when the worker registers from behind a
+    // Cloudflare tunnel. If present, workerClient uses this URL + apiKey
+    // instead of the direct LAN ip:port.
+    internetUrl?: string;
+    apiKey?: string;
+
     currentJobs: number;
     lastHeartbeat: number;
 }

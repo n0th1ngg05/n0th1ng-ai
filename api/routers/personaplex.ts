@@ -102,13 +102,16 @@ type SetupState = "not_started" | "cloning" | "installing" | "ready" | "error";
 // posix layout is lib/python3.X/site-packages, but since this whole repo
 // targets Windows (per VENV_PYTHON's win32 branch above), only that
 // layout is checked here — same assumption the rest of this file makes.
-const MOSHI_INSTALLED_MARKER = path.join(
-  INSTALL_DIR,
-  "venv",
-  "Lib",
-  "site-packages",
-  "moshi"
-);
+// editable installs in Python >= 3.10 often use PEP 660, which creates a
+// .dist-info folder (e.g. moshi_personaplex-0.1.0.dist-info) and a .pth
+// file rather than a direct 'moshi' symlink or directory.
+function isMoshiInstalled() {
+  const sitePackages = path.join(INSTALL_DIR, "venv", "Lib", "site-packages");
+  if (!fs.existsSync(sitePackages)) return false;
+  return fs.readdirSync(sitePackages).some(f => 
+    f.startsWith("moshi_personaplex") && f.endsWith(".dist-info")
+  );
+}
 
 // Checking only for venv/Scripts/python.exe is NOT sufficient to prove
 // setup finished — that file is created within seconds of `python -m venv`,
@@ -121,7 +124,7 @@ const MOSHI_INSTALLED_MARKER = path.join(
 // immediately fails with "No module named moshi", or in an even more
 // confusing case, a spawn that fails silently enough to leave no log at
 // all if the failure happens before startServer()'s own guards run.
-let setupState: SetupState = fs.existsSync(MOSHI_INSTALLED_MARKER) ? "ready" : "not_started";
+let setupState: SetupState = isMoshiInstalled() ? "ready" : "not_started";
 let setupLog: string[] = [];
 let setupProcess: ChildProcess | null = null;
 
@@ -206,7 +209,7 @@ async function runSetup() {
     // verify the package is actually importable before trusting the exit
     // code, rather than repeating the exact "reported ready, wasn't
     // actually ready" bug this whole check exists to fix.
-    if (!fs.existsSync(MOSHI_INSTALLED_MARKER)) {
+    if (!isMoshiInstalled()) {
       throw new Error(
         "pip install reported success, but moshi wasn't found in site-packages afterward. " +
         "This usually means a network interruption during install — try Retry Setup."
@@ -252,7 +255,11 @@ function startServer(cpuOffload: boolean, hfToken?: string): Promise<void> {
 
     const onData = (chunk: Buffer) => {
       const text = chunk.toString();
-      pushLog(serverLog, text.trim());
+      const trimmed = text.trim();
+      if (trimmed) {
+        console.log(`[PersonaPlex] ${trimmed}`);
+      }
+      pushLog(serverLog, trimmed);
       // The server prints this exact line once the WebUI is actually
       // reachable — that's the real "running" signal, not just "the
       // process started" (which happens well before weights finish
