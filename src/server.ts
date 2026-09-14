@@ -363,6 +363,9 @@ app.post("/tool", async (c) => {
 });
 
 
+// Start the Python + Speech runtimes before accepting requests.
+await runtimeManager.start();
+
 serve({
     fetch: app.fetch,
     port: 3001,
