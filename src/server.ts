@@ -363,24 +363,23 @@ app.post("/tool", async (c) => {
 });
 
 // ── Boot ─────────────────────────────────────────────────────────────────
-// Top-level await is ESM-only. package.json uses "commonjs" so we wrap
-// everything in an async IIFE instead.
+// Start the HTTP server FIRST so :3001 is immediately reachable by the
+// exposure service and HUD. Then boot the runtimes in the background —
+// they take time to load but the worker can already accept requests.
 
-(async () => {
-    // Start the Python + Speech runtimes before accepting requests.
-    await runtimeManager.start();
-
-    serve({
-        fetch: app.fetch,
-        port: 3001,
-    });
-
-    console.log("[WORKER] Running on :3001");
-    console.log("[WORKER] Pull-based registration active — master polls GET /capabilities every 5 s.");
-})().catch(err => {
-    console.error("[WORKER] Fatal boot error:", err);
-    process.exit(1);
+serve({
+    fetch: app.fetch,
+    port: 3001,
 });
+
+console.log("[WORKER] Running on :3001");
+console.log("[WORKER] Pull-based registration active — master polls GET /capabilities every 5 s.");
+
+// Start Python + Speech runtimes in the background (non-blocking).
+runtimeManager.start().catch(err => {
+    console.error("[WORKER] Runtime start failed:", err);
+});
+
 
 // The ONLY intentional way this process should ever stop is the user
 // hitting Ctrl+C in the terminal it was started from. Handle SIGINT (and
