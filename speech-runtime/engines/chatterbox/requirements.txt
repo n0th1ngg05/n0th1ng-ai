@@ -1,0 +1,11 @@
+chatterbox-tts
+torch
+numpy
+soundfile
+kui
+baize
+ormsgpack
+pyrootutils
+uvicorn
+pydantic
+loguru

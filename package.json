@@ -1,0 +1,41 @@
+{
+  "name": "worker",
+  "version": "1.5.0",
+  "description": "",
+  "main": "tray/main.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev": "concurrently --names \"WORKER,EXPOSE,HUD\" --prefix-colors \"cyan,green,yellow\" \"tsx src/server.ts\" \"tsx src/exposureService.ts\" \"npm run hud:dev\"",
+    "hud:dev": "cd hud && npm run dev",
+    "hud:build": "cd hud && npm run build",
+    "expose": "tsx src/exposureService.ts",
+    "tray": "electron --require tsx/cjs tray/main.ts",
+    "db:generate": "drizzle-kit generate",
+    "db:push": "drizzle-kit push",
+    "db:migrate": "drizzle-kit migrate",
+    "start": "node dist/server.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "@hono/node-server": "^2.0.6",
+    "@mendable/firecrawl-js": "^4.29.1",
+    "concurrently": "^9.1.2",
+    "dotenv": "^17.4.2",
+    "drizzle-orm": "^0.44.2",
+    "electron": "^36.9.5",
+    "hono": "^4.12.27",
+    "jose": "^5.10.0",
+    "mysql2": "^3.14.1",
+    "systeminformation": "^5.31.11"
+  },
+  "devDependencies": {
+    "@types/node": "^26.1.0",
+    "drizzle-kit": "^0.31.1",
+    "electron-builder": "^26.0.12",
+    "tsx": "^4.22.4",
+    "typescript": "^6.0.3"
+  }
+}

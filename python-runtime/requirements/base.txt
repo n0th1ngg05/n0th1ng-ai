@@ -1,0 +1,13 @@
+fastapi
+uvicorn
+pydantic
+numpy
+opencv-python
+pillow
+ollama
+transformers
+accelerate
+timm
+einops
+sentencepiece
+pillow

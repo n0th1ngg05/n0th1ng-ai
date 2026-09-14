@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Worker HUD — AI-DESKTOP</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&family=Orbitron:wght@400;500;700;900&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="/src/style.css" />
+</head>
+<body>
+    <div id="app">
+
+        <!-- ── Header ────────────────────────────────────────────────── -->
+        <header class="hud-header">
+            <div class="header-left">
+                <div class="logo-mark">
+                    <div class="logo-ring"></div>
+                    <span class="logo-text">WORKER</span>
+                </div>
+                <div class="header-meta">
+                    <span class="host-id" id="hostId">AI-DESKTOP</span>
+                    <span class="sep">·</span>
+                    <span class="host-ip" id="hostIp">192.168.0.108</span>
+                    <span class="sep">·</span>
+                    <span class="host-port">:3001</span>
+                </div>
+            </div>
+            <div class="header-center">
+                <div class="system-clock" id="systemClock">--:--:--</div>
+                <div class="system-date" id="systemDate">--- --, ----</div>
+            </div>
+            <div class="header-right">
+                <div class="master-status" id="masterStatus">
+                    <div class="status-dot" id="masterDot"></div>
+                    <span id="masterLabel">CONNECTING...</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- ── Main grid ─────────────────────────────────────────────── -->
+        <main class="hud-grid">
+
+            <!-- Row 1: Vitals gauges -->
+            <section class="panel vitals-panel">
+                <div class="panel-title">SYSTEM VITALS</div>
+                <div class="gauges-row">
+                    <div class="gauge-wrap">
+                        <svg class="gauge-svg" viewBox="0 0 100 60">
+                            <path class="gauge-bg" d="M10,55 A45,45 0 0,1 90,55" />
+                            <path class="gauge-fill" id="cpuArc" d="M10,55 A45,45 0 0,1 90,55" stroke-dasharray="0 141" />
+                        </svg>
+                        <div class="gauge-val" id="cpuVal">--%</div>
+                        <div class="gauge-lbl">CPU</div>
+                    </div>
+                    <div class="gauge-wrap">
+                        <svg class="gauge-svg" viewBox="0 0 100 60">
+                            <path class="gauge-bg" d="M10,55 A45,45 0 0,1 90,55" />
+                            <path class="gauge-fill gauge-fill--ram" id="ramArc" d="M10,55 A45,45 0 0,1 90,55" stroke-dasharray="0 141" />
+                        </svg>
+                        <div class="gauge-val" id="ramVal">-- GB</div>
+                        <div class="gauge-lbl">RAM</div>
+                    </div>
+                    <div class="gauge-wrap">
+                        <svg class="gauge-svg" viewBox="0 0 100 60">
+                            <path class="gauge-bg" d="M10,55 A45,45 0 0,1 90,55" />
+                            <path class="gauge-fill gauge-fill--gpu" id="gpuArc" d="M10,55 A45,45 0 0,1 90,55" stroke-dasharray="0 141" />
+                        </svg>
+                        <div class="gauge-val" id="gpuVal">--%</div>
+                        <div class="gauge-lbl">GPU</div>
+                    </div>
+                </div>
+                <div class="temps-row">
+                    <div class="temp-item">
+                        <span class="temp-lbl">CPU TEMP</span>
+                        <span class="temp-val" id="cpuTemp">--°C</span>
+                    </div>
+                    <div class="temp-divider"></div>
+                    <div class="temp-item">
+                        <span class="temp-lbl">GPU TEMP</span>
+                        <span class="temp-val" id="gpuTemp">--°C</span>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Network sparkline -->
+            <section class="panel network-panel">
+                <div class="panel-title">NETWORK I/O</div>
+                <div class="net-stats">
+                    <div class="net-stat">
+                        <span class="net-arrow">↓</span>
+                        <span class="net-val" id="rxVal">-- KB/s</span>
+                        <span class="net-lbl">DOWNLOAD</span>
+                    </div>
+                    <div class="net-stat">
+                        <span class="net-arrow net-arrow--tx">↑</span>
+                        <span class="net-val" id="txVal">-- KB/s</span>
+                        <span class="net-lbl">UPLOAD</span>
+                    </div>
+                </div>
+                <canvas class="sparkline" id="netSparkline"></canvas>
+            </section>
+
+            <!-- Runtimes -->
+            <section class="panel runtimes-panel">
+                <div class="panel-title">RUNTIMES</div>
+                <div class="runtime-list">
+                    <div class="runtime-item" id="rtPython">
+                        <div class="rt-dot"></div>
+                        <div class="rt-info">
+                            <span class="rt-name">Python Runtime</span>
+                            <span class="rt-port">:8002</span>
+                        </div>
+                        <span class="rt-status">CHECKING</span>
+                    </div>
+                    <div class="runtime-item" id="rtSpeech">
+                        <div class="rt-dot"></div>
+                        <div class="rt-info">
+                            <span class="rt-name">Speech Runtime</span>
+                            <span class="rt-port">:9000</span>
+                        </div>
+                        <span class="rt-status">CHECKING</span>
+                    </div>
+                    <div class="runtime-item" id="rtWorker">
+                        <div class="rt-dot"></div>
+                        <div class="rt-info">
+                            <span class="rt-name">Worker Node</span>
+                            <span class="rt-port">:3001</span>
+                        </div>
+                        <span class="rt-status">CHECKING</span>
+                    </div>
+                    <div class="runtime-item" id="rtExpose">
+                        <div class="rt-dot"></div>
+                        <div class="rt-info">
+                            <span class="rt-name">Exposure Service</span>
+                            <span class="rt-port">:3443</span>
+                        </div>
+                        <span class="rt-status">CHECKING</span>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Internet Exposure -->
+            <section class="panel exposure-panel">
+                <div class="panel-title">INTERNET EXPOSURE</div>
+                <div class="exposure-body">
+                    <div class="exposure-state" id="exposureState">
+                        <div class="exp-indicator" id="expIndicator">
+                            <div class="exp-ring"></div>
+                            <div class="exp-core"></div>
+                        </div>
+                        <div class="exp-info">
+                            <div class="exp-status-label" id="expStatusLabel">LOCAL ONLY</div>
+                            <div class="exp-url" id="expUrl"></div>
+                            <div class="exp-timer" id="expTimer"></div>
+                        </div>
+                    </div>
+                    <div class="toggle-group">
+                        <button class="toggle-btn" id="btnAuto" data-mode="AUTO">AUTO</button>
+                        <button class="toggle-btn" id="btnForceOn" data-mode="FORCE_ON">FORCE ON</button>
+                        <button class="toggle-btn" id="btnForceOff" data-mode="FORCE_OFF">FORCE OFF</button>
+                    </div>
+                    <div class="exp-copy-row" id="expCopyRow" style="display:none">
+                        <input class="exp-url-input" id="expUrlInput" readonly />
+                        <button class="copy-btn" id="copyBtn">COPY</button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Active Jobs -->
+            <section class="panel jobs-panel">
+                <div class="panel-title">ACTIVE JOBS <span class="badge" id="jobCount">0</span></div>
+                <div class="table-wrap">
+                    <table class="hud-table">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>TOOL</th>
+                                <th>ELAPSED</th>
+                                <th>SOURCE</th>
+                            </tr>
+                        </thead>
+                        <tbody id="jobsTableBody">
+                            <tr class="empty-row"><td colspan="4">No active jobs</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- Tool History -->
+            <section class="panel history-panel">
+                <div class="panel-title">TOOL HISTORY</div>
+                <div class="table-wrap">
+                    <table class="hud-table">
+                        <thead>
+                            <tr>
+                                <th>TIME</th>
+                                <th>TOOL</th>
+                                <th>DURATION</th>
+                                <th>SOURCE</th>
+                                <th>STATUS</th>
+                            </tr>
+                        </thead>
+                        <tbody id="historyTableBody">
+                            <tr class="empty-row"><td colspan="5">No history yet</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- Logs -->
+            <section class="panel logs-panel">
+                <div class="panel-title">
+                    RUNTIME LOGS
+                    <div class="log-tabs">
+                        <button class="log-tab active" data-src="">ALL</button>
+                        <button class="log-tab" data-src="python">PYTHON</button>
+                        <button class="log-tab" data-src="speech">SPEECH</button>
+                        <button class="log-tab" data-src="kokoro">KOKORO</button>
+                    </div>
+                </div>
+                <div class="log-body" id="logBody"></div>
+            </section>
+
+        </main>
+    </div>
+
+    <script type="module" src="/src/main.ts"></script>
+</body>
+</html>

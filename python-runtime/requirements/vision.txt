@@ -1,0 +1,4 @@
+surya-ocr
+marker-pdf
+transformers
+huggingface-hub

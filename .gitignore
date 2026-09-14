@@ -1,0 +1,134 @@
+# ==============================================================================
+# Worker .gitignore
+# Comprehensive ignore rules for Node, Python, AI runtimes, models & envs
+# ==============================================================================
+
+# ── 1. Environments & Virtual Environments ────────────────────────────────────
+.venv/
+venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+*/.venv/
+*/*/.venv/
+*/*/*/.venv/
+python-runtime/.venv/
+speech-runtime/.venv/
+speech-runtime/engines/**/.venv/
+node_modules/
+*/node_modules/
+
+# ── 2. Environment Variables & Secrets ────────────────────────────────────────
+.env
+.env.*
+!.env.example
+!.env.template
+*.pem
+*.key
+*.cert
+*.crt
+*_token.txt
+cloudflared_creds*.json
+
+# ── 3. Python Cache & Build Artifacts ─────────────────────────────────────────
+__pycache__/
+*/__pycache__/
+*/*/__pycache__/
+*/*/*/__pycache__/
+*.py[cod]
+*$py.class
+*.pyd
+*.so
+.Python
+build/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# ── 4. Speech Runtime & AI Data (Caches, Audio, Models) ───────────────────────
+speech-runtime/cache/
+speech-runtime/logs/
+speech-runtime/output/
+speech-runtime/temp/
+speech-runtime/models/
+speech-runtime/storage/
+# Audio test & generated files
+*.wav
+*.mp3
+*.flac
+*.ogg
+speech-runtime/first_test.wav
+# Hugging Face / ModelScope local weight caches
+.cache/
+hf_cache/
+checkpoints/
+*.safetensors
+*.bin
+*.onnx
+*.gguf
+*.pt
+*.pth
+
+# ── 5. Node, Vite & Electron Builds ───────────────────────────────────────────
+dist/
+dist-electron/
+out/
+.vite/
+*/.vite/
+hud/dist/
+hud/.vite/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# ── 6. Local Binaries & Compressed Archives ───────────────────────────────────
+cloudflared.exe
+*.exe
+*.dll
+*.tar.gz
+*.zip
+*.rar
+*.7z
+
+# ── 7. Local Databases & Logs ─────────────────────────────────────────────────
+*.sqlite
+*.sqlite3
+*.db
+*.log
+*.log.*
+logs/
+*/logs/
+
+# ── 8. OS & Editor Artifacts ──────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+desktop.ini
+$RECYCLE.BIN/
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.swp

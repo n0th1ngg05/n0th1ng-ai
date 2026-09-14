@@ -1,0 +1,11 @@
+fastapi
+uvicorn[standard]
+
+paddleocr
+paddlepaddle-gpu
+
+opencv-python
+numpy
+Pillow
+
+python-multipart
