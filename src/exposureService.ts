@@ -285,7 +285,12 @@ function getClientIp(req: Request): string {
 
 function checkApiKey(req: Request): boolean {
     const auth = req.headers.get("authorization") ?? "";
-    const token = auth.startsWith("Bearer ") ? auth.slice(7) : auth;
+    let token = auth.startsWith("Bearer ") ? auth.slice(7) : auth;
+    if (!token && req.url) {
+        try {
+            token = new URL(req.url).searchParams.get("key") ?? "";
+        } catch {}
+    }
     return token === API_KEY && API_KEY.length > 0;
 }
 
@@ -377,6 +382,59 @@ app.get("/internal/tunnel-url", (c) => {
     const req = c.req.raw;
     if (!checkHudToken(req)) return c.json({ error: "Unauthorized" }, 403);
     return c.json({ url: tunnelUrl || null });
+});
+
+// ── Public Health & Ping Endpoints (Browser accessible) ───────────────────
+// These let you open https://worker.nothingstudios.co.in/ping or /health
+// in any phone/laptop browser to check if the worker and runtimes are alive.
+
+app.get("/ping", (c) => {
+    if (!isExposed) {
+        return c.json({
+            status: "closed",
+            exposed: false,
+            message: "Exposure gateway is closed (AUTO mode / master online)",
+        }, 503);
+    }
+    return c.json({
+        status: "ok",
+        pong: true,
+        exposed: true,
+        timestamp: Date.now(),
+    });
+});
+
+app.get("/health", async (c) => {
+    if (!isExposed) {
+        return c.json({
+            status: "closed",
+            exposed: false,
+            message: "Exposure gateway is closed (AUTO mode / master online)",
+        }, 503);
+    }
+
+    const check = (url: string) =>
+        fetch(url, { signal: AbortSignal.timeout(2000) })
+            .then(r => r.ok)
+            .catch(() => false);
+
+    const [pythonOk, speechOk, workerOk] = await Promise.all([
+        check("http://127.0.0.1:8002/health"),
+        check("http://127.0.0.1:9000/health"),
+        check("http://127.0.0.1:3001/ping"),
+    ]);
+
+    return c.json({
+        status: workerOk ? "online" : "degraded",
+        uptimeSeconds: Math.round(process.uptime()),
+        timestamp: Date.now(),
+        runtimes: {
+            worker: workerOk,
+            python: pythonOk,
+            speech: speechOk,
+            exposureGateway: true,
+        },
+    });
 });
 
 // ── Proxy all other routes to :3001 (requires API key auth) ──────────────────
