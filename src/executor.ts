@@ -32,7 +32,7 @@ export async function executeTool(
 
     if (PYTHON_TOOLS.has(tool)) {
 
-        return await forwardTool({
+        const response = await forwardTool({
 
             url: "/execute",
 
@@ -47,6 +47,8 @@ export async function executeTool(
             },
 
         });
+        
+        return await response.json();
 
     }
 

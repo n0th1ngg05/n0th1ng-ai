@@ -14,9 +14,9 @@ export interface ToolHttpRequest {
 
 export async function forwardTool(
     request: ToolHttpRequest
-) {
+): Promise<Response> {
 
-    const response = await fetch(
+    return fetch(
 
         `${PYTHON_RUNTIME}${request.url}`,
 
@@ -44,6 +44,4 @@ export async function forwardTool(
 
     );
 
-    return await response.json();
-
-}
+}
