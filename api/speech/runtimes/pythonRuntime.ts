@@ -107,14 +107,20 @@ export class PythonRuntime extends Runtime {
     // NOTE: getHttpClient() is synchronous (required by the Runtime interface),
     // so we cannot await here. selectWorker is synchronous once cluster.ts is
     // loaded, but we need to ensure it has been loaded first. Since start()
-    // is always called before any request (and start() awaits getSelectWorker()),
     // cluster.ts is guaranteed to be loaded by the time getHttpClient() runs.
     // We cache it on first use to avoid repeated dynamic imports.
     private _selectWorker?: typeof import("../../services/cluster.js")["selectWorker"];
 
     override getHttpClient() {
+        // _selectWorker is populated by start(), which is always called before
+        // synthesize/transcribe. But listVoices() can be called at startup
+        // before start() runs — in that case fall back to local runtime.
         const selectWorker = this._selectWorker;
-        const worker = selectWorker?.("speech");
+        if (!selectWorker) {
+            // start() hasn't run yet — use local runtime (listVoices fallback)
+            return super.getHttpClient();
+        }
+        const worker = selectWorker("speech");
         if (worker) {
             console.log(`[SPEECH] → Routing request to cluster worker: ${worker.hostname}`);
             return this.clusterHttpClient;

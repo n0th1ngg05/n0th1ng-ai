@@ -16,7 +16,6 @@ import { defaultKokoroConfig } from './config.js';
 import { RuntimeRegistry } from '../../manager/runtimeRegistry.js';
 import { generateRequestId, sleep } from '../../utils/helpers.js';
 import { emitSpeechGenerated, emitSpeechFailed } from '../../events/speechEvents.js';
-import { HttpClient } from '../../runtimes/httpClient.js';
 
 /** Kokoro TTS provider implementation */
 export class KokoroProvider extends TTSProvider {
@@ -55,15 +54,14 @@ export class KokoroProvider extends TTSProvider {
 
   /** Lists available voices */
   async listVoices(): Promise<VoiceManifest[]> {
-    let client;
     const runtime = this.runtimeRegistry.getByProvider(this.id);
-    
-    if (runtime) {
-      client = runtime.getHttpClient();
-    } else {
-      const port = process.env.SPEECH_RUNTIME_PORT || 9000;
-      client = new HttpClient(`http://127.0.0.1:${port}`);
+
+    // No runtime registered yet (startup) — return static manifest
+    if (!runtime) {
+      return this.manifest.voices;
     }
+
+    const client = runtime.getHttpClient();
 
     try {
       const res = await client.get<{ voices: any[] }>('/voices');

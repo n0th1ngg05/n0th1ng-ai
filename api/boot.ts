@@ -2139,11 +2139,30 @@ app.post("/api/image/generate", async (c) => {
     return c.json({ success: false, error: "Request body is missing or not valid JSON." }, 400);
   }
 
+  const DEFAULT_IMAGE_NEGATIVE =
+    "cartoon, anime, CGI, 3D render, toy car, unrealistic reflections, plastic body, distorted car, incorrect proportions, warped wheels, malformed headlights, duplicate car, floating vehicle, excessive motion blur, oversaturated colors, artificial lighting, low detail, blurry, low resolution, noisy image, excessive HDR, crushed blacks, blown highlights, watermark, text, logo";
+
+  let width = body.width;
+  let height = body.height;
+  if ((!width || !height) && typeof body.aspectRatio === "string") {
+    const match = body.aspectRatio.match(/^(\d+(?:\.\d+)?)\s*[:/]\s*(\d+(?:\.\d+)?)$/);
+    if (match) {
+      const r = parseFloat(match[1]) / parseFloat(match[2]);
+      if (r > 0) {
+        height = Math.round(Math.sqrt(1048576 / r) / 16) * 16;
+        width = Math.round((height * r) / 16) * 16;
+      }
+    }
+  }
+
   const input = {
     prompt: body.prompt,
-    negativePrompt: body.negativePrompt ?? "",
-    width: body.width ?? 1024,
-    height: body.height ?? 1024,
+    negativePrompt: (typeof body.negativePrompt === "string" && body.negativePrompt.trim().length > 0)
+      ? body.negativePrompt.trim()
+      : DEFAULT_IMAGE_NEGATIVE,
+    width: width ?? 1024,
+    height: height ?? 1024,
+    aspectRatio: body.aspectRatio ?? undefined,
     steps: body.steps ?? 20,
     cfg: body.cfg ?? 1,
     denoise: body.denoise ?? 1,
@@ -2152,6 +2171,13 @@ app.post("/api/image/generate", async (c) => {
     scheduler: body.scheduler ?? "simple",
     seed: body.seed,
     providerId: body.providerId,
+    // Full-pipeline upscale section
+    upscaleModel:  body.upscaleModel  ?? undefined,
+    targetWidth:   body.targetWidth   ?? undefined,
+    targetHeight:  body.targetHeight  ?? undefined,
+    interpolation: body.interpolation ?? undefined,
+    hiresSteps:    body.hiresSteps    ?? undefined,
+    hiresDenoise:  body.hiresDenoise  ?? undefined,
   };
 
   const jobId = createJob(input.prompt);
@@ -2234,6 +2260,7 @@ app.get("/api/image/result/:jobId", (c) => {
   if (!job) return c.json(null);
   return c.json({
     imageUrl: job.imageUrl,
+    baseImageUrl: job.baseImageUrl ?? null,
     seed: job.seed,
     generationTime: job.generationTime,
     status: job.status,

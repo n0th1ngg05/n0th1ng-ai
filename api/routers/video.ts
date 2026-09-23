@@ -6,7 +6,6 @@ import { eq, desc } from "drizzle-orm";
 import fs from "node:fs/promises";
 import path from "node:path";
 import { createVideoJob, videoJobs } from "../services/videoGenerationState";
-import { generateLtxVideoPipeline } from "../services/comfy";
 
 export const videoRouter = createRouter({
   list: publicQuery.query(async () => {
@@ -74,27 +73,29 @@ export const videoRouter = createRouter({
 
       // Fire and forget — status is polled via getStatus, same pattern
       // generateFluxImage's callers already use for image jobs.
-      generateLtxVideoPipeline(jobId, input)
-        .then(async (result) => {
-          const db = getDb();
-          await db.insert(generatedVideos).values({
-            prompt: input.prompt,
-            negativePrompt: input.negativePrompt,
-            modelUsed: "ltxv-2b-0.9.8-distilled-fp8",
-            resolution: `${input.width ?? 640}x${input.height ?? 352}`,
-            seed: result.seed,
-            frameRate: input.frameRate ?? 24,
-            length: input.length ?? 193,
-            fps: 48, // post RIFE 2x interpolation
-            format: "mp4",
-            sceneCount: 4, // 4 pipeline stages, not scenes in the multi-shot sense
-            generationTime: result.generationTime,
-            videoUrl: result.videoUrl,
+      import("../services/comfy").then(({ generateLtxVideoPipeline }) => {
+        generateLtxVideoPipeline(jobId, input)
+          .then(async (result) => {
+            const db = getDb();
+            await db.insert(generatedVideos).values({
+              prompt: input.prompt,
+              negativePrompt: input.negativePrompt,
+              modelUsed: "ltxv-2b-0.9.8-distilled-fp8",
+              resolution: `${input.width ?? 640}x${input.height ?? 352}`,
+              seed: result.seed,
+              frameRate: input.frameRate ?? 24,
+              length: input.length ?? 193,
+              fps: 48, // post RIFE 2x interpolation
+              format: "mp4",
+              sceneCount: 4, // 4 pipeline stages, not scenes in the multi-shot sense
+              generationTime: result.generationTime,
+              videoUrl: result.videoUrl,
+            });
+          })
+          .catch((err) => {
+            console.error(`LTX pipeline failed for job ${jobId}:`, err);
           });
-        })
-        .catch((err) => {
-          console.error(`LTX pipeline failed for job ${jobId}:`, err);
-        });
+      });
 
       return { jobId };
     }),

@@ -221,6 +221,28 @@ export const generatedImages = mysqlTable("generated_images", {
     "image_url",
     { length: 500 }
   ),
+  baseImageUrl: varchar(
+    "base_image_url",
+    { length: 500 }
+  ),
+  upscaledImageUrl: varchar(
+    "upscaled_image_url",
+    { length: 500 }
+  ),
+  pipelineType: varchar(
+    "pipeline_type",
+    { length: 50 }
+  ),
+  hiresSteps: int(
+    "hires_steps"
+  ),
+  hiresDenoise: float(
+    "hires_denoise"
+  ),
+  upscaleModel: varchar(
+    "upscale_model",
+    { length: 100 }
+  ),
   createdAt: timestamp(
     "created_at"
   ).defaultNow(),

@@ -84,9 +84,12 @@ export function buildWorkflow(
     positive.inputs.text =
       config.prompt;
 
-  if (negative)
-    negative.inputs.text =
-      config.negativePrompt || "";
+  if (negative) {
+    const DEFAULT_NEG = "cartoon, anime, CGI, 3D render, toy car, unrealistic reflections, plastic body, distorted car, incorrect proportions, warped wheels, malformed headlights, duplicate car, floating vehicle, excessive motion blur, oversaturated colors, artificial lighting, low detail, blurry, low resolution, noisy image, excessive HDR, crushed blacks, blown highlights, watermark, text, logo";
+    negative.inputs.text = (config.negativePrompt && config.negativePrompt.trim().length > 0)
+      ? config.negativePrompt.trim()
+      : DEFAULT_NEG;
+  }
 
   if (latent) {
     latent.inputs.width =

@@ -142,6 +142,7 @@
           <div id="genProgress" class="loader-overlay hidden">
             <div class="spinner"></div>
             <div class="loader-text text-aurora">Rendering Image...</div>
+            <div class="loader-phase" id="loaderPhase">PASS 1 · BASE GEN</div>
             <div class="loader-subtext">Step <span id="stepCount">0</span> / <span id="stepTotal">30</span> · <span id="timeEst">Queued</span></div>
             <div class="gp-bar"><div id="progressBar"></div></div>
           </div>
@@ -186,7 +187,7 @@
     <!-- Negative Prompt Floating Bar -->
     <div id="negPromptWrap" class="hidden glass" style="position:absolute; bottom:100px; left:50%; transform:translateX(-50%); padding:10px 20px; border-radius:9999px; display:flex; gap:12px; align-items:center; width:90%; max-width:500px; z-index:90;">
       <span class="mono" style="font-size: 0.7rem; color: #ff5555; border: 1px solid rgba(255,85,85,0.3); padding: 2px 4px; border-radius: 4px;">NEG</span>
-      <input type="text" id="negativePrompt" placeholder="Elements to exclude..." style="flex:1; background:transparent; color:var(--fg-muted); font-size: 0.9rem; border:none; outline:none;">
+      <input type="text" id="negativePrompt" value="cartoon, anime, CGI, 3D render, toy car, unrealistic reflections, plastic body, distorted car, incorrect proportions, warped wheels, malformed headlights, duplicate car, floating vehicle, excessive motion blur, oversaturated colors, artificial lighting, low detail, blurry, low resolution, noisy image, excessive HDR, crushed blacks, blown highlights, watermark, text, logo" placeholder="Elements to exclude..." style="flex:1; background:transparent; color:var(--fg-muted); font-size: 0.9rem; border:none; outline:none;">
     </div>
 
     <!-- Left sidebar: history -->
@@ -235,20 +236,57 @@
         </div>
 
         <div class="sidebar-section">
-          <h4>Aspect Ratio</h4>
+          <div class="slider-header">
+            <h4>Aspect Ratio</h4>
+            <span class="slider-val" id="arDisplay">1:1</span>
+          </div>
           <div class="ar-grid">
-            <button class="ar-btn glass active" title="1:1">
-              <div class="ar-box" style="width:18px;height:18px;"></div>
+            <button class="ar-btn glass active" title="1:1" data-w="1024" data-h="1024" data-ratio="1:1">
+              <div class="ar-box" style="width:16px;height:16px;"></div>
+              <span class="ar-label">1:1</span>
             </button>
-            <button class="ar-btn glass" title="16:9">
-              <div class="ar-box" style="width:24px;height:14px;"></div>
+            <button class="ar-btn glass" title="16:9" data-w="1344" data-h="768" data-ratio="16:9">
+              <div class="ar-box" style="width:22px;height:12px;"></div>
+              <span class="ar-label">16:9</span>
             </button>
-            <button class="ar-btn glass" title="9:16">
-              <div class="ar-box" style="width:14px;height:24px;"></div>
+            <button class="ar-btn glass" title="9:16" data-w="768" data-h="1344" data-ratio="9:16">
+              <div class="ar-box" style="width:12px;height:22px;"></div>
+              <span class="ar-label">9:16</span>
             </button>
-            <button class="ar-btn glass" title="4:3">
-              <div class="ar-box" style="width:20px;height:15px;"></div>
+            <button class="ar-btn glass" title="4:3" data-w="1152" data-h="864" data-ratio="4:3">
+              <div class="ar-box" style="width:18px;height:14px;"></div>
+              <span class="ar-label">4:3</span>
             </button>
+            <button class="ar-btn glass" title="3:2" data-w="1216" data-h="832" data-ratio="3:2">
+              <div class="ar-box" style="width:20px;height:13px;"></div>
+              <span class="ar-label">3:2</span>
+            </button>
+            <button class="ar-btn glass" title="21:9" data-w="1536" data-h="640" data-ratio="21:9">
+              <div class="ar-box" style="width:24px;height:10px;"></div>
+              <span class="ar-label">21:9</span>
+            </button>
+          </div>
+          <div class="target-size-inputs" style="margin-top:10px;">
+            <div class="tsz-input-wrap" style="flex:1;">
+              <label>Custom Ratio</label>
+              <input type="text" id="customArInput" class="glass" placeholder="e.g. 16:9, 2.39:1" value="1:1">
+            </div>
+            <div class="tsz-input-wrap" style="flex:0 0 auto; justify-content:flex-end;">
+              <label style="opacity:0; user-select:none;">⇄</label>
+              <button id="swapDimensionsBtn" class="action-btn glass" title="Swap Width & Height" style="height:31px; padding:0 10px; display:flex; align-items:center; justify-content:center; border-radius:8px;">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 16V4M7 4L3 8M7 4L11 8M17 8V20M17 20L21 16M17 20L13 16"/></svg>
+              </button>
+            </div>
+          </div>
+          <div class="target-size-inputs" style="margin-top:6px;">
+            <div class="tsz-input-wrap">
+              <label>Width</label>
+              <input type="number" id="baseWidthInput" class="glass" value="1024" min="256" max="4096" step="16">
+            </div>
+            <div class="tsz-input-wrap">
+              <label>Height</label>
+              <input type="number" id="baseHeightInput" class="glass" value="1024" min="256" max="4096" step="16">
+            </div>
           </div>
         </div>
 
@@ -288,9 +326,6 @@
           <h4>Sampler</h4>
           <select id="samplerSelect" class="form-select glass">
             <option value="euler">Euler</option>
-            <option value="euler_ancestral">Euler A</option>
-            <option value="dpmpp_2m">DPM++ 2M</option>
-            <option value="dpmpp_sde">DPM++ SDE</option>
           </select>
         </div>
 
@@ -298,10 +333,59 @@
           <h4>Scheduler</h4>
           <select id="schedulerSelect" class="form-select glass">
             <option value="simple">Simple</option>
-            <option value="normal">Normal</option>
-            <option value="karras">Karras</option>
-            <option value="sgm_uniform">SGM Uniform</option>
           </select>
+        </div>
+
+        <!-- Upscale Section — only shown for full-pipeline providers -->
+        <div class="sidebar-section upscale-section hidden" id="upscaleSection">
+          <div class="upscale-divider">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--gold)" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>
+            <span>Upscale Pass</span>
+          </div>
+
+          <h4 style="margin-top:12px;">Upscale Model</h4>
+          <select id="upscaleModelSelect" class="form-select glass">
+            <option value="4x-UltraSharp.pth">4x UltraSharp</option>
+          </select>
+
+          <h4 style="margin-top:14px;">Target Size</h4>
+          <div class="tsz-presets">
+            <button class="tsz-btn glass" data-w="1920" data-h="1080">1080p</button>
+            <button class="tsz-btn glass active" data-w="2048" data-h="2048">2K</button>
+            <button class="tsz-btn glass" data-w="3840" data-h="2160">4K</button>
+          </div>
+          <div class="target-size-inputs">
+            <div class="tsz-input-wrap">
+              <label>W</label>
+              <input type="number" id="targetWidthInput" class="glass" value="2048" min="512" max="7680" step="8">
+            </div>
+            <div class="tsz-input-wrap">
+              <label>H</label>
+              <input type="number" id="targetHeightInput" class="glass" value="2048" min="512" max="7680" step="8">
+            </div>
+          </div>
+
+          <h4 style="margin-top:14px;">Interpolation</h4>
+          <select id="interpolationSelect" class="form-select glass">
+            <option value="lanczos">Lanczos</option>
+          </select>
+
+          <div class="upscale-divider" style="margin-top:16px;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--gold)" stroke-width="2"><path d="M12 22V12m0 0L8 16m4-4l4 4M3 7l9-4 9 4"/></svg>
+            <span>Hires Fix (Pass 2)</span>
+          </div>
+
+          <div class="slider-header" style="margin-top:12px;">
+            <h4>Pass 2 Steps</h4>
+            <span class="slider-val" id="hiresStepsVal">12</span>
+          </div>
+          <input id="hiresStepsSlider" type="range" class="form-slider" min="1" max="50" value="12">
+
+          <div class="slider-header" style="margin-top:10px;">
+            <h4>Pass 2 Denoise</h4>
+            <span class="slider-val" id="hiresDenoiseVal">0.50</span>
+          </div>
+          <input id="hiresDenoiseSlider" type="range" class="form-slider" min="0.1" max="1" step="0.05" value="0.5">
         </div>
 
         <div class="sidebar-section">
@@ -369,6 +453,10 @@
             Copy
           </button>
           <button id="reuseConfigBtn" class="action-btn glass" title="Reuse Settings">↻ Reuse</button>
+          <button id="downloadBaseBtn" class="action-btn glass hidden" title="Download Base Image (1024²)">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+            Base
+          </button>
           <button id="downloadBtn" class="action-btn bg-aurora" title="Download Image">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#000" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
             Save

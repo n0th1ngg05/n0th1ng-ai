@@ -669,13 +669,15 @@ body {
 
 .ar-grid {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 8px;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
 }
 .ar-btn {
-  height: 48px;
+  height: 52px;
   border-radius: 8px;
   display: flex;
+  flex-direction: column;
+  gap: 4px;
   align-items: center;
   justify-content: center;
   cursor: pointer;
@@ -685,12 +687,20 @@ body {
 .ar-btn:hover { background: var(--glass-hover); }
 .ar-btn.active {
   background: rgba(212, 175, 55, 0.1);
-  border-color: rgba(212, 175, 55, 0.3);
+  border-color: rgba(212, 175, 55, 0.4);
 }
 .ar-btn.active .ar-box { border-color: var(--gold); }
+.ar-btn.active .ar-label { color: var(--gold); }
 .ar-box {
   border: 2px solid var(--fg-muted);
   border-radius: 2px;
+  transition: 0.2s;
+}
+.ar-label {
+  font-family: var(--mono);
+  font-size: 0.6rem;
+  color: var(--fg-muted);
+  letter-spacing: 0.04em;
   transition: 0.2s;
 }
 
@@ -851,6 +861,156 @@ body {
   #promptInput { min-width: 0; }
   .composer-tools button { width: 32px !important; height: 32px !important; }
 }
+
+/* ==========================================================================
+   UPSCALE SECTION
+   ========================================================================== */
+
+.upscale-divider {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--mono);
+  font-size: 0.65rem;
+  letter-spacing: 0.12em;
+  color: var(--gold);
+  text-transform: uppercase;
+  opacity: 0.85;
+  margin-top: 4px;
+}
+.upscale-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(90deg, rgba(212,175,55,0.3), transparent);
+}
+
+.tsz-presets {
+  display: flex;
+  gap: 6px;
+  margin-top: 8px;
+}
+.tsz-btn {
+  flex: 1;
+  padding: 6px 4px;
+  border-radius: 8px;
+  font-family: var(--mono);
+  font-size: 0.65rem;
+  letter-spacing: 0.06em;
+  cursor: pointer;
+  border: 1px solid var(--glass-border);
+  color: var(--fg-muted);
+  background: var(--glass);
+  transition: all 0.2s;
+  text-align: center;
+}
+.tsz-btn:hover {
+  background: var(--glass-hover);
+  color: var(--fg);
+}
+.tsz-btn.active {
+  border-color: var(--gold);
+  color: var(--gold);
+  background: rgba(212, 175, 55, 0.08);
+}
+.target-size-inputs {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+}
+.tsz-input-wrap {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.tsz-input-wrap label {
+  font-family: var(--mono);
+  font-size: 0.6rem;
+  letter-spacing: 0.1em;
+  color: var(--fg-muted);
+  text-transform: uppercase;
+}
+.tsz-input-wrap input {
+  width: 100%;
+  padding: 7px 10px;
+  border-radius: 8px;
+  border: 1px solid var(--glass-border);
+  background: var(--glass);
+  color: var(--fg);
+  font-family: var(--mono);
+  font-size: 0.75rem;
+  outline: none;
+  -moz-appearance: textfield;
+}
+.tsz-input-wrap input::-webkit-inner-spin-button,
+.tsz-input-wrap input::-webkit-outer-spin-button {
+  opacity: 0.4;
+}
+.tsz-input-wrap input:focus {
+  border-color: rgba(212, 175, 55, 0.4);
+  background: var(--glass-hover);
+}
+
+/* Phase label in generation overlay */
+.loader-phase {
+  font-family: var(--mono);
+  font-size: 0.65rem;
+  letter-spacing: 0.15em;
+  color: var(--gold);
+  text-transform: uppercase;
+  margin-bottom: 6px;
+  opacity: 0.9;
+}
+
+/* Dual image viewer for full-pipeline results */
+.dual-result-wrap {
+  display: flex;
+  gap: 12px;
+  width: 100%;
+  height: 100%;
+}
+.dual-result-wrap .result-pane {
+  flex: 1;
+  position: relative;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid var(--glass-border);
+  display: flex;
+  flex-direction: column;
+}
+.dual-result-wrap .result-pane img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  background: #0a0a0a;
+}
+.result-pane-label {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  font-family: var(--mono);
+  font-size: 0.6rem;
+  letter-spacing: 0.1em;
+  color: var(--fg-muted);
+  background: rgba(0,0,0,0.6);
+  padding: 3px 8px;
+  border-radius: 4px;
+  text-transform: uppercase;
+  z-index: 10;
+}
+.result-pane-label.upscaled {
+  color: var(--gold);
+}
+.result-pane-actions {
+  position: absolute;
+  bottom: 8px;
+  right: 8px;
+  display: flex;
+  gap: 6px;
+  z-index: 10;
+}
+
 
 
 

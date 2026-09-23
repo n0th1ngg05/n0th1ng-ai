@@ -7,6 +7,7 @@ import WebSocket from "ws";
 
 import { generationJobs } from "./generationState";
 import { buildWorkflow } from "./comfyWorkflow";
+import { buildFullPipelineWorkflow } from "./comfyWorkflowFull";
 import { getProvider, getDefaultProvider } from "./providers";
 import {
   videoJobs,
@@ -82,6 +83,13 @@ export async function generateFluxImage(
     scheduler = "simple",
     seed,
     providerId,
+    upscaleModel,
+    targetWidth,
+    targetHeight,
+    interpolation,
+    hiresSteps,
+    hiresDenoise,
+    pipelineType,
   }: {
     prompt: string;
     negativePrompt?: string;
@@ -95,6 +103,14 @@ export async function generateFluxImage(
     scheduler?: string;
     seed?: number;
     providerId?: string;
+    // Full-pipeline upscale params
+    upscaleModel?: string;
+    targetWidth?: number;
+    targetHeight?: number;
+    interpolation?: string;
+    hiresSteps?: number;
+    hiresDenoise?: number;
+    pipelineType?: string;
   },
   emit: ImageEmit = noopEmit
 ) {
@@ -103,18 +119,41 @@ export async function generateFluxImage(
   const finalSeed =
     seed ?? Math.floor(Math.random() * 999999999999999);
 
-  const workflow = buildWorkflow({
-  prompt,
-  negativePrompt,
-  width,
-  height,
-  seed: finalSeed,
-  steps,
-  cfg,
-  sampler,
-  scheduler,
-  providerId,
-});
+  // Full-pipeline JSONs (LiteGraph graph format) use a separate builder.
+  // Single-stage JSONs use the original flat-API builder.
+  const isFullPipeline = pipelineType === "full-pipeline";
+
+  const workflow = isFullPipeline
+    ? buildFullPipelineWorkflow({
+        prompt,
+        negativePrompt,
+        width,
+        height,
+        seed: finalSeed,
+        steps,
+        cfg,
+        sampler,
+        scheduler: scheduler ?? "simple",
+        providerId: providerId!,
+        upscaleModel,
+        targetWidth,
+        targetHeight,
+        interpolation,
+        hiresSteps,
+        hiresDenoise,
+      })
+    : buildWorkflow({
+        prompt,
+        negativePrompt,
+        width,
+        height,
+        seed: finalSeed,
+        steps,
+        cfg,
+        sampler,
+        scheduler,
+        providerId,
+      });
 
   const startTime = Date.now();
   const clientId = `image-${jobId}`;
@@ -253,15 +292,27 @@ export async function generateFluxImage(
 
   const outputs = historyData[promptId].outputs;
 
-  const saveNode = Object.values(outputs).find(
-    (node: any) => node?.images?.length
-  );
+  // For full-pipeline runs: pick the LAST output node (highest key) that
+  // has images — it is always the final upscaled SaveImage. For single-
+  // stage runs, pick the first (only) output node as before.
+  const outputEntries = Object.entries(outputs)
+    .filter(([, node]: any) => node?.images?.length)
+    .sort(([a], [b]) => Number(a) - Number(b));
+
+  const saveNode = isFullPipeline
+    ? outputEntries[outputEntries.length - 1]?.[1]
+    : outputEntries[0]?.[1];
+
+  const baseOutputNode = isFullPipeline && outputEntries.length >= 2
+    ? outputEntries[0][1]
+    : null;
 
   if (!saveNode) {
     throw new Error("No image output node found");
   }
 
   const image = (saveNode as any)?.images?.[0];
+  const baseImage = (baseOutputNode as any)?.images?.[0] ?? null;
 
   if (!image) {
     throw new Error("Image not found in output");
@@ -296,6 +347,25 @@ export async function generateFluxImage(
   console.log("DESTINATION:", destinationFile);
 
   await fs.writeFile(destinationFile, buffer);
+
+  // For full-pipeline runs, also copy the base (pre-upscale) image.
+  let baseImageUrl: string | undefined;
+  if (baseImage) {
+    const baseSourceFile = path.join(COMFY_OUTPUT, baseImage.filename);
+    const baseExt = path.extname(baseImage.filename);
+    const baseFilename = `${uuidv4()}-base${baseExt}`;
+    const baseDestFile = path.join(PUBLIC_GENERATED, baseFilename);
+    try {
+      await fs.access(baseSourceFile);
+      const baseBuffer = await fs.readFile(baseSourceFile);
+      await fs.writeFile(baseDestFile, baseBuffer);
+      baseImageUrl = `/generated/${baseFilename}`;
+      console.log("BASE IMAGE SAVED:", baseDestFile);
+    } catch (err) {
+      console.warn("[WARN] Base image copy failed (non-fatal):", err);
+    }
+  }
+
   await new Promise((resolve) => setTimeout(resolve, 500));
 
   const generationTime = Math.round((Date.now() - startTime) / 1000);
@@ -310,12 +380,14 @@ export async function generateFluxImage(
     imageUrl: `/generated/${filename}`,
     generationTime,
     seed: finalSeed,
+    baseImageUrl,
   });
 
   const result = {
     seed: finalSeed,
     generationTime,
     imageUrl: `/generated/${filename}`,
+    baseImageUrl,
     width,
     height,
   };

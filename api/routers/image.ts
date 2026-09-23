@@ -9,8 +9,6 @@ import { runGeneration } from "../services/backgroundGeneration";
 import fs from "node:fs/promises";
 import path from "node:path";
 
-import { generateFluxImage } from "../services/comfy";
-
 export const imageRouter = createRouter({
   list: publicQuery.query(async () => {
     const db = getDb();
@@ -84,6 +82,9 @@ export const imageRouter = createRouter({
       imageUrl:
         job.imageUrl,
 
+      baseImageUrl:
+        job.baseImageUrl ?? null,
+
       seed:
         job.seed,
 
@@ -103,6 +104,7 @@ export const imageRouter = createRouter({
 
     width: z.number().default(512),
     height: z.number().default(512),
+    aspectRatio: z.string().optional(),
 
     steps: z.number().default(20),
     cfg: z.number().default(1),
@@ -135,6 +137,9 @@ export const imageRouter = createRouter({
 
     height:
       input.height,
+
+    aspectRatio:
+      input.aspectRatio,
 
     steps:
       input.steps,

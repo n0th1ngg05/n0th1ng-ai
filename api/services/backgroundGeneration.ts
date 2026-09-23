@@ -14,6 +14,7 @@ export async function runGeneration(
     negativePrompt?: string;
     width: number;
     height: number;
+    aspectRatio?: string;
     steps: number;
     cfg: number;
     denoise: number;
@@ -22,6 +23,13 @@ export async function runGeneration(
     scheduler: string;
     seed?: number;
     providerId?: string; // defaults to first registered image provider
+    // Full-pipeline upscale params
+    upscaleModel?: string;
+    targetWidth?: number;
+    targetHeight?: number;
+    interpolation?: string;
+    hiresSteps?: number;
+    hiresDenoise?: number;
   },
   emit?: ImageEmit
 ) {
@@ -64,6 +72,13 @@ export async function runGeneration(
         scheduler: input.scheduler,
         seed: input.seed,
         providerId: provider.id,
+        pipelineType: provider.executor,
+        upscaleModel: input.upscaleModel,
+        targetWidth: input.targetWidth,
+        targetHeight: input.targetHeight,
+        interpolation: input.interpolation,
+        hiresSteps: input.hiresSteps,
+        hiresDenoise: input.hiresDenoise,
       },
       emit
     );
@@ -85,6 +100,12 @@ export async function runGeneration(
       gpuUsage: null,
       vramUsage: null,
       imageUrl: result.imageUrl,
+      baseImageUrl: result.baseImageUrl ?? null,
+      upscaledImageUrl: provider.executor === "full-pipeline" ? result.imageUrl : null,
+      pipelineType: provider.executor,
+      hiresSteps: input.hiresSteps ?? null,
+      hiresDenoise: input.hiresDenoise ?? null,
+      upscaleModel: input.upscaleModel ?? null,
     });
 
     generationJobs.set(jobId, {
@@ -93,6 +114,7 @@ export async function runGeneration(
       progress: 100,
       currentStep: 4,
       imageUrl: result.imageUrl,
+      baseImageUrl: result.baseImageUrl ?? undefined,
       generationTime: result.generationTime,
       seed: result.seed,
     });

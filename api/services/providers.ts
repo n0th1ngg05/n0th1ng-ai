@@ -1,4 +1,4 @@
-// api/services/providers.ts
+﻿// api/services/providers.ts
 //
 // Explicit registry of generation providers. Each entry maps a stable
 // `id` (used in API requests, stored in generatedImages/generatedVideos.
@@ -12,7 +12,16 @@
 // meaningful across renames.
 
 export type MediaType = "image" | "video";
-export type Executor = "single-stage" | "ltx-3-stage";
+export type Executor = "single-stage" | "ltx-3-stage" | "full-pipeline";
+
+export interface UpscaleDefaults {
+  upscaleModel: string;   // e.g. "4x-UltraSharp.pth"
+  targetWidth: number;    // e.g. 2048
+  targetHeight: number;   // e.g. 2048
+  interpolation: string;  // e.g. "lanczos"
+  hiresSteps: number;     // Pass 2 sampler steps
+  hiresDenoise: number;   // Pass 2 denoise strength
+}
 
 export interface ProviderDefinition {
   id: string; // stable, stored in DB - never rename once used in production
@@ -20,9 +29,9 @@ export interface ProviderDefinition {
   mediaType: MediaType;
   executor: Executor;
   folder: string; // relative to app/Comfy/
-  // single-stage: exactly one JSON file for the whole generation.
+  // single-stage / full-pipeline: exactly one JSON file for the whole generation.
   // ltx-3-stage: three JSON files, one per pipeline stage.
-  jsonFile?: string; // single-stage only
+  jsonFile?: string; // single-stage + full-pipeline
   stage1File?: string; // ltx-3-stage only
   stage2File?: string; // ltx-3-stage only
   stage3File?: string; // ltx-3-stage only
@@ -38,6 +47,8 @@ export interface ProviderDefinition {
     fps?: number;
     length?: number;
   };
+  // Only set for full-pipeline providers that have an upscale pass.
+  upscaleDefaults?: UpscaleDefaults;
 }
 
 export const PROVIDERS: ProviderDefinition[] = [
@@ -58,6 +69,40 @@ export const PROVIDERS: ProviderDefinition[] = [
     folder: "Flux.2",
     jsonFile: "RTX_4050_Workflow_Flux2.json",
     defaults: { width: 512, height: 512, steps: 4, cfg: 1.5 },
+  },
+  {
+    id: "flux2-klein-full",
+    label: "FLUX.2 Klein 4B · Full Pipeline",
+    mediaType: "image",
+    executor: "full-pipeline",
+    folder: "Flux.2",
+    jsonFile: "flux2-klein-4b-full-pipeline.json",
+    defaults: { width: 1024, height: 1024, steps: 20, cfg: 1.0 },
+    upscaleDefaults: {
+      upscaleModel: "4x-UltraSharp.pth",
+      targetWidth: 2048,
+      targetHeight: 2048,
+      interpolation: "lanczos",
+      hiresSteps: 12,
+      hiresDenoise: 0.5,
+    },
+  },
+  {
+    id: "flux1-krea-dev-gguf",
+    label: "FLUX.1 Krea [dev] GGUF · Full Pipeline",
+    mediaType: "image",
+    executor: "full-pipeline",
+    folder: "Flux.Krea",
+    jsonFile: "flux1-krea-dev-gguf-full-pipeline.json",
+    defaults: { width: 1024, height: 1024, steps: 28, cfg: 4.0 },
+    upscaleDefaults: {
+      upscaleModel: "4x-UltraSharp.pth",
+      targetWidth: 2048,
+      targetHeight: 2048,
+      interpolation: "lanczos",
+      hiresSteps: 16,
+      hiresDenoise: 0.5,
+    },
   },
   {
     id: "ltx-2b-0.9.8-distilled",

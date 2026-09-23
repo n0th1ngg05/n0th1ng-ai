@@ -57,15 +57,14 @@ export class ChatterboxProvider extends HybridProvider {
 
   /** Lists available voices */
   async listVoices(): Promise<VoiceManifest[]> {
-    let client;
     const runtime = this.runtimeRegistry.getByProvider(this.id);
-    
-    if (runtime) {
-      client = runtime.getHttpClient();
-    } else {
-      const port = process.env.SPEECH_RUNTIME_PORT || 9000;
-      client = new HttpClient(`http://127.0.0.1:${port}`);
+
+    // No runtime registered yet (startup) — return static manifest
+    if (!runtime) {
+      return this.manifest.voices;
     }
+
+    const client = runtime.getHttpClient();
 
     try {
       const res = await client.get<{ voices: any[] }>('/voices');

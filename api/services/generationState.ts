@@ -23,6 +23,10 @@ export type GenerationJob = {
 
   imageUrl?: string;
 
+  // For full-pipeline runs (ESRGAN + hires-fix), the pre-upscale base
+  // image is also saved. Both URLs are returned by /api/image/result.
+  baseImageUrl?: string;
+
   generationTime?: number;
 
   seed?: number;
