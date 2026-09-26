@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
   <title>Chatspace — n0th1ng AI</title>
   <meta name="description" content="Chatspace - Ideas to reality." />
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -28,7 +28,7 @@
         </span>
         <span class="brand-text">
           <span class="brand-name text-aurora">n0th1ng</span>
-          <span class="brand-tag">AI · WORKSTATION · A property of n0th1ng Studios</span>
+          <span class="brand-tag">AI · WORKSTATION</span>
         </span>
       </a>
 
@@ -122,28 +122,28 @@
 
     <section class="chat-area">
       
-      <header class="chat-header glass-liquid" style="padding: 12px 24px; position: relative; justify-content: space-between; margin: 16px 24px 0 24px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.05);">
+      <header class="chat-header glass-liquid">
         <div class="ch-left">
           <button class="btn-icon glass" id="openLeftSidebar" title="History & Library">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></line></svg>
           </button>
         </div>
         
-        <div class="ch-center" style="display:flex; align-items:center; gap: 12px; position: absolute; left: 50%; transform: translateX(-50%);">
-           <button id="newChatBtnHeader" style="background:transparent; border:none; color:var(--fg); display:flex; align-items:center; gap:6px; cursor:pointer; font-size:0.9rem;" title="New Chat">
+        <div class="ch-center">
+           <button id="newChatBtnHeader" class="ch-newchat" title="New Chat">
              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
            </button>
-           <span id="currentChatTitle" style="color: var(--fg); font-weight: 500; font-size: 0.9rem; max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">New Chat</span>
-           <div style="width:1px; height:14px; background:rgba(255,255,255,0.1);"></div>
-           
-           <select id="modelSelect" class="form-select glass" style="width: auto; height: 32px; border-radius: 9999px; font-size: 0.85rem;">
+           <span id="currentChatTitle" class="ch-title">New Chat</span>
+           <div class="ch-divider"></div>
+
+           <select id="modelSelect" class="form-select glass ch-model-select">
              <option value="" disabled selected>Loading models...</option>
            </select>
 
-           <div style="width:1px; height:14px; background:rgba(255,255,255,0.1);"></div>
-           <div class="ch-status" style="display:flex; align-items:center; gap:6px;">
+           <div class="ch-divider ch-divider-status"></div>
+           <div class="ch-status">
              <span class="status-dot healthy"></span>
-             <span id="chatStatus" class="text-muted" style="font-size:0.8rem;">Online</span>
+             <span id="chatStatus" class="text-muted">Online</span>
            </div>
         </div>
         

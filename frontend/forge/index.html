@@ -2,9 +2,11 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
   <title>Forge — n0th1ng ai</title>
   <meta name="description" content="Forge - Long-horizon autonomous coding." />
+  <script src="../assets/desktop-only.js"></script>
+  <link rel="stylesheet" href="../assets/desktop-only.css" />
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@200;300;400;500;600&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet">
@@ -15,6 +17,16 @@
   <link rel="stylesheet" href="../assets/nav.css">
 </head>
 <body class="forge-mode">
+
+  <!-- =========================== DESKTOP-ONLY GUARD =========================== -->
+  <div id="n0DesktopOnlyGuard" role="alert">
+    <div class="n0-dog-inner">
+      <svg class="n0-dog-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="4" width="20" height="13" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
+      <h2>Forge is available on desktop</h2>
+      <p>This is a long-horizon build workspace and needs a full keyboard and a larger screen to work properly. Please open it on a laptop or desktop computer to continue.</p>
+      <a href="../../index.html">Back to Home</a>
+    </div>
+  </div>
 
   <!-- =========================== AMBIENT BACKGROUND =========================== -->
   <canvas id="liquidField"></canvas>
@@ -29,7 +41,7 @@
           <span class="brand-logo-bg" aria-hidden="true"></span>
         </span>
         <span class="brand-text">
-          <span class="brand-name">n0th1ng</span>
+          <span class="brand-name text-aurora">n0th1ng</span>
           <span class="brand-tag">AI · WORKSTATION</span>
         </span>
       </a>
@@ -69,7 +81,7 @@
     <div class="drawer-bg"></div>
     <aside class="drawer glass-liquid">
       <div class="drawer-head">
-        <div class="brand"><span class="brand-name">n0th1ng</span></div>
+        <div class="brand"><span class="brand-name text-aurora">n0th1ng</span></div>
         <button class="drawer-close glass" data-close>×</button>
       </div>
                         <nav class="drawer-links">

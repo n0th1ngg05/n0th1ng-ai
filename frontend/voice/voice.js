@@ -539,6 +539,19 @@ class Visualizer {
     this.resizeCanvas();
     window.addEventListener("resize", () => this.resizeCanvas());
 
+    // The canvas is given explicit inline pixel dimensions in resizeCanvas()
+    // (needed so the internal buffer can be scaled by devicePixelRatio), which
+    // means it no longer tracks its parent's CSS size on its own. On mobile,
+    // the parent's height changes via 100dvh whenever the browser's address
+    // bar shows/hides, and that doesn't reliably fire a window "resize" event
+    // on every mobile browser. A stale canvas size then shows a cropped,
+    // zoomed-in-looking view of the scene. ResizeObserver watches the actual
+    // rendered box size directly, regardless of what caused it to change.
+    if (typeof ResizeObserver !== "undefined" && this.canvas.parentElement) {
+      this._resizeObserver = new ResizeObserver(() => this.resizeCanvas());
+      this._resizeObserver.observe(this.canvas.parentElement);
+    }
+
     for (let i = 0; i < this.numParticles; i++) {
       const u = Math.random(), v = Math.random();
       // ~16% of particles never fully commit to the sphere — they stay
@@ -572,6 +585,13 @@ class Visualizer {
     this.cw  = r.width; this.ch = r.height;
     this.canvas.width  = this.cw * this.dpr;
     this.canvas.height = this.ch * this.dpr;
+    // Reset the transform before rescaling — resizeCanvas() runs again on every
+    // window resize (address bar show/hide, orientation, etc.), and ctx.scale()
+    // is multiplicative on top of whatever transform is already set. Without
+    // this reset, each resize compounds the DPR scale (dpr, then dpr^2, ...),
+    // which is why the visualizer would appear zoomed in on phones (dpr > 1)
+    // after the very first resize event fired post-load.
+    this.ctx.setTransform(1, 0, 0, 1, 0, 0);
     this.ctx.scale(this.dpr, this.dpr);
     this.canvas.style.width  = `${this.cw}px`;
     this.canvas.style.height = `${this.ch}px`;

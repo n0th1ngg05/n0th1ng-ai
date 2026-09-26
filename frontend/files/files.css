@@ -38,7 +38,7 @@ body {
   background-attachment: fixed;
 }
 
-body.workspace-mode { height: 100vh; overflow: hidden; }
+body.workspace-mode { height: 100vh; height: 100dvh; overflow: hidden; }
 
 /* ============ UTILITIES ============ */
 .text-aurora { background: var(--grad-aurora); -webkit-background-clip: text; background-clip: text; color: transparent; }
@@ -130,7 +130,7 @@ ul { list-style: none; }
 @media (min-width: 901px) { .drawer-wrap, #drawer { display: none !important; } }
 
 /* ============ WORKSPACE LAYOUT ============ */
-.workspace { display: flex; height: 100vh; padding-top: 64px; position: relative; overflow: hidden; }
+.workspace { display: flex; height: 100vh; height: 100dvh; padding-top: 64px; position: relative; overflow: hidden; }
 
 /* CRITICAL FIX: Ensure backdrops don't silently block clicks */
 .sidebar-backdrop { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.6); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); z-index: 9990; opacity: 0; visibility: hidden; pointer-events: none; transition: opacity 0.3s ease, visibility 0.3s ease; }
@@ -151,7 +151,7 @@ ul { list-style: none; }
 .sidebar-search input::placeholder { color: var(--fg-dim); }
 .sidebar-search svg { color: var(--fg-muted); }
 
-.sidebar-scroll { flex: 1; overflow-y: auto; padding: 0 20px 20px; min-height: 0; }
+.sidebar-scroll { flex: 1; overflow-y: auto; padding: 0 20px calc(20px + env(safe-area-inset-bottom, 0px)); min-height: 0; }
 .sidebar-scroll::-webkit-scrollbar { width: 4px; }
 .sidebar-scroll::-webkit-scrollbar-thumb { background: rgba(255,255,255,.1); border-radius: 4px; }
 
@@ -198,7 +198,7 @@ ul { list-style: none; }
 
 /* Files Stream */
 /* CRITICAL FIX: Added position: relative so the `.noise` absolute child stays inside this container */
-.files-scroll { flex: 1; overflow-y: auto; padding: 32px 24px; display: flex; flex-direction: column; position: relative; min-height: 0; }
+.files-scroll { flex: 1; overflow-y: auto; padding: 32px 24px calc(32px + env(safe-area-inset-bottom, 0px)) 24px; display: flex; flex-direction: column; position: relative; min-height: 0; }
 .files-scroll::-webkit-scrollbar { width: 6px; }
 .files-scroll::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 6px; }
 
@@ -285,7 +285,7 @@ ul { list-style: none; }
 /* ============ RESPONSIVE ============ */
 .hide-desktop { display: none; }
 @media (max-width: 1024px) {
-  .left-sidebar { position: fixed; left: 0; top: 0; bottom: 0; transform: translateX(-100%); border-radius: 0; width: 320px; z-index: 9995; box-shadow: 20px 0 50px rgba(0,0,0,0.8); background: var(--surface); }
+  .left-sidebar { position: fixed; left: 0; top: 0; bottom: 0; transform: translateX(-100%); border-radius: 0; width: min(320px, 86vw); padding-bottom: env(safe-area-inset-bottom, 0px); z-index: 9995; box-shadow: 20px 0 50px rgba(0,0,0,0.8); background: var(--surface); }
   .left-sidebar.open { transform: translateX(0); }
 
   .hide-desktop { display: flex; }

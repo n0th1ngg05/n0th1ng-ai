@@ -31,6 +31,7 @@
       -webkit-font-smoothing: antialiased;
       overflow: hidden;
       height: 100vh;
+      height: 100dvh;
       width: 100vw;
       display: flex;
       flex-direction: column;
@@ -248,7 +249,7 @@
     /* ============ COMPOSER ISLAND ============ */
     .composer-island {
       position: absolute;
-      bottom: 32px;
+      bottom: calc(32px + env(safe-area-inset-bottom, 0px));
       left: 50%;
       transform: translateX(-50%);
       width: 100%;
@@ -699,7 +700,7 @@
 
 /* ============ MOBILE RESPONSIVENESS ============ */
 @media (max-width: 900px) {
-  .top-actions, .top-actions-left { top: 84px; }
+  .top-actions, .top-actions-left { top: calc(84px + env(safe-area-inset-top, 0px)); }
   .top-actions { right: 16px; }
   .top-actions-left { left: 16px; }
   
@@ -727,7 +728,7 @@
   
   .composer-island {
     width: calc(100% - 32px);
-    bottom: 16px;
+    bottom: calc(16px + env(safe-area-inset-bottom, 0px));
     padding: 16px;
     border-radius: 16px;
   }
@@ -773,7 +774,7 @@
 @media (max-width: 900px) {
   .stage {
     justify-content: flex-start;
-    padding-top: 40px; /* Give breathing room at top when flex-start */
+    padding-top: calc(112px + env(safe-area-inset-top, 0px)); /* clear the floating top-action buttons */
   }
 }
 /* ==========================================================================

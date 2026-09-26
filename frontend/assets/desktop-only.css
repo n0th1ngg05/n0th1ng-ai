@@ -1,0 +1,68 @@
+/* desktop-only.css — blocking overlay for phone-only-restricted pages */
+
+#n0DesktopOnlyGuard { display: none; }
+
+html.n0-desktop-only body {
+  overflow: hidden !important;
+}
+
+html.n0-desktop-only #n0DesktopOnlyGuard {
+  display: flex;
+  position: fixed;
+  inset: 0;
+  z-index: 999999;
+  align-items: center;
+  justify-content: center;
+  padding: 32px;
+  padding-top: calc(32px + env(safe-area-inset-top, 0px));
+  padding-bottom: calc(32px + env(safe-area-inset-bottom, 0px));
+  text-align: center;
+  background: #050505;
+  color: #fafafa;
+  font-family: 'Inter Tight', system-ui, sans-serif;
+}
+
+#n0DesktopOnlyGuard .n0-dog-inner {
+  max-width: 360px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+}
+
+#n0DesktopOnlyGuard .n0-dog-icon {
+  width: 52px;
+  height: 52px;
+  color: #d4af37;
+  opacity: 0.9;
+}
+
+#n0DesktopOnlyGuard h2 {
+  font-size: 1.25rem;
+  font-weight: 500;
+  margin: 0;
+  letter-spacing: -0.01em;
+}
+
+#n0DesktopOnlyGuard p {
+  font-size: 0.9rem;
+  color: rgba(255, 255, 255, 0.6);
+  line-height: 1.6;
+  margin: 0;
+}
+
+#n0DesktopOnlyGuard a {
+  margin-top: 8px;
+  font-size: 0.85rem;
+  color: #d4af37;
+  text-decoration: none;
+  padding: 10px 22px;
+  border: 1px solid rgba(212, 175, 55, 0.4);
+  border-radius: 9999px;
+  transition: background 0.2s, border-color 0.2s;
+}
+
+#n0DesktopOnlyGuard a:hover {
+  background: rgba(212, 175, 55, 0.1);
+  border-color: rgba(212, 175, 55, 0.7);
+}
