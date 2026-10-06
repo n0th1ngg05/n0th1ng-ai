@@ -154,8 +154,10 @@ class KokoroProvider(BaseProvider):
 
     def __init__(self):
         super().__init__()
+        import os
+        base_url = os.environ.get("KOKORO_ENGINE_URL", "http://127.0.0.1:6103")
         self.client = httpx.AsyncClient(
-            base_url="http://127.0.0.1:6103",
+            base_url=base_url,
             timeout=httpx.Timeout(
                 connect=10.0,
                 read=300.0,

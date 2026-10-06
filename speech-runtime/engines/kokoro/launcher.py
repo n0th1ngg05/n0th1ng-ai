@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import argparse
 import json
 import os
 import subprocess
@@ -10,29 +11,89 @@ import urllib.request
 import urllib.error
 from pathlib import Path
 
-from loguru import logger
-
-logger.remove()
-logger.add(
-    sys.stderr,
-    format="<green>{time:YYYY-MM-DD HH:mm:ss.SSS}</green> | "
-           "<level>{level: <8}</level> | "
-           "<magenta>kokoro/launcher</magenta> - "
-           "<level>{message}</level>",
-    level="INFO",
-    colorize=True,
-)
+try:
+    from loguru import logger
+    logger.remove()
+    logger.add(
+        sys.stderr,
+        format="<green>{time:YYYY-MM-DD HH:mm:ss.SSS}</green> | "
+               "<level>{level: <8}</level> | "
+               "<magenta>kokoro/launcher</magenta> - "
+               "<level>{message}</level>",
+        level="INFO",
+        colorize=True,
+    )
+except ImportError:
+    import logging
+    logging.basicConfig(
+        level=logging.INFO,
+        format="%(asctime)s | %(levelname)-8s | kokoro/launcher - %(message)s",
+    )
+    class FallbackLogger:
+        @staticmethod
+        def info(msg, *args):
+            logging.info(msg.format(*args) if "{" in msg else msg % args if args else msg)
+        @staticmethod
+        def warning(msg, *args):
+            logging.warning(msg.format(*args) if "{" in msg else msg % args if args else msg)
+        @staticmethod
+        def debug(msg, *args):
+            logging.debug(msg.format(*args) if "{" in msg else msg % args if args else msg)
+    logger = FallbackLogger()
 
 
 ROOT = Path(__file__).resolve().parent
 
 SOURCE = ROOT / "source"
 
-PYTHON = (
-    ROOT / ".venv" / "Scripts" / "python.exe"
-    if os.name == "nt"
-    else ROOT / ".venv" / "bin" / "python"
-)
+
+def get_python_executable() -> Path:
+    """Resolve the Python executable to run the Kokoro engine with.
+
+    Prioritizes the active Python environment from which the launcher was executed,
+    allowing seamless switching between environments (e.g. AMD ROCm vs NVIDIA CUDA).
+
+    Resolution order:
+    1. KOKORO_PYTHON environment variable (explicit override)
+    2. Active Python interpreter (sys.executable) running this script
+    3. Active VIRTUAL_ENV environment variable
+    4. Fallback to ROOT / ".venv" if it exists
+    """
+    if "KOKORO_PYTHON" in os.environ:
+        custom_py = Path(os.environ["KOKORO_PYTHON"]).resolve()
+        if custom_py.exists():
+            return custom_py
+        logger.warning(
+            "KOKORO_PYTHON was set to '{}' but the file does not exist, falling back.",
+            os.environ["KOKORO_PYTHON"],
+        )
+
+    current_py = Path(sys.executable).resolve()
+    if current_py.exists():
+        return current_py
+
+    if "VIRTUAL_ENV" in os.environ:
+        venv_root = Path(os.environ["VIRTUAL_ENV"]).resolve()
+        venv_py = (
+            venv_root / "Scripts" / "python.exe"
+            if os.name == "nt"
+            else venv_root / "bin" / "python"
+        )
+        if venv_py.exists():
+            return venv_py
+
+    default_venv_py = (
+        ROOT / ".venv" / "Scripts" / "python.exe"
+        if os.name == "nt"
+        else ROOT / ".venv" / "bin" / "python"
+    ).resolve()
+    if default_venv_py.exists():
+        return default_venv_py
+
+    return current_py
+
+
+PYTHON = get_python_executable()
 
 API_SERVER = SOURCE / "api_server.py"
 
@@ -84,7 +145,7 @@ def _post_register(runtime_url: str, provider_id: str, port: int) -> bool:
         return False
 
 
-def _heartbeat_loop(runtime_url: str, provider_id: str, interval: int = 25) -> None:
+def _heartbeat_loop(runtime_url: str, provider_id: str, port: int = ENGINE_PORT, interval: int = 25) -> None:
     payload = json.dumps({"provider_id": provider_id}).encode()
     beat_count = 0
 
@@ -104,7 +165,7 @@ def _heartbeat_loop(runtime_url: str, provider_id: str, interval: int = 25) -> N
                     beat_count += 1
                     if body.get("status") == "unknown":
                         logger.warning("Runtime doesn't know us — re-registering")
-                        _post_register(runtime_url, provider_id, ENGINE_PORT)
+                        _post_register(runtime_url, provider_id, port)
                     else:
                         logger.debug("Heartbeat #{} ok", beat_count)
             except Exception as exc:
@@ -114,20 +175,51 @@ def _heartbeat_loop(runtime_url: str, provider_id: str, interval: int = 25) -> N
     t.start()
 
 
-def main():
+def parse_args():
+    parser = argparse.ArgumentParser(description="Kokoro Engine Launcher")
+    parser.add_argument(
+        "--python",
+        default=None,
+        help="Path to python executable (overrides active venv and KOKORO_PYTHON)",
+    )
+    parser.add_argument(
+        "--device",
+        default=os.environ.get("KOKORO_DEVICE", "cuda"),
+        help="Device to run on (e.g. cuda, cuda:0, cuda:1, cpu). Default: cuda or $KOKORO_DEVICE",
+    )
+    parser.add_argument(
+        "--host",
+        default=os.environ.get("KOKORO_HOST", ENGINE_HOST),
+        help=f"Host to bind (default: {ENGINE_HOST})",
+    )
+    parser.add_argument(
+        "--port",
+        type=int,
+        default=int(os.environ.get("KOKORO_PORT", str(ENGINE_PORT))),
+        help=f"Port to bind (default: {ENGINE_PORT})",
+    )
+    return parser.parse_args()
 
-    if not PYTHON.exists():
-        raise FileNotFoundError(PYTHON)
+
+def main():
+    args = parse_args()
+
+    python_bin = Path(args.python).resolve() if args.python else get_python_executable()
+
+    if not python_bin.exists():
+        raise FileNotFoundError(f"Python executable not found: {python_bin}")
 
     if not API_SERVER.exists():
-        raise FileNotFoundError(API_SERVER)
+        raise FileNotFoundError(f"API server script not found: {API_SERVER}")
 
     logger.info("=" * 50)
     logger.info("  KOKORO ENGINE LAUNCHER")
     logger.info("=" * 50)
-    logger.info("Python  : {}", PYTHON)
+    logger.info("Python  : {}", python_bin)
     logger.info("Server  : {}", API_SERVER)
-    logger.info("Port    : {}", ENGINE_PORT)
+    logger.info("Device  : {}", args.device)
+    logger.info("Host    : {}", args.host)
+    logger.info("Port    : {}", args.port)
 
     runtime_url = os.environ.get("SPEECH_RUNTIME_URL", DEFAULT_RUNTIME_URL).rstrip("/")
     logger.info("Runtime : {}", runtime_url)
@@ -138,14 +230,14 @@ def main():
     env = os.environ.copy()
 
     command = [
-        str(PYTHON),
+        str(python_bin),
         str(API_SERVER),
         "--device",
-        "cuda",
+        args.device,
         "--host",
-        ENGINE_HOST,
+        args.host,
         "--port",
-        str(ENGINE_PORT),
+        str(args.port),
     ]
 
     process = subprocess.Popen(
@@ -156,18 +248,18 @@ def main():
 
     logger.info(
         "Engine started (PID {}) — waiting for /v1/health on {}:{} …",
-        process.pid, ENGINE_HOST, ENGINE_PORT,
+        process.pid, args.host, args.port,
     )
 
-    health_url = f"http://{ENGINE_HOST}:{ENGINE_PORT}/v1/health"
+    health_url = f"http://{args.host}:{args.port}/v1/health"
 
     if _wait_for_health(health_url, HEALTH_TIMEOUT_SECONDS):
         boot_elapsed = time.monotonic() - launch_start
         logger.info("Engine is healthy after {:.1f}s — registering with runtime", boot_elapsed)
-        registered = _post_register(runtime_url, "kokoro", ENGINE_PORT)
+        registered = _post_register(runtime_url, "kokoro", args.port)
         if registered:
             logger.info("Kokoro engine is live and registered. Heartbeat every 25s.")
-            _heartbeat_loop(runtime_url, "kokoro")
+            _heartbeat_loop(runtime_url, "kokoro", port=args.port)
     else:
         logger.warning(
             "Engine did not become healthy within {}s — skipping registration.",

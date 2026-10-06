@@ -27,12 +27,24 @@ class EngineManager:
         return self.engines / provider
 
     def _python(self, provider: str) -> Path:
+        import os
+        env_var = f"{provider.upper()}_PYTHON"
+        if env_var in os.environ:
+            p = Path(os.environ[env_var])
+            if p.exists():
+                return p
+
         engine = self._engine_dir(provider)
 
-        if sys.platform == "win32":
-            return engine / ".venv" / "Scripts" / "python.exe"
+        default_py = (
+            engine / ".venv" / "Scripts" / "python.exe"
+            if sys.platform == "win32"
+            else engine / ".venv" / "bin" / "python"
+        )
+        if default_py.exists():
+            return default_py
 
-        return engine / ".venv" / "bin" / "python"
+        return Path(sys.executable)
 
     def _launcher(self, provider: str) -> Path:
         return self._engine_dir(provider) / "launcher.py"

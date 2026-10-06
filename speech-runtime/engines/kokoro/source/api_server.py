@@ -123,22 +123,36 @@ def main():
     parser.add_argument("--port", type=int, default=6103)
     args = parser.parse_args()
 
-    _device = args.device if torch.cuda.is_available() else "cpu"
+    target_device = args.device
+    if target_device.startswith("cuda"):
+        if not torch.cuda.is_available():
+            logger.warning("--device {} requested but CUDA is not available — falling back to CPU", target_device)
+            _device = "cpu"
+        else:
+            _device = target_device
+    else:
+        _device = target_device
 
     logger.info("Starting Kokoro engine (device={}, host={}, port={})", _device, args.host, args.port)
 
-    if _device == "cuda":
-        gpu_name = torch.cuda.get_device_name(0)
-        vram_gb = torch.cuda.get_device_properties(0).total_memory / (1024 ** 3)
-        logger.info("GPU: {} ({:.1f} GB VRAM)", gpu_name, vram_gb)
-    elif args.device == "cuda":
-        logger.warning("--device cuda requested but CUDA is not available — falling back to CPU")
+    if _device.startswith("cuda"):
+        try:
+            device_idx = int(_device.split(":")[1]) if ":" in _device else 0
+            gpu_name = torch.cuda.get_device_name(device_idx)
+            vram_gb = torch.cuda.get_device_properties(device_idx).total_memory / (1024 ** 3)
+            logger.info("GPU {}: {} ({:.1f} GB VRAM)", device_idx, gpu_name, vram_gb)
+        except Exception as exc:
+            logger.warning("Could not query GPU properties for {}: {}", _device, exc)
 
     load_start = time.perf_counter()
 
     from kokoro import KPipeline
-    logger.info("Loading Kokoro-82M pipeline from hexgrad/Kokoro-82M ...")
-    _pipeline = KPipeline(repo_id="hexgrad/Kokoro-82M", lang_code="a")
+    logger.info("Loading Kokoro-82M pipeline from hexgrad/Kokoro-82M on device {} ...", _device)
+    try:
+        _pipeline = KPipeline(repo_id="hexgrad/Kokoro-82M", lang_code="a", device=_device)
+    except TypeError:
+        logger.warning("KPipeline does not accept device parameter, falling back to default constructor")
+        _pipeline = KPipeline(repo_id="hexgrad/Kokoro-82M", lang_code="a")
 
     load_elapsed = time.perf_counter() - load_start
     logger.info("Pipeline loaded in {:.2f}s.", load_elapsed)
