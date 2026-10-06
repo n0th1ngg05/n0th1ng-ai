@@ -29,6 +29,11 @@ class MarkerPDFTool(BaseTool):
             }
 
         provider = pdf_manager.current()
+        if not provider or not getattr(provider, "converter", None):
+            return {
+                "success": False,
+                "error": "Marker PDF provider is not initialized or failed to load."
+            }
 
         result = await provider.parse(
             file_path

@@ -54,16 +54,28 @@ class Runtime:
         #
 
         for provider in OCR_PROVIDERS:
-            await ocr_manager.register(provider)
+            try:
+                await ocr_manager.register(provider)
+            except Exception as e:
+                print(f"[Runtime] Warning: Failed to register OCR provider '{getattr(provider, 'name', 'unknown')}': {e}")
 
         for provider in LAYOUT_PROVIDERS:
-            await layout_manager.register(provider)
+            try:
+                await layout_manager.register(provider)
+            except Exception as e:
+                print(f"[Runtime] Warning: Failed to register Layout provider '{getattr(provider, 'name', 'unknown')}': {e}")
 
         for provider in PDF_PROVIDERS:
-            await pdf_manager.register(provider)
+            try:
+                await pdf_manager.register(provider)
+            except Exception as e:
+                print(f"[Runtime] Warning: Failed to register PDF provider '{getattr(provider, 'name', 'unknown')}': {e}")
 
         for provider in VISION_PROVIDERS:
-            await vision_manager.register(provider)
+            try:
+                await vision_manager.register(provider)
+            except Exception as e:
+                print(f"[Runtime] Warning: Failed to register Vision provider '{getattr(provider, 'name', 'unknown')}': {e}")
 
         #
         # Managers

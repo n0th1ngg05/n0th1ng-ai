@@ -1,6 +1,3 @@
-from marker.models import create_model_dict
-from marker.converters.pdf import PdfConverter
-
 from app.providers.pdf.base import PDFProvider
 
 
@@ -17,17 +14,23 @@ class MarkerPDFProvider(PDFProvider):
 
         print("[Marker] Loading artifacts...")
 
-        self.artifacts = create_model_dict()
+        try:
+            from marker.models import create_model_dict
+            from marker.converters.pdf import PdfConverter
 
-        print("[Marker] Creating converter...")
+            self.artifacts = create_model_dict()
 
-        self.converter = PdfConverter(
+            print("[Marker] Creating converter...")
 
-            artifact_dict=self.artifacts
+            self.converter = PdfConverter(
+                artifact_dict=self.artifacts
+            )
 
-        )
-
-        print("[Marker] Ready")
+            print("[Marker] Ready")
+        except Exception as e:
+            print(f"[Marker] Warning: Failed to initialize marker: {e}")
+            self.converter = None
+            raise e
 
     async def parse(
         self,
