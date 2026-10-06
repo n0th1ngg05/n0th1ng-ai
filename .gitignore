@@ -5,7 +5,9 @@
 
 # ── 1. Environments & Virtual Environments ────────────────────────────────────
 .venv/
+.venv-nvidia/
 venv/
+venv-nvidia/
 env/
 ENV/
 env.bak/
