@@ -1,5 +1,3 @@
-from paddleocr import PaddleOCR
-
 from app.providers.ocr.base import OCRProvider
 
 
@@ -13,6 +11,12 @@ class PaddleOCRProvider(OCRProvider):
     async def initialize(self):
 
         print("[PaddleOCR] Loading models...")
+
+        try:
+            from paddleocr import PaddleOCR
+        except Exception as e:
+            print(f"[PaddleOCR] Error importing paddleocr: {e}")
+            raise e
 
         self.model = PaddleOCR(
             text_detection_model_name="PP-OCRv5_server_det",

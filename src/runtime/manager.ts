@@ -51,54 +51,21 @@ class RuntimeManager {
 
         try {
 
-    console.log("[Runtime] Starting Python Runtime...");
+            console.log("[Runtime] Starting Python Runtime...");
+            this.python = startPythonRuntime();
 
-    this.python = startPythonRuntime();
+            await waitForHealth("http://127.0.0.1:8002/health");
+            console.log("[Runtime] Python Runtime Ready");
+            this.attachPythonSupervisor();
 
-    this.python.onExit = async () => {
+            console.log("[Runtime] Starting Speech Runtime...");
+            this.speech = startSpeechRuntime();
 
-        console.log("[Runtime] Restarting Python Runtime...");
+            await waitForHealth("http://127.0.0.1:9000/health");
+            console.log("[Runtime] Speech Runtime Ready");
+            this.attachSpeechSupervisor();
 
-        this.python = startPythonRuntime();
-
-        await waitForHealth(
-            "http://127.0.0.1:8002/health"
-        );
-
-        console.log("[Runtime] Python Runtime Restarted");
-
-    };
-
-    await waitForHealth(
-        "http://127.0.0.1:8002/health"
-    );
-
-    console.log("[Runtime] Python Runtime Ready");
-
-    console.log("[Runtime] Starting Speech Runtime...");
-
-    this.speech = startSpeechRuntime();
-
-    this.speech.onExit = async () => {
-
-        console.log("[Runtime] Restarting Speech Runtime...");
-
-        this.speech = startSpeechRuntime();
-
-        await waitForHealth(
-            "http://127.0.0.1:9000/health"
-        );
-
-        console.log("[Runtime] Speech Runtime Restarted");
-
-    };
-
-    await waitForHealth(
-        "http://127.0.0.1:9000/health"
-    );
-
-    console.log("[Runtime] Speech Runtime Ready");
-    console.log("[Runtime] All runtimes online");
+            console.log("[Runtime] All runtimes online");
 
         } finally {
 
@@ -106,20 +73,51 @@ class RuntimeManager {
 
         }
 
-}
+    }
 
-status() {
+    private attachPythonSupervisor() {
+        if (!this.python) return;
+        this.python.onExit = async () => {
+            console.log("[Runtime] Python Runtime exited, restarting in 3s...");
+            await new Promise(resolve => setTimeout(resolve, 3000));
+            this.python = startPythonRuntime();
+            this.attachPythonSupervisor();
+            try {
+                await waitForHealth("http://127.0.0.1:8002/health");
+                console.log("[Runtime] Python Runtime Restarted");
+            } catch (err) {
+                console.error("[Runtime] Python Runtime restart health check failed:", err);
+            }
+        };
+    }
 
-    return {
+    private attachSpeechSupervisor() {
+        if (!this.speech) return;
+        this.speech.onExit = async () => {
+            console.log("[Runtime] Speech Runtime exited, restarting in 3s...");
+            await new Promise(resolve => setTimeout(resolve, 3000));
+            this.speech = startSpeechRuntime();
+            this.attachSpeechSupervisor();
+            try {
+                await waitForHealth("http://127.0.0.1:9000/health");
+                console.log("[Runtime] Speech Runtime Restarted");
+            } catch (err) {
+                console.error("[Runtime] Speech Runtime restart health check failed:", err);
+            }
+        };
+    }
 
-        python: !!this.python,
+    status() {
 
-        speech: !!this.speech
+        return {
 
-    };
+            python: !!this.python,
 
+            speech: !!this.speech
 
-}
+        };
+
+    }
 }
 
 export const runtimeManager = new RuntimeManager();

@@ -98,6 +98,7 @@ async function startTunnel(): Promise<void> {
         // We just open the proxy gate.
         isExposed = true;
         tunnelUrl = process.env.CF_TUNNEL_URL ?? "Dashboard Managed Tunnel";
+        setConfig("tunnel_url", tunnelUrl).catch(() => {});
         console.log("[EXPOSE] Gateway OPENED for Dashboard tunnel");
         return;
     }
@@ -220,25 +221,32 @@ async function applyToggle(mode: ToggleMode, source: "HUD" | "TRAY" | "AUTO" = "
         await stopTunnel();
     } else {
         // AUTO — re-evaluate current master state
-        if (connectionState.connected) {
+        if (connectionState.connected && !connectionState.isRemote) {
             await stopTunnel();
             clearAutoTimer();
-            console.log("[EXPOSE] AUTO mode — master is online, staying local");
+            console.log("[EXPOSE] AUTO mode — master is online locally on LAN, staying local");
+        } else if (connectionState.connected && connectionState.isRemote) {
+            clearAutoTimer();
+            if (!isExposed) await startTunnel();
+            console.log("[EXPOSE] AUTO mode — master is online remotely via tunnel, keeping tunnel open");
         } else {
-            console.log("[EXPOSE] AUTO mode — master offline, starting auto-timer");
-            startAutoTimer();
+            console.log("[EXPOSE] AUTO mode — master not connected locally, enabling internet exposure");
+            await startTunnel();
         }
     }
 }
 
 // ── Master connection listeners ───────────────────────────────────────────────
 
-connectionState.on("connected", async () => {
-    console.log("[EXPOSE] Master connected event received");
+connectionState.on("connected", async (info?: { isRemote?: boolean }) => {
+    const isRemote = info?.isRemote ?? false;
+    console.log(`[EXPOSE] Master connected event received (source: ${isRemote ? "remote" : "local"})`);
     if (toggleMode !== "AUTO") return;
     clearAutoTimer();
-    if (isExposed) {
-        console.log("[EXPOSE] Master back online — stopping internet tunnel (AUTO mode)");
+    // Only stop the internet tunnel if the master reconnected LOCALLY on LAN.
+    // If the master connected REMOTELY via the tunnel, the tunnel MUST STAY OPEN!
+    if (!isRemote && isExposed) {
+        console.log("[EXPOSE] Master back online locally on LAN — stopping internet tunnel (AUTO mode)");
         await stopTunnel();
     }
 });
@@ -246,7 +254,9 @@ connectionState.on("connected", async () => {
 connectionState.on("disconnected", () => {
     console.log("[EXPOSE] Master disconnected event received");
     if (toggleMode !== "AUTO") return;
-    startAutoTimer();
+    if (!isExposed) {
+        startAutoTimer();
+    }
 });
 
 // ── Access logging ────────────────────────────────────────────────────────────
@@ -444,6 +454,14 @@ app.all("*", async (c) => {
     const ip  = getClientIp(req);
     const started = Date.now();
 
+    const isAuthed = checkApiKey(req);
+
+    // If an authenticated master request arrives while we are in AUTO mode, open the gateway immediately
+    if (isAuthed && !isExposed && toggleMode === "AUTO") {
+        console.log(`[EXPOSE] Authenticated master request from ${ip} ${req.method} ${c.req.path} — opening gateway in AUTO mode`);
+        await startTunnel();
+    }
+
     // Exposure gate
     if (!isExposed) {
         console.log(`[EXPOSE] Blocked request (tunnel not active) from ${ip} ${req.method} ${c.req.path}`);
@@ -452,7 +470,7 @@ app.all("*", async (c) => {
     }
 
     // Auth check
-    if (!checkApiKey(req)) {
+    if (!isAuthed) {
         console.log(`[EXPOSE] Unauthorized request from ${ip} ${req.method} ${c.req.path} — 401`);
         await logAccess({ method: req.method, path: c.req.path, status: 401, durationMs: Date.now() - started, ip, tool: null });
         return c.json({ error: "Unauthorized" }, 401);
@@ -481,9 +499,12 @@ app.all("*", async (c) => {
             }
         }
 
+        const forwardHeaders = new Headers(req.headers);
+        forwardHeaders.set("x-worker-source", "remote");
+
         const upstream = await fetch(targetUrl, {
             method:  req.method,
-            headers: req.headers,
+            headers: forwardHeaders,
             body,
         });
 
@@ -575,14 +596,14 @@ async function boot() {
     } else if (toggleMode === "FORCE_OFF") {
         console.log("[EXPOSE] Restored FORCE_OFF — tunnel will not start");
     } else {
-        // AUTO — check if master is already connected
-        // Give server.ts a couple of seconds to attempt its first registration
-        setTimeout(() => {
-            if (connectionState.connected) {
-                console.log("[EXPOSE] AUTO — master already connected, staying local");
+        // AUTO — check if master is already connected locally on LAN
+        // Give server.ts a couple of seconds to attempt its first local check-in
+        setTimeout(async () => {
+            if (connectionState.connected && !connectionState.isRemote) {
+                console.log("[EXPOSE] AUTO — master already connected locally on LAN, staying local");
             } else {
-                console.log("[EXPOSE] AUTO — master not yet connected, starting auto-timer");
-                startAutoTimer();
+                console.log("[EXPOSE] AUTO — master not connected locally, enabling internet exposure");
+                await startTunnel();
             }
         }, 3000);
     }

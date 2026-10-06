@@ -41,13 +41,13 @@ const app = new Hono();
 let isConnected    = false;
 let lastMasterPoll = 0; // 0 = never polled
 
-function markConnected() {
-    if (!isConnected) {
+function markConnected(isRemote = false) {
+    if (!isConnected || connectionState.isRemote !== isRemote) {
         isConnected = true;
-        connectionState.setConnected(true);
+        connectionState.setConnected(true, isRemote);
         console.log("");
         console.log("========================================");
-        console.log("[WORKER] Master connection: CONNECTED");
+        console.log(`[WORKER] Master connection: CONNECTED (${isRemote ? "REMOTE via tunnel" : "LOCAL LAN"})`);
         console.log("========================================");
         console.log("");
     }
@@ -56,7 +56,7 @@ function markConnected() {
 function markDisconnected(reason?: string) {
     if (isConnected) {
         isConnected = false;
-        connectionState.setConnected(false);
+        connectionState.setConnected(false, false);
         console.log("");
         console.log("========================================");
         console.log("[WORKER] Master connection: DISCONNECTED");
@@ -93,9 +93,12 @@ app.get("/capabilities", async (c) => {
     const caps    = await getCapabilities();
     const runtime = await getRuntimeStatus();
 
+    // Check if master poll arrived via exposure service (remote tunnel) or directly on local LAN
+    const isRemote = c.req.header("x-worker-source") === "remote" || !!c.req.header("cf-connecting-ip");
+
     // Record that the master just checked in — updates connectionState.
     lastMasterPoll = Date.now();
-    markConnected();
+    markConnected(isRemote);
 
     return c.json({
         ...caps,
