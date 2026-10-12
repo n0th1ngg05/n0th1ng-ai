@@ -16,13 +16,13 @@
  */
 
 let _instance: import("./manager/speechManager").SpeechManager | null = null;
+let _initPromise: Promise<import("./manager/speechManager").SpeechManager> | null = null;
 
 export async function getSpeechManager() {
-  if (!_instance) {
-    const { SpeechManager } = await import("./manager/speechManager");
-    _instance = new SpeechManager();
+  if (_instance) {
+    return _instance;
   }
-  return _instance;
+  return initializeLazySpeechManager();
 }
 
 /**
@@ -30,7 +30,14 @@ export async function getSpeechManager() {
  * Creates the instance *and* runs initialize() so providers are ready.
  */
 export async function initializeLazySpeechManager() {
-  const mgr = await getSpeechManager();
-  await mgr.initialize();
-  return mgr;
+  if (!_initPromise) {
+    _initPromise = (async () => {
+      const { SpeechManager } = await import("./manager/speechManager");
+      const mgr = new SpeechManager();
+      await mgr.initialize();
+      _instance = mgr;
+      return mgr;
+    })();
+  }
+  return _initPromise;
 }

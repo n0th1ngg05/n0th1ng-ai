@@ -1,6 +1,3 @@
-from marker.models import create_model_dict
-from marker.converters.pdf import PdfConverter
-
 from app.providers.pdf.base import PDFProvider
 
 
@@ -14,6 +11,16 @@ class MarkerPDFProvider(PDFProvider):
         self.converter = None
 
     async def initialize(self):
+
+        print("[Marker] Registered (lazy model loading enabled)")
+
+    def _ensure_loaded(self):
+
+        if self.converter is not None:
+            return
+
+        from marker.models import create_model_dict
+        from marker.converters.pdf import PdfConverter
 
         print("[Marker] Loading artifacts...")
 
@@ -33,6 +40,8 @@ class MarkerPDFProvider(PDFProvider):
         self,
         file_path: str
     ):
+
+        self._ensure_loaded()
 
         rendered = self.converter(file_path)
 

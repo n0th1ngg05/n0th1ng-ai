@@ -124,9 +124,16 @@ function isMoshiInstalled() {
 // immediately fails with "No module named moshi", or in an even more
 // confusing case, a spawn that fails silently enough to leave no log at
 // all if the failure happens before startServer()'s own guards run.
-let setupState: SetupState = isMoshiInstalled() ? "ready" : "not_started";
+let setupState: SetupState | null = null;
 let setupLog: string[] = [];
 let setupProcess: ChildProcess | null = null;
+
+function getSetupState(): SetupState {
+  if (setupState === null) {
+    setupState = isMoshiInstalled() ? "ready" : "not_started";
+  }
+  return setupState;
+}
 
 let serverProcess: ChildProcess | null = null;
 let serverStatus: "stopped" | "starting" | "running" | "error" = "stopped";
@@ -165,7 +172,8 @@ function runStep(cmd: string, args: string[], cwd: string): Promise<void> {
  * NVIDIA's own docs, so `start()` below is where that download actually
  * happens (surfaced through the same serverLog the UI already polls). */
 async function runSetup() {
-  if (setupState === "cloning" || setupState === "installing") return;
+  const current = getSetupState();
+  if (current === "cloning" || current === "installing") return;
 
   setupState = "cloning";
   setupLog = [];
@@ -235,7 +243,7 @@ function startServer(cpuOffload: boolean, hfToken?: string): Promise<void> {
       resolve();
       return;
     }
-    if (setupState !== "ready") {
+    if (getSetupState() !== "ready") {
       reject(new Error("PersonaPlex isn't set up yet — run setup first."));
       return;
     }
@@ -350,18 +358,22 @@ export const personaplexRouter = createRouter({
   }),
 
   setup: createRouter({
-    status: publicQuery.query(() => ({
-      state: setupState,
-      log: setupLog,
-      installed: setupState === "ready",
-    })),
+    status: publicQuery.query(() => {
+      const state = getSetupState();
+      return {
+        state,
+        log: setupLog,
+        installed: state === "ready",
+      };
+    }),
 
     // Fire-and-forget: kicks off cloning + pip install in the background
     // and returns immediately. The frontend polls setup.status for
     // progress rather than holding this request open for the several
     // minutes this can take.
     start: publicQuery.mutation(() => {
-      if (setupState === "cloning" || setupState === "installing") {
+      const state = getSetupState();
+      if (state === "cloning" || state === "installing") {
         return { started: false, reason: "Setup already in progress." };
       }
       runSetup().catch(() => {

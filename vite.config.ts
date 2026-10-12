@@ -5,13 +5,42 @@ import react from "@vitejs/plugin-react"
 import { defineConfig } from "vite"
 import { inspectAttr } from 'kimi-plugin-inspect-react'
 
+const WATCH_IGNORED: (string | RegExp)[] = [
+  /\.wrangler/,
+  /\.mf/,
+  "**/python-runtime/**",
+  "**/speech-runtime/**",
+  "**/personaplex-runtime/**",
+  "**/.venv/**",
+  "**/venv/**",
+  "**/transfer/**",
+  "**/PPT/**",
+  "**/uploads/**",
+  "**/storage/**",
+  "**/data/**",
+  "**/public/generated/**",
+  "**/public/video/**",
+]
+
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [
-    devServer({ entry: "api/boot.ts", exclude: [/^\/(?!api\/).*$/] }),
-    inspectAttr(), react()],
+    devServer({
+      entry: "api/boot.ts",
+      exclude: [/^\/(?!api\/).*$/],
+      ignoreWatching: WATCH_IGNORED,
+    }),
+    inspectAttr(),
+    react(),
+  ],
   server: {
     port: 3000,
+    watch: {
+      ignored: WATCH_IGNORED,
+    },
+  },
+  optimizeDeps: {
+    entries: ["index.html", "frontend/**/*.html"],
   },
   resolve: {
     alias: {

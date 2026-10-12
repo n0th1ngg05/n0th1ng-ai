@@ -19,6 +19,7 @@ import { freePort } from "./freePort";
 class RuntimeManager {
 
     private started = false;
+    private startPromise?: Promise<void>;
 
     private python?: RuntimeProcess;
 
@@ -96,21 +97,29 @@ class RuntimeManager {
 
     async start() {
 
+        if (this.startPromise) {
+            return this.startPromise;
+        }
+
         if (this.started) {
             return;
         }
 
         this.started = true;
 
-        console.log("[Runtime] Starting Python Runtime...");
+        this.startPromise = (async () => {
+            console.log("[Runtime] Starting Python Runtime...");
 
-        // Kill anything already squatting on the port from a previous
-        // crashed/force-quit session before we even try to spawn — don't
-        // rely solely on graceful shutdown having run last time.
-        freePort(PYTHON_PORT);
+            // Kill anything already squatting on the port from a previous
+            // crashed/force-quit session before we even try to spawn — don't
+            // rely solely on graceful shutdown having run last time.
+            freePort(PYTHON_PORT);
 
-        this.python = startPythonRuntime();
-        await this.attachHandlers(this.python, new AbortController());
+            this.python = startPythonRuntime();
+            await this.attachHandlers(this.python, new AbortController());
+        })();
+
+        return this.startPromise;
 
     }
 
@@ -148,6 +157,7 @@ class RuntimeManager {
         }
 
         this.started = false;
+        this.startPromise = undefined;
 
     }
 }

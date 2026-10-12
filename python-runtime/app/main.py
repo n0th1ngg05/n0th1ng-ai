@@ -71,8 +71,10 @@ app.include_router(router)
 
 if __name__ == "__main__":
     # Port was already checked at module load above; no need to call again.
+    # Pass the `app` instance directly rather than `"app.main:app"` so
+    # `python -m app.main` does not import and execute `app.main` a second time.
     uvicorn.run(
-        "app.main:app",
+        app,
         host=HOST,
         port=PORT,
         reload=False,

@@ -114,22 +114,18 @@ try {
     console.error("[Boot] Database initialization failed:", err);
 }
 
-// Wrapped in try/catch — a speech system failure must not prevent the rest
-// of the server (Python runtime, companion, telemetry, Hono routes) from
-// starting. Speech features simply become unavailable until the server restarts.
-try {
-    await initializeSpeechSystem();
-} catch (err) {
+// Run Speech system and Python runtime initialization asynchronously in the
+// background so top-level module evaluation of api/boot.ts returns immediately
+// under Vite's SSR runner (preventing 60s fetchModule RPC timeouts). Both
+// subsystems deduplicate their startup promises and are awaited on demand if a
+// request arrives before background warmup finishes.
+initializeSpeechSystem().catch((err) => {
     console.error("[Boot] Speech system initialization failed — continuing without speech:", err);
-}
+});
 
-// Only starts the Python runtime eagerly. The Speech runtime is no longer
-// started here or at boot at all — it's started lazily, only the first time
-// an actual speech request needs local synthesis/transcription, and only if
-// no distributed worker is available. That logic lives in
-// speech/runtimes/pythonRuntime.ts (PythonRuntime.start()), triggered via
-// speechManager.synthesize()/transcribe().
-await runtimeManager.start();
+runtimeManager.start().catch((err) => {
+    console.error("[Boot] Python runtime startup failed:", err);
+});
 startCompanionService();
 startTelemetryCollector();
 startWorkerPoller();

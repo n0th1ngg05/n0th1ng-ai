@@ -1,9 +1,7 @@
 from PIL import Image
 
-from surya.foundation import FoundationPredictor
-from surya.layout import LayoutPredictor
-
 from app.providers.layout.base import LayoutProvider
+from app.providers.ocr.surya import get_shared_foundation
 
 
 class SuryaLayoutProvider(LayoutProvider):
@@ -17,9 +15,18 @@ class SuryaLayoutProvider(LayoutProvider):
 
     async def initialize(self):
 
+        print("[Surya Layout] Registered (lazy model loading enabled)")
+
+    def _ensure_loaded(self):
+
+        if self.predictor is not None:
+            return
+
+        from surya.layout import LayoutPredictor
+
         print("[Surya Layout] Loading...")
 
-        self.foundation = FoundationPredictor()
+        self.foundation = get_shared_foundation()
 
         self.predictor = LayoutPredictor(
             self.foundation
@@ -28,6 +35,8 @@ class SuryaLayoutProvider(LayoutProvider):
         print("[Surya Layout] Ready")
 
     async def analyze(self, image_path: str):
+
+        self._ensure_loaded()
 
         image = Image.open(image_path).convert("RGB")
 
