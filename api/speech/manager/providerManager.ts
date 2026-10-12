@@ -78,6 +78,8 @@ async function fetchWorkerVoices(worker: {
   hostname: string;
   ip: string;
   port: number;
+  internetUrl?: string;
+  apiKey?: string;
 }): Promise<RemoteVoiceManifest[]> {
 
   const controller = new AbortController();
@@ -85,11 +87,22 @@ async function fetchWorkerVoices(worker: {
 
   try {
 
+    // Use the Cloudflare tunnel URL + Bearer auth when the worker is exposed
+    // over the internet, otherwise fall back to direct LAN ip:port.
+    // This mirrors workerClient.ts's workerTarget() logic.
+    const baseUrl = (worker.internetUrl ?? `http://${worker.ip}:${worker.port}`).replace(/\/$/, '');
+    const authHeaders: Record<string, string> = worker.internetUrl && worker.apiKey
+      ? { Authorization: `Bearer ${worker.apiKey}` }
+      : {};
+
+    const via = worker.internetUrl ? 'internet (Cloudflare)' : 'LAN';
+    console.log(`[Speech] Fetching voices from ${worker.hostname} via ${via} → ${baseUrl}/speech`);
+
     const response = await fetch(
-      `http://${worker.ip}:${worker.port}/speech`,
+      `${baseUrl}/speech`,
       {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...authHeaders },
         body: JSON.stringify({ method: 'GET', url: '/voices' }),
         signal: controller.signal,
       }

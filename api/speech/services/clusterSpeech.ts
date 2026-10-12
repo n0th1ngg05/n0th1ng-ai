@@ -11,7 +11,7 @@ export async function executeClusterSpeech(
 
 ): Promise<Response> {
     console.log("========== CLUSTER SPEECH ==========");
-console.log(request.url);
+    console.log(request.url);
 
     const worker = selectWorker("speech");
 
@@ -31,18 +31,29 @@ console.log(request.url);
 
     try {
 
+        // Use the Cloudflare tunnel URL + Bearer auth when the worker is
+        // exposed over the internet, otherwise fall back to direct LAN ip:port.
+        // This mirrors workerClient.ts's workerTarget() logic.
+        const baseUrl = (worker.internetUrl ?? `http://${worker.ip}:${worker.port}`).replace(/\/$/, "");
+        const authHeaders: Record<string, string> = worker.internetUrl && worker.apiKey
+            ? { Authorization: `Bearer ${worker.apiKey}` }
+            : {};
+        const via = worker.internetUrl ? "internet (Cloudflare)" : "LAN";
+
         console.log("");
         console.log("========================================");
         console.log("[SPEECH] Remote Runtime");
         console.log("Worker :", worker.hostname);
+        console.log("Via    :", via);
         console.log("Method :", request.method ?? "POST");
         console.log("Target :", request.url);
+        console.log("URL    :", `${baseUrl}/speech`);
         console.log("========================================");
         console.log("");
 
         const response = await fetch(
 
-            `http://${worker.ip}:${worker.port}/speech`,
+            `${baseUrl}/speech`,
 
             {
 
@@ -51,6 +62,7 @@ console.log(request.url);
                 headers: {
 
                     "Content-Type": "application/json",
+                    ...authHeaders,
 
                 },
 
