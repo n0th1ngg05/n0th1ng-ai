@@ -23,12 +23,46 @@
     statusView: document.getElementById('statusView'),
     statusMessage: document.getElementById('statusMessage'),
     statusRetry: document.getElementById('statusRetry'),
-    successView: document.getElementById('successView')
+    successView: document.getElementById('successView'),
+    totpForm: document.getElementById('totpForm'),
+    totpCode: document.getElementById('totpCode'),
+    totpError: document.getElementById('totpError'),
+    totpMessage: document.getElementById('totpMessage'),
+    totpSubmitButton: document.getElementById('totpSubmitButton'),
+    totpSubmitLabel: document.getElementById('totpSubmitLabel'),
+    totpCountdown: document.getElementById('totpCountdown'),
+    totpCancelButton: document.getElementById('totpCancelButton'),
+    setupPinRow: document.getElementById('setupPinRow'),
+    setupPin: document.getElementById('setupPin'),
+    setupPinError: document.getElementById('setupPinError'),
+    switchToPinRow: document.getElementById('switchToPinRow'),
+    switchToPinButton: document.getElementById('switchToPinButton'),
+    pinForm: document.getElementById('pinForm'),
+    pinCode: document.getElementById('pinCode'),
+    pinError: document.getElementById('pinError'),
+    pinMessage: document.getElementById('pinMessage'),
+    pinSubmitButton: document.getElementById('pinSubmitButton'),
+    pinSubmitLabel: document.getElementById('pinSubmitLabel'),
+    pinCountdown: document.getElementById('pinCountdown'),
+    pinSwitchToPassword: document.getElementById('pinSwitchToPassword'),
+    passkeyRow: document.getElementById('passkeyRow'),
+    passkeyButton: document.getElementById('passkeyButton'),
+    passkeyButtonLabel: document.getElementById('passkeyButtonLabel'),
+    pinPasskeyRow: document.getElementById('pinPasskeyRow'),
+    pinPasskeyButton: document.getElementById('pinPasskeyButton'),
   };
 
   let isSetup = false;
   let isSubmitting = false;
   let countdownTimer = null;
+  let pendingToken = null;
+  let isTotpSubmitting = false;
+  let totpCountdownTimer = null;
+  let hasTrustedPin = false;
+  let isPinSubmitting = false;
+  let pinCountdownTimer = null;
+  let hasPasskeys = false;
+  let isPasskeyAuthenticating = false;
   const validatedFields = new Set();
 
   function setMessage(element, message) {
@@ -52,6 +86,28 @@
     elements.formMessage.textContent = message;
     elements.formMessage.classList.add('is-error');
     elements.formMessage.hidden = false;
+  }
+
+  function clearTotpMessage() {
+    setMessage(elements.totpMessage, '');
+    elements.totpMessage.classList.remove('is-error');
+  }
+
+  function showTotpMessage(message) {
+    elements.totpMessage.textContent = message;
+    elements.totpMessage.classList.add('is-error');
+    elements.totpMessage.hidden = false;
+  }
+
+  function clearPinMessage() {
+    setMessage(elements.pinMessage, '');
+    elements.pinMessage.classList.remove('is-error');
+  }
+
+  function showPinMessage(message) {
+    elements.pinMessage.textContent = message;
+    elements.pinMessage.classList.add('is-error');
+    elements.pinMessage.hidden = false;
   }
 
   function validatePassword() {
@@ -109,6 +165,9 @@
     elements.statusView.hidden = true;
     elements.statusRetry.hidden = true;
     elements.form.hidden = false;
+    elements.totpForm.hidden = true;
+    elements.pinForm.hidden = true;
+    pendingToken = null;
     elements.successView.hidden = true;
     elements.card.classList.remove('is-success');
     elements.eyebrow.textContent = configured ? 'PRIVATE WORKSTATION' : 'FIRST-RUN SETUP';
@@ -131,10 +190,22 @@
     elements.password.required = true;
     elements.password.minLength = configured ? 0 : 8;
 
+    if (elements.setupPinRow) {
+      elements.setupPinRow.hidden = configured ? !elements.rememberMe.checked : true;
+    }
+    if (elements.switchToPinRow) {
+      elements.switchToPinRow.hidden = !hasTrustedPin;
+    }
+    if (elements.passkeyRow) {
+      elements.passkeyRow.hidden = configured ? !hasPasskeys : true;
+    }
+
     elements.password.value = '';
     elements.confirmPassword.value = '';
+    if (elements.setupPin) elements.setupPin.value = '';
     setFieldError(elements.password, elements.passwordError, '');
     setFieldError(elements.confirmPassword, elements.confirmError, '');
+    if (elements.setupPin) setFieldError(elements.setupPin, elements.setupPinError, '');
     clearFormMessage();
     validatedFields.clear();
     elements.submitButton.disabled = false;
@@ -150,6 +221,8 @@
 
   async function checkStatus() {
     elements.form.hidden = true;
+    elements.totpForm.hidden = true;
+    elements.pinForm.hidden = true;
     elements.statusView.hidden = false;
     elements.statusRetry.hidden = true;
     elements.statusRetry.disabled = true;
@@ -165,7 +238,46 @@
       if (!response.ok) throw new Error('Status check failed');
       const body = await readJson(response);
       if (typeof body.configured !== 'boolean') throw new Error('Invalid status response');
+
+      if (body.configured) {
+        try {
+          const trustRes = await fetch('/api/auth/device-trust/status', {
+            method: 'GET',
+            credentials: 'include',
+            headers: { Accept: 'application/json' }
+          });
+          if (trustRes.ok) {
+            const trustData = await readJson(trustRes);
+            hasTrustedPin = Boolean(trustData.trusted && trustData.hasPin);
+          }
+        } catch (_) {}
+
+        try {
+          const passkeyRes = await fetch('/api/auth/webauthn/status', {
+            method: 'GET',
+            credentials: 'include',
+            headers: { Accept: 'application/json' }
+          });
+          if (passkeyRes.ok) {
+            const passkeyData = await readJson(passkeyRes);
+            hasPasskeys = Boolean(passkeyData.available);
+          }
+        } catch (_) {}
+      }
+
       configureForm(body.configured);
+
+      const urlParams = new URLSearchParams(window.location.search);
+      const isIdle = urlParams.get('idle') === 'true';
+
+      if (body.configured && hasTrustedPin) {
+        switchToPin();
+        if (isIdle) {
+          showPinMessage('Workstation locked due to inactivity.');
+        }
+      } else if (isIdle) {
+        showFormMessage('Workstation locked due to inactivity.');
+      }
     } catch (_) {
       elements.eyebrow.textContent = 'PRIVATE WORKSTATION';
       elements.title.textContent = 'Unable to verify access';
@@ -206,6 +318,8 @@
     const rippleRemaining = Math.max(0, 420 - (Date.now() - submitStartedAt));
     if (rippleRemaining) await delay(rippleRemaining);
     elements.form.hidden = true;
+    elements.totpForm.hidden = true;
+    elements.pinForm.hidden = true;
     elements.statusView.hidden = true;
     elements.successView.hidden = false;
     elements.card.classList.add('is-success');
@@ -245,6 +359,192 @@
     countdownTimer = window.setInterval(updateCountdown, 1000);
   }
 
+  function startTotpCountdown(seconds) {
+    if (totpCountdownTimer) {
+      window.clearInterval(totpCountdownTimer);
+      totpCountdownTimer = null;
+    }
+
+    let remaining = Math.max(1, Math.floor(seconds));
+    elements.totpSubmitButton.disabled = true;
+    elements.totpCountdown.hidden = false;
+
+    const updateCountdown = () => {
+      if (remaining <= 0) {
+        window.clearInterval(totpCountdownTimer);
+        totpCountdownTimer = null;
+        elements.totpCountdown.hidden = true;
+        elements.totpCountdown.textContent = '';
+        elements.totpSubmitButton.disabled = isTotpSubmitting;
+        return;
+      }
+      elements.totpCountdown.textContent = `Try again in ${remaining}s`;
+      remaining -= 1;
+    };
+
+    updateCountdown();
+    totpCountdownTimer = window.setInterval(updateCountdown, 1000);
+  }
+
+  function switchToTotp(token) {
+    pendingToken = token;
+    elements.form.hidden = true;
+    elements.totpForm.hidden = false;
+    elements.eyebrow.textContent = 'TWO-FACTOR AUTHENTICATION';
+    elements.title.textContent = 'Verification required';
+    elements.description.textContent = 'Enter the 6-digit code from your authenticator app.';
+    elements.totpCode.value = '';
+    setFieldError(elements.totpCode, elements.totpError, '');
+    clearTotpMessage();
+    elements.totpSubmitButton.disabled = false;
+    elements.totpCode.focus();
+  }
+
+  function switchToPassword() {
+    pendingToken = null;
+    elements.totpForm.hidden = true;
+    elements.pinForm.hidden = true;
+    elements.form.hidden = false;
+    elements.eyebrow.textContent = 'PRIVATE WORKSTATION';
+    elements.title.textContent = 'Workstation locked';
+    elements.description.textContent = 'Enter your password to unlock this workstation.';
+    elements.password.value = '';
+    setFieldError(elements.password, elements.passwordError, '');
+    clearFormMessage();
+    if (hasTrustedPin && elements.switchToPinRow) {
+      elements.switchToPinRow.hidden = false;
+    }
+    if (elements.passkeyRow) {
+      elements.passkeyRow.hidden = !hasPasskeys;
+    }
+    elements.password.focus();
+  }
+
+  function startPinCountdown(seconds) {
+    if (pinCountdownTimer) {
+      window.clearInterval(pinCountdownTimer);
+      pinCountdownTimer = null;
+    }
+
+    let remaining = Math.max(1, Math.floor(seconds));
+    elements.pinSubmitButton.disabled = true;
+    elements.pinCountdown.hidden = false;
+
+    const updateCountdown = () => {
+      if (remaining <= 0) {
+        window.clearInterval(pinCountdownTimer);
+        pinCountdownTimer = null;
+        elements.pinCountdown.hidden = true;
+        elements.pinCountdown.textContent = '';
+        elements.pinSubmitButton.disabled = isPinSubmitting;
+        return;
+      }
+      elements.pinCountdown.textContent = `Try again in ${remaining}s`;
+      remaining -= 1;
+    };
+
+    updateCountdown();
+    pinCountdownTimer = window.setInterval(updateCountdown, 1000);
+  }
+
+  function switchToPin() {
+    pendingToken = null;
+    elements.form.hidden = true;
+    elements.totpForm.hidden = true;
+    elements.pinForm.hidden = false;
+    const urlParams = new URLSearchParams(window.location.search);
+    const isIdle = urlParams.get('idle') === 'true';
+    elements.eyebrow.textContent = 'TRUSTED DEVICE';
+    elements.title.textContent = isIdle ? 'Session paused' : 'Quick unlock';
+    elements.description.textContent = 'Enter your quick PIN to resume your session.';
+    elements.pinCode.value = '';
+    setFieldError(elements.pinCode, elements.pinError, '');
+    clearPinMessage();
+    if (elements.pinPasskeyRow) {
+      elements.pinPasskeyRow.hidden = !hasPasskeys;
+    }
+    elements.pinSubmitButton.disabled = false;
+    elements.pinCode.focus();
+  }
+
+  function switchToPasswordFromPin() {
+    switchToPassword();
+  }
+
+  async function submitPin() {
+    if (isPinSubmitting || pinCountdownTimer) return;
+
+    const pin = elements.pinCode.value.trim();
+    if (!/^\d{4,8}$/.test(pin)) {
+      setFieldError(elements.pinCode, elements.pinError, 'Enter your 4–8 digit PIN.');
+      elements.pinCode.focus();
+      return;
+    }
+
+    clearPinMessage();
+    setFieldError(elements.pinCode, elements.pinError, '');
+
+    const submitStartedAt = Date.now();
+    elements.pinSubmitButton.classList.remove('is-rippling');
+    void elements.pinSubmitButton.offsetWidth;
+    elements.pinSubmitButton.classList.add('is-rippling');
+    isPinSubmitting = true;
+    elements.pinSubmitButton.disabled = true;
+
+    try {
+      const response = await fetch('/api/auth/pin/unlock', {
+        method: 'POST',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+          Accept: 'application/json'
+        },
+        body: JSON.stringify({ pin })
+      });
+
+      const body = await readJson(response);
+
+      if (response.status === 401) {
+        const errorMsg = body.error || 'Incorrect PIN';
+        showPinMessage(errorMsg);
+        elements.card.classList.remove('is-shaking');
+        void elements.card.offsetWidth;
+        elements.card.classList.add('is-shaking');
+        elements.pinCode.value = '';
+        elements.pinCode.focus();
+        return;
+      }
+
+      if (response.status === 400) {
+        showPinMessage(body.error || 'No PIN configured for this device.');
+        switchToPasswordFromPin();
+        return;
+      }
+
+      if (response.status === 429) {
+        const message = typeof body.error === 'string' && body.error.trim()
+          ? body.error.trim()
+          : 'Too many failed attempts. Please wait 60 seconds.';
+        showPinMessage(message);
+        startPinCountdown(parseWaitSeconds(message) || 60);
+        return;
+      }
+
+      if (response.ok && body.ok === true) {
+        await showSuccess(submitStartedAt);
+        return;
+      }
+
+      showPinMessage('Something went wrong — try again');
+    } catch (_) {
+      showPinMessage('Something went wrong — try again');
+    } finally {
+      isPinSubmitting = false;
+      elements.pinSubmitButton.disabled = Boolean(pinCountdownTimer);
+      elements.pinSubmitButton.classList.remove('is-rippling');
+    }
+  }
+
   function parseWaitSeconds(message) {
     const match = String(message || '').match(/wait\s+(\d+)\s+seconds?/i);
     if (!match) return null;
@@ -272,12 +572,94 @@
       return;
     }
 
+    if (response.ok && body.totpRequired && body.pendingToken) {
+      switchToTotp(body.pendingToken);
+      return;
+    }
+
     if (response.ok && body.ok === true) {
       await showSuccess(submitStartedAt);
       return;
     }
 
     showFormMessage('Something went wrong — try again');
+  }
+
+  async function submitTotp() {
+    if (isTotpSubmitting || totpCountdownTimer || !pendingToken) return;
+
+    const code = elements.totpCode.value.trim();
+    if (!/^\d{6}$/.test(code)) {
+      setFieldError(elements.totpCode, elements.totpError, 'Enter a valid 6-digit code.');
+      elements.totpCode.focus();
+      return;
+    }
+
+    clearTotpMessage();
+    setFieldError(elements.totpCode, elements.totpError, '');
+
+    const submitStartedAt = Date.now();
+    elements.totpSubmitButton.classList.remove('is-rippling');
+    void elements.totpSubmitButton.offsetWidth;
+    elements.totpSubmitButton.classList.add('is-rippling');
+    isTotpSubmitting = true;
+    elements.totpSubmitButton.disabled = true;
+
+    try {
+      const response = await fetch('/api/auth/totp/verify-login', {
+        method: 'POST',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+          Accept: 'application/json'
+        },
+        body: JSON.stringify({
+          pendingToken,
+          code
+        })
+      });
+
+      const body = await readJson(response);
+
+      if (response.status === 401) {
+        const errorMsg = body.error || 'Invalid authentication code';
+        showTotpMessage(errorMsg);
+        elements.card.classList.remove('is-shaking');
+        void elements.card.offsetWidth;
+        elements.card.classList.add('is-shaking');
+        elements.totpCode.value = '';
+        elements.totpCode.focus();
+        return;
+      }
+
+      if (response.status === 410) {
+        switchToPassword();
+        showFormMessage('Verification session expired. Please enter your password again.');
+        return;
+      }
+
+      if (response.status === 429) {
+        const message = typeof body.error === 'string' && body.error.trim()
+          ? body.error.trim()
+          : 'Too many failed attempts. Please wait 60 seconds.';
+        showTotpMessage(message);
+        startTotpCountdown(parseWaitSeconds(message) || 60);
+        return;
+      }
+
+      if (response.ok && body.ok === true) {
+        await showSuccess(submitStartedAt);
+        return;
+      }
+
+      showTotpMessage('Something went wrong — try again');
+    } catch (_) {
+      showTotpMessage('Something went wrong — try again');
+    } finally {
+      isTotpSubmitting = false;
+      elements.totpSubmitButton.disabled = Boolean(totpCountdownTimer);
+      elements.totpSubmitButton.classList.remove('is-rippling');
+    }
   }
 
   async function handleSetupResponse(response, body, submitStartedAt) {
@@ -306,9 +688,21 @@
     setBusy(true);
 
     try {
+      const pinVal = elements.setupPin ? elements.setupPin.value.trim() : '';
+      if (pinVal && !/^\d{4,8}$/.test(pinVal)) {
+        setFieldError(elements.setupPin, elements.setupPinError, 'PIN must be between 4 and 8 digits.');
+        elements.setupPin.focus();
+        return;
+      }
+
       const payload = isSetup
         ? { password: elements.password.value }
-        : { password: elements.password.value, rememberMe: elements.rememberMe.checked };
+        : {
+            password: elements.password.value,
+            rememberMe: elements.rememberMe.checked,
+            trustDevice: elements.rememberMe.checked,
+            pin: pinVal || undefined,
+          };
       const response = await fetch(isSetup ? '/api/auth/setup' : '/api/auth/login', {
         method: 'POST',
         credentials: 'include',
@@ -375,6 +769,147 @@
   elements.card.addEventListener('animationend', event => {
     if (event.animationName === 'login-shake') elements.card.classList.remove('is-shaking');
   });
+
+  elements.totpForm.addEventListener('submit', event => {
+    event.preventDefault();
+    submitTotp();
+  });
+
+  elements.totpCode.addEventListener('input', event => {
+    const clean = event.target.value.replace(/\D/g, '').slice(0, 6);
+    event.target.value = clean;
+    setFieldError(elements.totpCode, elements.totpError, '');
+    clearTotpMessage();
+
+    if (clean.length === 6) {
+      submitTotp();
+    }
+  });
+
+  elements.totpCancelButton.addEventListener('click', () => {
+    switchToPassword();
+  });
+
+  if (elements.rememberMe) {
+    elements.rememberMe.addEventListener('change', () => {
+      if (elements.setupPinRow) {
+        elements.setupPinRow.hidden = !elements.rememberMe.checked;
+      }
+    });
+  }
+
+  if (elements.setupPin) {
+    elements.setupPin.addEventListener('input', () => {
+      setFieldError(elements.setupPin, elements.setupPinError, '');
+    });
+  }
+
+  if (elements.switchToPinButton) {
+    elements.switchToPinButton.addEventListener('click', () => {
+      switchToPin();
+    });
+  }
+
+  if (elements.pinSwitchToPassword) {
+    elements.pinSwitchToPassword.addEventListener('click', () => {
+      switchToPasswordFromPin();
+    });
+  }
+
+  if (elements.pinForm) {
+    elements.pinForm.addEventListener('submit', event => {
+      event.preventDefault();
+      submitPin();
+    });
+  }
+
+  if (elements.pinCode) {
+    elements.pinCode.addEventListener('input', event => {
+      const clean = event.target.value.replace(/\D/g, '').slice(0, 8);
+      event.target.value = clean;
+      setFieldError(elements.pinCode, elements.pinError, '');
+      clearPinMessage();
+    });
+  }
+
+  async function loginWithPasskey() {
+    if (isPasskeyAuthenticating) return;
+    clearFormMessage();
+    clearPinMessage();
+
+    isPasskeyAuthenticating = true;
+    if (elements.passkeyButtonLabel) elements.passkeyButtonLabel.textContent = 'Verifying Passkey…';
+    if (elements.passkeyButton) elements.passkeyButton.disabled = true;
+    if (elements.pinPasskeyButton) elements.pinPasskeyButton.disabled = true;
+
+    try {
+      const optRes = await fetch('/api/auth/webauthn/login-options', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { Accept: 'application/json' }
+      });
+
+      if (!optRes.ok) {
+        const errData = await readJson(optRes);
+        throw new Error(errData.error || 'Failed to get passkey options.');
+      }
+
+      const { available, options } = await readJson(optRes);
+      if (!available || !options) {
+        throw new Error('No passkeys are registered on this workstation.');
+      }
+
+      let simpleWebAuthn;
+      try {
+        simpleWebAuthn = await import('/node_modules/@simplewebauthn/browser/esm/index.js');
+      } catch (_) {
+        simpleWebAuthn = await import('@simplewebauthn/browser');
+      }
+
+      const assertion = await simpleWebAuthn.startAuthentication({ optionsJSON: options });
+      const submitStartedAt = Date.now();
+
+      const verifyRes = await fetch('/api/auth/webauthn/login-verify', {
+        method: 'POST',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+          Accept: 'application/json'
+        },
+        body: JSON.stringify(assertion)
+      });
+
+      const body = await readJson(verifyRes);
+
+      if (verifyRes.ok && body.ok === true) {
+        await showSuccess(submitStartedAt);
+        return;
+      }
+
+      throw new Error(body.error || 'Passkey verification failed.');
+    } catch (err) {
+      if (err.name === 'NotAllowedError') {
+        showFormMessage('Passkey verification was cancelled.');
+        showPinMessage('Passkey verification was cancelled.');
+      } else {
+        const msg = err.message || 'Passkey authentication failed.';
+        showFormMessage(msg);
+        showPinMessage(msg);
+      }
+    } finally {
+      isPasskeyAuthenticating = false;
+      if (elements.passkeyButtonLabel) elements.passkeyButtonLabel.textContent = 'Sign in with Passkey';
+      if (elements.passkeyButton) elements.passkeyButton.disabled = false;
+      if (elements.pinPasskeyButton) elements.pinPasskeyButton.disabled = false;
+    }
+  }
+
+  if (elements.passkeyButton) {
+    elements.passkeyButton.addEventListener('click', loginWithPasskey);
+  }
+  if (elements.pinPasskeyButton) {
+    elements.pinPasskeyButton.addEventListener('click', loginWithPasskey);
+  }
 
   elements.statusRetry.addEventListener('click', checkStatus);
   checkStatus();

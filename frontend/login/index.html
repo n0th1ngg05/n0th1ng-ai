@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@200;300;400;500;600&family=JetBrains+Mono:wght@300;400&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="login.css">
-  <script src="login.js" defer></script>
+  <script type="module" src="login.js"></script>
 </head>
 <body>
   <main class="login-shell">
@@ -77,6 +77,18 @@
             <span>Remember this device</span>
           </label>
 
+          <div class="login-field" id="setupPinRow" hidden style="margin-top: 14px;">
+            <label for="setupPin">Quick unlock PIN (4–8 digits, optional)</label>
+            <div class="login-input-wrap">
+              <input id="setupPin" name="setupPin" type="password" inputmode="numeric" pattern="[0-9]*" maxlength="8" autocomplete="new-password" aria-describedby="setupPinError" spellcheck="false" placeholder="Set PIN for fast unlock">
+              <button class="login-reveal" type="button" data-toggle-password="setupPin" aria-label="Show PIN" aria-pressed="false">
+                <svg class="login-eye" viewBox="0 0 24 24" fill="none" aria-hidden="true" focusable="false"><path d="M2.5 12s3.4-6 9.5-6 9.5 6 9.5 6-3.4 6-9.5 6-9.5-6Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" /><circle cx="12" cy="12" r="2.6" stroke="currentColor" stroke-width="1.5" /></svg>
+                <svg class="login-eye-off" viewBox="0 0 24 24" fill="none" aria-hidden="true" focusable="false"><path d="m3 3 18 18M10.6 6.2A10 10 0 0 1 12 6c6.1 0 9.5 6 9.5 6a15 15 0 0 1-3.2 3.7M6.2 6.8C3.8 8.4 2.5 12 2.5 12s3.4 6 9.5 6c1.3 0 2.5-.3 3.5-.7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" /><path d="M9.9 9.9a3 3 0 0 0 4.2 4.2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" /></svg>
+              </button>
+            </div>
+            <p class="login-field-error" id="setupPinError" hidden></p>
+          </div>
+
           <p class="login-message" id="formMessage" role="status" aria-live="polite" hidden></p>
 
           <div class="login-submit-row">
@@ -85,6 +97,82 @@
               <svg class="login-submit-arrow" viewBox="0 0 20 20" fill="none" aria-hidden="true" focusable="false"><path d="M4 10h11m-4-4 4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" /></svg>
             </button>
             <span class="login-countdown" id="countdown" role="status" aria-live="off" hidden></span>
+          </div>
+
+          <div id="switchToPinRow" style="margin-top: 14px; text-align: center;" hidden>
+            <button type="button" id="switchToPinButton" class="login-reveal" style="background: transparent; border: none; color: inherit; cursor: pointer; font-size: 13px; opacity: 0.7; padding: 6px 10px;">Unlock with Quick PIN instead</button>
+          </div>
+
+          <div id="passkeyRow" style="margin-top: 14px; text-align: center;" hidden>
+            <button type="button" id="passkeyButton" class="login-reveal" style="background: rgba(255, 255, 255, 0.04); border: 1px solid rgba(255, 255, 255, 0.12); border-radius: 8px; color: inherit; cursor: pointer; font-size: 13px; opacity: 0.85; padding: 8px 14px; display: inline-flex; align-items: center; justify-content: center; gap: 8px; width: 100%;">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M2 18v3c0 .6.4 1 1 1h4v-3h3v-3h2l1.4-1.4a6.5 6.5 0 1 0-4-4Z"/>
+                <circle cx="16.5" cy="7.5" r=".5" fill="currentColor"/>
+              </svg>
+              <span id="passkeyButtonLabel">Sign in with Passkey</span>
+            </button>
+          </div>
+        </form>
+
+        <form id="pinForm" class="login-form" hidden novalidate>
+          <div class="login-field" id="pinField">
+            <label for="pinCode">Quick Unlock PIN</label>
+            <div class="login-input-wrap">
+              <input id="pinCode" name="pinCode" type="password" inputmode="numeric" pattern="[0-9]*" maxlength="8" autocomplete="current-password" required aria-describedby="pinError" spellcheck="false" placeholder="••••">
+              <button class="login-reveal" type="button" data-toggle-password="pinCode" aria-label="Show PIN" aria-pressed="false">
+                <svg class="login-eye" viewBox="0 0 24 24" fill="none" aria-hidden="true" focusable="false"><path d="M2.5 12s3.4-6 9.5-6 9.5 6 9.5 6-3.4 6-9.5 6-9.5-6Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" /><circle cx="12" cy="12" r="2.6" stroke="currentColor" stroke-width="1.5" /></svg>
+                <svg class="login-eye-off" viewBox="0 0 24 24" fill="none" aria-hidden="true" focusable="false"><path d="m3 3 18 18M10.6 6.2A10 10 0 0 1 12 6c6.1 0 9.5 6 9.5 6a15 15 0 0 1-3.2 3.7M6.2 6.8C3.8 8.4 2.5 12 2.5 12s3.4 6 9.5 6c1.3 0 2.5-.3 3.5-.7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" /><path d="M9.9 9.9a3 3 0 0 0 4.2 4.2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" /></svg>
+              </button>
+            </div>
+            <p class="login-field-error" id="pinError" hidden></p>
+          </div>
+
+          <p class="login-message" id="pinMessage" role="status" aria-live="polite" hidden></p>
+
+          <div class="login-submit-row">
+            <button class="login-submit" id="pinSubmitButton" type="submit">
+              <span id="pinSubmitLabel">Unlock</span>
+              <svg class="login-submit-arrow" viewBox="0 0 20 20" fill="none" aria-hidden="true" focusable="false"><path d="M4 10h11m-4-4 4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" /></svg>
+            </button>
+            <span class="login-countdown" id="pinCountdown" role="status" aria-live="off" hidden></span>
+          </div>
+
+          <div id="pinPasskeyRow" style="margin-top: 14px; text-align: center;" hidden>
+            <button type="button" id="pinPasskeyButton" class="login-reveal" style="background: rgba(255, 255, 255, 0.04); border: 1px solid rgba(255, 255, 255, 0.12); border-radius: 8px; color: inherit; cursor: pointer; font-size: 13px; opacity: 0.85; padding: 8px 14px; display: inline-flex; align-items: center; justify-content: center; gap: 8px; width: 100%;">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M2 18v3c0 .6.4 1 1 1h4v-3h3v-3h2l1.4-1.4a6.5 6.5 0 1 0-4-4Z"/>
+                <circle cx="16.5" cy="7.5" r=".5" fill="currentColor"/>
+              </svg>
+              <span>Sign in with Passkey</span>
+            </button>
+          </div>
+
+          <div style="margin-top: 14px; text-align: center;">
+            <button type="button" id="pinSwitchToPassword" class="login-reveal" style="background: transparent; border: none; color: inherit; cursor: pointer; font-size: 13px; opacity: 0.7; padding: 6px 10px;">Use master password instead</button>
+          </div>
+        </form>
+
+        <form id="totpForm" class="login-form" hidden novalidate>
+          <div class="login-field" id="totpField">
+            <label for="totpCode">Authentication code</label>
+            <div class="login-input-wrap">
+              <input id="totpCode" name="totpCode" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="6" autocomplete="one-time-code" required aria-describedby="totpError" spellcheck="false" placeholder="000000">
+            </div>
+            <p class="login-field-error" id="totpError" hidden></p>
+          </div>
+
+          <p class="login-message" id="totpMessage" role="status" aria-live="polite" hidden></p>
+
+          <div class="login-submit-row">
+            <button class="login-submit" id="totpSubmitButton" type="submit">
+              <span id="totpSubmitLabel">Verify</span>
+              <svg class="login-submit-arrow" viewBox="0 0 20 20" fill="none" aria-hidden="true" focusable="false"><path d="M4 10h11m-4-4 4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" /></svg>
+            </button>
+            <span class="login-countdown" id="totpCountdown" role="status" aria-live="off" hidden></span>
+          </div>
+
+          <div style="margin-top: 14px; text-align: center;">
+            <button type="button" id="totpCancelButton" class="login-reveal" style="background: transparent; border: none; color: inherit; cursor: pointer; font-size: 13px; opacity: 0.7; padding: 6px 10px;">Use a different device / Back to password</button>
           </div>
         </form>
 

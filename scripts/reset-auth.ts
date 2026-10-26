@@ -1,7 +1,7 @@
 import readline from "readline";
 import crypto from "crypto";
 import { getDbAsync } from "../api/queries/connection";
-import { setMasterPassword, revokeAllSessions, hasMasterPassword } from "../api/services/auth.service";
+import { setMasterPassword, revokeAllSessions, hasMasterPassword, hasTotpEnabled, disableTotp } from "../api/services/auth.service";
 
 async function main() {
   console.log("=================================================");
@@ -14,14 +14,21 @@ async function main() {
   // Parse command line arguments
   const args = process.argv.slice(2);
   let newPassword = "";
+  let shouldResetTotp = false;
+
   for (const arg of args) {
     if (arg.startsWith("--password=")) {
       newPassword = arg.slice("--password=".length);
     }
+    if (arg === "--reset-totp" || arg === "--disable-totp") {
+      shouldResetTotp = true;
+    }
   }
 
   const isConfigured = await hasMasterPassword();
-  console.log(`Current Status: ${isConfigured ? "Password Configured" : "No Password Configured (Uninitialized)"}`);
+  const totpActive = await hasTotpEnabled();
+  console.log(`Master Password: ${isConfigured ? "Configured" : "Uninitialized"}`);
+  console.log(`TOTP Second-Factor: ${totpActive ? "Active" : "Disabled"}`);
 
   if (!newPassword) {
     // If not provided in CLI flag, prompt interactively
@@ -34,7 +41,6 @@ async function main() {
       new Promise((resolve) => rl.question(query, resolve));
 
     const entered = await promptUser("Enter new Master Password (min 8 chars, or press Enter for auto-generated): ");
-    rl.close();
 
     if (entered.trim().length >= 8) {
       newPassword = entered.trim();
@@ -43,8 +49,17 @@ async function main() {
       console.log(`Generated secure passphrase: ${newPassword}`);
     } else {
       console.error("Password must be at least 8 characters long.");
+      rl.close();
       process.exit(1);
     }
+
+    if (totpActive && !shouldResetTotp) {
+      const resetTotpAnswer = await promptUser("TOTP is active. Disable TOTP to remove 2FA lockout? (y/N): ");
+      if (resetTotpAnswer.trim().toLowerCase() === "y") {
+        shouldResetTotp = true;
+      }
+    }
+    rl.close();
   }
 
   try {
@@ -52,9 +67,15 @@ async function main() {
     await revokeAllSessions();
     console.log("\n[SUCCESS] Master password has been securely updated via Argon2id.");
     console.log("[SUCCESS] All existing sessions have been revoked.");
+
+    if (shouldResetTotp) {
+      await disableTotp();
+      console.log("[SUCCESS] TOTP second-factor has been disabled.");
+    }
+
     console.log("\nYou can now unlock the workstation at /login.html");
   } catch (err: any) {
-    console.error("\n[ERROR] Failed to set password:", err.message);
+    console.error("\n[ERROR] Recovery failed:", err.message);
     process.exit(1);
   }
 

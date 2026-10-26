@@ -1,4 +1,4 @@
-import { createRouter, publicQuery } from "../middleware";
+import { createRouter, publicQuery, elevatedForgeProcedure } from "../middleware";
 import { runtimeManager } from "../services/runtime/manager";
 
 /**
@@ -13,12 +13,12 @@ export const runtimeRouter = createRouter({
       return runtimeManager.status();
     }),
 
-    start: publicQuery.mutation(async () => {
+    start: elevatedForgeProcedure.mutation(async () => {
       await runtimeManager.start();
       return runtimeManager.status();
     }),
 
-    stop: publicQuery.mutation(async () => {
+    stop: elevatedForgeProcedure.mutation(async () => {
       await runtimeManager.stop();
       return runtimeManager.status();
     }),

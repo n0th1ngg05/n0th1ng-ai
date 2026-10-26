@@ -5,14 +5,14 @@
 // ─────────────────────────────────────────────────────────────────────────────
 
 import { z } from "zod";
-import { createRouter, publicQuery } from "../middleware";
+import { createRouter, publicQuery, elevatedForgeProcedure } from "../middleware";
 import * as db from "./db";
 import * as processManager from "./processManager";
 import { OLLAMA_TAGS_URL } from "./constants";
 import { listOpenRouterModels } from "../services/openRouter";
 
 export const forgexRouter = createRouter({
-    create: publicQuery
+    create: elevatedForgeProcedure
         .input(z.object({ goal: z.string(), modelId: z.string() }))
         .mutation(async ({ input }) => {
             try {
@@ -80,7 +80,7 @@ export const forgexRouter = createRouter({
     // processManager.sendInput. Only works while status is 'running'; the
     // frontend gates the input the same way it gates Forge's follow-up bar,
     // but here it's a real live conversation, not a new appended task.
-    sendInput: publicQuery
+    sendInput: elevatedForgeProcedure
         .input(z.object({ sessionId: z.string(), text: z.string() }))
         .mutation(async ({ input }) => {
             try {

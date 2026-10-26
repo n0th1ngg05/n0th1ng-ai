@@ -7,7 +7,7 @@
 // ─────────────────────────────────────────────────────────────────────────────
 
 import { z } from "zod";
-import { createRouter, publicQuery } from "../middleware";
+import { createRouter, publicQuery, elevatedForgeProcedure } from "../middleware";
 import * as orchestrator from "./orchestrator";
 import * as db from "./db";
 import * as execWorker from "./execWorker";
@@ -16,7 +16,7 @@ import { FORGE_MODEL, OLLAMA_TAGS_URL } from "./constants";
 import { listOpenRouterModels } from "../services/openRouter";
 
 export const forgeRouter = createRouter({
-    create: publicQuery
+    create: elevatedForgeProcedure
         .input(
             z.object({
                 goal: z.string(),
@@ -111,7 +111,7 @@ export const forgeRouter = createRouter({
             return { success: true };
         }),
 
-    resume: publicQuery
+    resume: elevatedForgeProcedure
         .input(z.object({ id: z.string() }))
         .mutation(async ({ input }) => {
             await orchestrator.resumeSession(input.id);
@@ -143,7 +143,7 @@ export const forgeRouter = createRouter({
     // in the tree — see orchestrator.addFollowUp for the full reasoning.
     // Rejected server-side (not just in the UI) if the session is actively
     // running, since a follow-up landing mid-iteration would race the loop.
-    followUp: publicQuery
+    followUp: elevatedForgeProcedure
         .input(z.object({ sessionId: z.string(), message: z.string() }))
         .mutation(async ({ input }) => {
             try {
@@ -158,7 +158,7 @@ export const forgeRouter = createRouter({
     // The ONLY way a human write ever touches a workspace outside the agent
     // loop itself: manual intervention while PAUSED. Hard-gated on status —
     // rejected in any other state so a human edit can never race the loop.
-    writeFileManually: publicQuery
+    writeFileManually: elevatedForgeProcedure
         .input(
             z.object({
                 sessionId: z.string(),

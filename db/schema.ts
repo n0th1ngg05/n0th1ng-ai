@@ -888,8 +888,10 @@ export const authTotpSecrets = mysqlTable("auth_totp_secrets", {
   id: serial("id").primaryKey(),
   secret: text("secret").notNull(),
   verified: boolean("verified").notNull().default(false),
+  lastVerifiedStep: bigint("last_verified_step", { mode: "number" }),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
+
 
 // Registered WebAuthn / FIDO2 passkey credentials (Windows Hello, Touch ID, YubiKey)
 export const authWebauthnCredentials = mysqlTable("auth_webauthn_credentials", {

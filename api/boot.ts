@@ -64,6 +64,8 @@ import { forgexStreamRouter } from "./forgex/routes";
 import { isOpenRouterModel, streamOpenRouterGenerate, streamOpenRouterTyped } from "./services/openRouter";
 import { authRouter } from "./routers/auth.router";
 import { verifyWorkerKey, verifySession } from "./services/auth.service";
+import { evaluateCloudflareAccess } from "./services/cloudflare.service";
+import { validateCsrfProtection, applySecurityHeaders } from "./services/security.service";
 
 
 
@@ -136,16 +138,53 @@ startWorkerPoller();
 // ─────────────────────────────────────────────────────────────────────────────
 // WORKSTATION GATEKEEPER MIDDLEWARE (Single-User Gate)
 // ─────────────────────────────────────────────────────────────────────────────
-app.route("/api/auth", authRouter);
-
 app.use("*", async (c, next) => {
   const url = new URL(c.req.url);
   const pathname = url.pathname;
 
+  // 0. CLOUDFLARE ACCESS OUTER PERIMETER:
+  // Evaluates outer defense perimeter. Strict passthrough on local dev;
+  // verifies Cf-Access-Jwt-Assertion if present or required.
+  const cfAccess = await evaluateCloudflareAccess(c.req.raw);
+  if (!cfAccess.passed) {
+    const res = c.json(
+      {
+        error: "CF_ACCESS_REQUIRED",
+        message: cfAccess.error || "Cloudflare Access verification failed.",
+      },
+      403
+    );
+    applySecurityHeaders(res.headers, c.req.raw);
+    return res;
+  }
+  if (cfAccess.payload) {
+    c.set("cfAccessUser" as any, cfAccess.payload);
+  }
+
+  // 0.5. CSRF & ORIGIN DEFENSE:
+  // For state-changing methods (POST, PUT, DELETE, PATCH), verify Sec-Fetch-Site and Origin/Referer
+  const csrfResult = validateCsrfProtection(c.req.raw);
+  if (!csrfResult.valid) {
+    const res = c.json(
+      {
+        error: "CSRF_DETECTED",
+        message: "Cross-site request rejected.",
+        reason: csrfResult.reason,
+      },
+      403
+    );
+    applySecurityHeaders(res.headers, c.req.raw);
+    return res;
+  }
+
   // 1. PUBLIC WHITELIST:
   // Public auth endpoints, login UI, Vite dev internals, and public styling assets
   const isPublicAuthRoute = pathname.startsWith("/api/auth");
-  const isLoginPage = pathname === "/login.html" || pathname === "/login" || pathname === "/frontend/login" || pathname.startsWith("/frontend/login/");
+  const isLoginPage =
+    pathname === "/login.html" ||
+    pathname === "/login" ||
+    pathname === "/frontend/login" ||
+    pathname.startsWith("/frontend/login/");
   const isSafeStaticAsset = /\.(css|js|png|jpe?g|svg|ico|woff2?|webp|map)$/i.test(pathname);
   const isPublicAsset =
     (pathname.startsWith("/frontend/assets/") && isSafeStaticAsset) ||
@@ -155,12 +194,15 @@ app.use("*", async (c, next) => {
     pathname === "/robots.txt";
 
   if (isPublicAuthRoute || isLoginPage || isPublicAsset) {
-    return next();
+    await next();
+    if (c.res) {
+      applySecurityHeaders(c.res.headers, c.req.raw);
+    }
+    return;
   }
 
-
   // 2. WORKER LANE (Checked before human session lane):
-  // Check Authorization: Bearer <key> or X-Workstation-Key
+  // Check Authorization: Bearer <key>, X-Workstation-Key, or CF Service Token
   const authHeader = c.req.header("authorization");
   const bearerKey = authHeader?.startsWith("Bearer ") ? authHeader.slice(7).trim() : undefined;
   const workstationKey = c.req.header("x-workstation-key");
@@ -170,8 +212,21 @@ app.use("*", async (c, next) => {
     const isWorkerValid = await verifyWorkerKey(incomingWorkerKey);
     if (isWorkerValid) {
       c.set("isWorker" as any, true);
-      return next();
+      await next();
+      if (c.res) {
+        applySecurityHeaders(c.res.headers, c.req.raw);
+      }
+      return;
     }
+  }
+
+  if (cfAccess.payload?.identity_type === "service") {
+    c.set("isWorker" as any, true);
+    await next();
+    if (c.res) {
+      applySecurityHeaders(c.res.headers, c.req.raw);
+    }
+    return;
   }
 
   // 3. HUMAN SESSION LANE:
@@ -190,7 +245,11 @@ app.use("*", async (c, next) => {
 
   if (session) {
     c.set("session" as any, session);
-    return next();
+    await next();
+    if (c.res) {
+      applySecurityHeaders(c.res.headers, c.req.raw);
+    }
+    return;
   }
 
   // 4. UNAUTHENTICATED HANDLER:
@@ -199,11 +258,17 @@ app.use("*", async (c, next) => {
 
   if (isHtmlRequest) {
     const returnTo = encodeURIComponent(pathname + url.search);
-    return c.redirect(`/login.html?returnTo=${returnTo}`, 302);
+    const res = c.redirect(`/frontend/login/?returnTo=${returnTo}`, 302);
+    applySecurityHeaders(res.headers, c.req.raw);
+    return res;
   }
 
-  return c.json({ error: "Unauthorized. Workstation locked.", code: "AUTH_REQUIRED" }, 401);
+  const res = c.json({ error: "Unauthorized. Workstation locked.", code: "AUTH_REQUIRED" }, 401);
+  applySecurityHeaders(res.headers, c.req.raw);
+  return res;
 });
+
+app.route("/api/auth", authRouter);
 
 app.use(bodyLimit({ maxSize: 50 * 1024 * 1024 }));
 
