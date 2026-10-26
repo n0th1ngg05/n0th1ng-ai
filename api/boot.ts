@@ -62,6 +62,9 @@ import { startCompanionService } from "./services/companion";
 import { forgeStreamRouter } from "./forge/routes";
 import { forgexStreamRouter } from "./forgex/routes";
 import { isOpenRouterModel, streamOpenRouterGenerate, streamOpenRouterTyped } from "./services/openRouter";
+import { authRouter } from "./routers/auth.router";
+import { verifyWorkerKey, verifySession } from "./services/auth.service";
+
 
 
 
@@ -130,8 +133,80 @@ startCompanionService();
 startTelemetryCollector();
 startWorkerPoller();
 
+// ─────────────────────────────────────────────────────────────────────────────
+// WORKSTATION GATEKEEPER MIDDLEWARE (Single-User Gate)
+// ─────────────────────────────────────────────────────────────────────────────
+app.route("/api/auth", authRouter);
+
+app.use("*", async (c, next) => {
+  const url = new URL(c.req.url);
+  const pathname = url.pathname;
+
+  // 1. PUBLIC WHITELIST:
+  // Public auth endpoints, login UI, Vite dev internals, and public styling assets
+  const isPublicAuthRoute = pathname.startsWith("/api/auth");
+  const isLoginPage = pathname === "/login.html" || pathname === "/login" || pathname === "/frontend/login" || pathname.startsWith("/frontend/login/");
+  const isSafeStaticAsset = /\.(css|js|png|jpe?g|svg|ico|woff2?|webp|map)$/i.test(pathname);
+  const isPublicAsset =
+    (pathname.startsWith("/frontend/assets/") && isSafeStaticAsset) ||
+    pathname.startsWith("/@") ||
+    pathname.startsWith("/node_modules/") ||
+    pathname === "/favicon.ico" ||
+    pathname === "/robots.txt";
+
+  if (isPublicAuthRoute || isLoginPage || isPublicAsset) {
+    return next();
+  }
+
+
+  // 2. WORKER LANE (Checked before human session lane):
+  // Check Authorization: Bearer <key> or X-Workstation-Key
+  const authHeader = c.req.header("authorization");
+  const bearerKey = authHeader?.startsWith("Bearer ") ? authHeader.slice(7).trim() : undefined;
+  const workstationKey = c.req.header("x-workstation-key");
+  const incomingWorkerKey = bearerKey || workstationKey;
+
+  if (incomingWorkerKey) {
+    const isWorkerValid = await verifyWorkerKey(incomingWorkerKey);
+    if (isWorkerValid) {
+      c.set("isWorker" as any, true);
+      return next();
+    }
+  }
+
+  // 3. HUMAN SESSION LANE:
+  // Check valid signed session cookie (n0th1ng_session)
+  const cookieHeader = c.req.header("cookie");
+  let sessionCookie: string | undefined;
+  if (cookieHeader) {
+    const match = cookieHeader.match(/(?:^|;\s*)n0th1ng_session=([^;]*)/);
+    if (match) {
+      sessionCookie = decodeURIComponent(match[1]);
+    }
+  }
+
+  const clientIp = c.req.header("x-forwarded-for")?.split(",")[0].trim() || "127.0.0.1";
+  const session = await verifySession(sessionCookie, clientIp);
+
+  if (session) {
+    c.set("session" as any, session);
+    return next();
+  }
+
+  // 4. UNAUTHENTICATED HANDLER:
+  const acceptHeader = c.req.header("accept") || "";
+  const isHtmlRequest = acceptHeader.includes("text/html");
+
+  if (isHtmlRequest) {
+    const returnTo = encodeURIComponent(pathname + url.search);
+    return c.redirect(`/login.html?returnTo=${returnTo}`, 302);
+  }
+
+  return c.json({ error: "Unauthorized. Workstation locked.", code: "AUTH_REQUIRED" }, 401);
+});
 
 app.use(bodyLimit({ maxSize: 50 * 1024 * 1024 }));
+
 app.route("/api/files", fileUploadRouter);
 app.route("/api/files", analyzeStreamRouter);
 app.route("/api/chat-files", chatUploadRouter);
@@ -2530,6 +2605,12 @@ app.get("/api/test-tavily", async (c) => {
 });
 
 app.post("/api/cluster/register", async (c) => {
+    // Phase 2: Require valid worker API key (Bearer token or X-Workstation-Key)
+    const isWorker = c.get("isWorker" as any);
+    if (!isWorker) {
+        return c.json({ success: false, error: "Unauthorized. Valid worker API key required." }, 401);
+    }
+
     const worker = await safeJson(c);
     if (!worker) {
         return c.json({ success: false, error: "Request body is missing or not valid JSON." }, 400);
@@ -2539,6 +2620,12 @@ app.post("/api/cluster/register", async (c) => {
 });
 
 app.post("/api/cluster/heartbeat", async (c) => {
+    // Phase 2: Require valid worker API key (Bearer token or X-Workstation-Key)
+    const isWorker = c.get("isWorker" as any);
+    if (!isWorker) {
+        return c.json({ success: false, error: "Unauthorized. Valid worker API key required." }, 401);
+    }
+
     const body = await safeJson(c);
     if (!body) {
         return c.json({ success: false, error: "Request body is missing or not valid JSON." }, 400);
@@ -2563,8 +2650,15 @@ app.get("/api/cluster/workers", (c) => {
 // upstream SSE stream byte-for-byte, and this is a straightforward pass-
 // through, same shape as the other raw SSE routes already in this file.
 app.get("/api/cluster/:id/logs/stream", async (c) => {
+    // Phase 2: Require inbound request (browser -> master) to carry a valid human session
+    const session = c.get("session" as any);
+    if (!session) {
+        return c.json({ error: "Unauthorized. Operator session required to stream worker logs." }, 401);
+    }
+
     const workerId = c.req.param("id");
     const source = c.req.query("source"); // "python" | "speech" | "kokoro" | undefined
+
 
     const worker = getWorkers().find((w) => w.id === workerId);
     if (!worker) {

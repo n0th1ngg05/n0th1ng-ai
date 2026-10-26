@@ -14,8 +14,11 @@
     "test": "vitest run",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
-    "db:push": "drizzle-kit push"
+    "db:push": "drizzle-kit push",
+    "auth:reset": "tsx scripts/reset-auth.ts",
+    "worker:keys": "tsx scripts/manage-worker-keys.ts"
   },
+
   "dependencies": {
     "@hono/node-server": "^1.14.3",
     "@hookform/resolvers": "^5.2.2",
@@ -51,6 +54,7 @@
     "@trpc/react-query": "^11.8.1",
     "@trpc/server": "^11.8.1",
     "@types/three": "^0.184.1",
+    "argon2": "^0.45.1",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "cmdk": "^1.1.1",

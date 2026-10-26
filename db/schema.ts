@@ -870,3 +870,79 @@ export const forgexOutput = mysqlTable("forgex_output", {
     text: text("text").notNull(),
     timestamp: timestamp("timestamp").notNull().defaultNow(),
 });
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Authentication & Security Hardening (Single-User Gate)
+// ─────────────────────────────────────────────────────────────────────────────
+
+// Single-row table storing the workstation master password hash (Argon2id)
+export const authCredentials = mysqlTable("auth_credentials", {
+  id: serial("id").primaryKey(),
+  passwordHash: varchar("password_hash", { length: 255 }).notNull(),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+// RFC 6238 TOTP secret encrypted at rest using APP_SECRET (AES-256-GCM)
+export const authTotpSecrets = mysqlTable("auth_totp_secrets", {
+  id: serial("id").primaryKey(),
+  secret: text("secret").notNull(),
+  verified: boolean("verified").notNull().default(false),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+// Registered WebAuthn / FIDO2 passkey credentials (Windows Hello, Touch ID, YubiKey)
+export const authWebauthnCredentials = mysqlTable("auth_webauthn_credentials", {
+  id: serial("id").primaryKey(),
+  credentialId: varchar("credential_id", { length: 500 }).notNull().unique(),
+  publicKey: text("public_key").notNull(),
+  counter: bigint("counter", { mode: "number" }).notNull().default(0),
+  deviceLabel: varchar("device_label", { length: 255 }),
+  transports: json("transports"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  lastUsedAt: timestamp("last_used_at"),
+});
+
+// Active sessions: opaque random tokens checked on every request (instant revocation)
+export const sessions = mysqlTable("sessions", {
+  id: varchar("id", { length: 128 }).primaryKey(),
+  deviceLabel: varchar("device_label", { length: 255 }),
+  methodUsed: mysqlEnum("method_used", ["password", "totp", "pin", "passkey"]).notNull(),
+  scope: mysqlEnum("scope", ["standard", "forge_unlocked"]).notNull().default("standard"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  lastSeenAt: timestamp("last_seen_at").notNull().defaultNow(),
+  ipLastSeen: varchar("ip_last_seen", { length: 64 }),
+  revokedAt: timestamp("revoked_at"),
+  expiresAt: timestamp("expires_at").notNull(),
+});
+
+// Device trust pairing: long-lived cookie-bound token for rapid PIN unlock
+export const deviceTrust = mysqlTable("device_trust", {
+  id: serial("id").primaryKey(),
+  deviceFingerprint: varchar("device_fingerprint", { length: 255 }),
+  token: varchar("token", { length: 128 }).notNull().unique(),
+  pinHash: varchar("pin_hash", { length: 255 }),
+  trustedAt: timestamp("trusted_at").notNull().defaultNow(),
+  expiresAt: timestamp("expires_at").notNull(),
+});
+
+// Formalized cluster & background worker API keys (Bearer token / X-Workstation-Key)
+export const workerApiKeys = mysqlTable("worker_api_keys", {
+  id: serial("id").primaryKey(),
+  label: varchar("label", { length: 255 }).notNull(),
+  keyHash: varchar("key_hash", { length: 255 }).notNull(),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  revokedAt: timestamp("revoked_at"),
+  lastUsedAt: timestamp("last_used_at"),
+});
+
+// Comprehensive security audit log of every auth attempt (success & failure)
+export const authAuditLog = mysqlTable("auth_audit_log", {
+  id: serial("id").primaryKey(),
+  timestamp: timestamp("timestamp").notNull().defaultNow(),
+  method: varchar("method", { length: 50 }).notNull(),
+  success: boolean("success").notNull(),
+  ip: varchar("ip", { length: 64 }),
+  userAgent: text("user_agent"),
+  failureReason: text("failure_reason"),
+});
