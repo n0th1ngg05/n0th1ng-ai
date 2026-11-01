@@ -179,7 +179,21 @@ app.use("*", async (c, next) => {
 
   // 1. PUBLIC WHITELIST:
   // Public auth endpoints, login UI, Vite dev internals, and public styling assets
-  const isPublicAuthRoute = pathname.startsWith("/api/auth");
+  const cleanPathname = pathname.replace(/\/+$/, "") || "/";
+  const PUBLIC_AUTH_ROUTES = new Set([
+    "/api/auth/status",
+    "/api/auth/setup",
+    "/api/auth/login",
+    "/api/auth/totp/verify-login",
+    "/api/auth/logout",
+    "/api/auth/pin/unlock",
+    "/api/auth/device-trust/status",
+    "/api/auth/webauthn/status",
+    "/api/auth/webauthn/login-options",
+    "/api/auth/webauthn/login-verify",
+    "/api/auth/cloudflare/status",
+  ]);
+  const isPublicAuthRoute = PUBLIC_AUTH_ROUTES.has(cleanPathname);
   const isLoginPage =
     pathname === "/login.html" ||
     pathname === "/login" ||

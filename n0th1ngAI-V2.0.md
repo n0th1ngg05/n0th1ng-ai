@@ -444,6 +444,42 @@ WantedBy=multi-user.target
 
 ---
 
+## Security Audit Review & Hardening Updates (Completed)
+
+Following a comprehensive cross-check and security audit, five targeted architectural enhancements and defense-in-depth fixes were implemented and verified across the codebase:
+
+1. **Atomic TOTP Step Verification & Race Condition Guard (`api/services/auth.service.ts`)**:
+   - Replaced Javascript-side step comparison with an atomic SQL test-and-set query in both `verifyTotpLogin()` and `confirmTotpEnrollment()`:
+     ```typescript
+     where(
+       and(
+         eq(authTotpSecrets.id, row.id),
+         or(
+           isNull(authTotpSecrets.lastVerifiedStep),
+           lt(authTotpSecrets.lastVerifiedStep, result.step)
+         )
+       )
+     )
+     ```
+   - Validates `affectedRows > 0`. If `affectedRows === 0`, rejects the code immediately as `code_already_used`. Eliminates potential race conditions when a code is concurrently used for login vs step-up elevation.
+
+2. **CSRF Origin Allowlist Isolation (`api/services/security.service.ts`)**:
+   - Removed request-echoed Host and Forwarded-Host header reflection (`http://${cleanHost}` / `https://${cleanHost}`) from `getAllowedOrigins()`.
+   - The production allowlist now strictly derives from explicit, operator-configured environment variables (`PRODUCTION_ORIGIN`, `ALLOWED_ORIGINS`, `WEBAUTHN_ORIGIN`), while preserving fixed, non-attacker-influenced local dev strings (`localhost:3000`, `127.0.0.1:3000`, `localhost:5173`, `127.0.0.1:5173`).
+
+3. **WebAuthn Production Origin Restriction (`api/services/auth.service.ts`)**:
+   - Updated `getWebAuthnConfig()` so that insecure `http://` origins are only included when `isRequestSecure(req)` is `false` (local development).
+   - In production (HTTPS), `expectedOrigins` exclusively accepts `https://` origins, eliminating origin downgrade vulnerabilities.
+
+4. **Gatekeeper Defense-in-Depth for `/api/auth/*` (`api/boot.ts`)**:
+   - Replaced blanket `pathname.startsWith("/api/auth")` bypass with an explicit whitelist of genuine public endpoints (`/status`, `/setup`, `/login`, `/totp/verify-login`, `/logout`, `/pin/unlock`, `/device-trust/status`, `/webauthn/status`, `/webauthn/login-options`, `/webauthn/login-verify`, `/cloudflare/status`).
+   - All sensitive management routes (`/totp/enroll`, `/totp/verify`, `/elevate`, `/demote`, `/webauthn/credentials`, `/device-trust/revoke`, etc.) now pass through the global gatekeeper session check as a defense-in-depth backstop.
+
+5. **Session Check on Device Trust Revocation (`api/routers/auth.router.ts`)**:
+   - Added `verifySession()` guard to `POST /api/auth/device-trust/revoke`, ensuring only an authenticated operator session can revoke paired trusted devices.
+
+---
+
 ## Complete Verification Test Suite Summary
 
 Every phase has an automated, standalone regression test suite in `scripts/`:

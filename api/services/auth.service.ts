@@ -1,6 +1,6 @@
 import * as crypto from "crypto";
 import * as argon2 from "argon2";
-import { eq, and, isNull, gt } from "drizzle-orm";
+import { eq, and, isNull, gt, lt, or } from "drizzle-orm";
 import { getDb } from "../queries/connection";
 import { env } from "../lib/env";
 import {
@@ -620,13 +620,25 @@ export async function confirmTotpEnrollment(code: string): Promise<{ success: bo
   await db.delete(authTotpSecrets).where(eq(authTotpSecrets.verified, true));
 
   // Mark newly confirmed secret as verified
-  await db
+  const [updateResult] = await db
     .update(authTotpSecrets)
     .set({
       verified: true,
       lastVerifiedStep: result.step,
     })
-    .where(eq(authTotpSecrets.id, row.id));
+    .where(
+      and(
+        eq(authTotpSecrets.id, row.id),
+        or(
+          isNull(authTotpSecrets.lastVerifiedStep),
+          lt(authTotpSecrets.lastVerifiedStep, result.step)
+        )
+      )
+    );
+
+  if ((updateResult as any)?.affectedRows === 0) {
+    return { success: false, error: "Authenticator code has already been used." };
+  }
 
   return { success: true };
 }
@@ -651,11 +663,26 @@ export async function verifyTotpLogin(code: string): Promise<TotpVerifyResult> {
   }
 
   const result = verifyTotpCode(plainSecret, code, row.lastVerifiedStep);
-  if (result.valid && result.step != null) {
-    await db
-      .update(authTotpSecrets)
-      .set({ lastVerifiedStep: result.step })
-      .where(eq(authTotpSecrets.id, row.id));
+  if (!result.valid || result.step == null) {
+    return result;
+  }
+
+  // Atomic update: only succeed if step has not already been consumed concurrently
+  const [updateResult] = await db
+    .update(authTotpSecrets)
+    .set({ lastVerifiedStep: result.step })
+    .where(
+      and(
+        eq(authTotpSecrets.id, row.id),
+        or(
+          isNull(authTotpSecrets.lastVerifiedStep),
+          lt(authTotpSecrets.lastVerifiedStep, result.step)
+        )
+      )
+    );
+
+  if ((updateResult as any)?.affectedRows === 0) {
+    return { valid: false, reason: "code_already_used" };
   }
 
   return result;
@@ -840,17 +867,20 @@ export function getWebAuthnConfig(req: Request) {
   const defaultOrigin = `${protocol}://${hostHeader}`;
   const origin = process.env.WEBAUTHN_ORIGIN || defaultOrigin;
 
-  // Expected origins: allow both exact origin, defaultOrigin, and common dev/proxy variants
-  const expectedOrigins = Array.from(
-    new Set([
-      origin,
-      defaultOrigin,
-      `http://localhost:3000`,
-      `http://127.0.0.1:3000`,
-      `https://${hostname}`,
+  // Expected origins: in production (HTTPS), only accept exact https:// origins.
+  // In local development (HTTP), permit local dev origins.
+  const originsList = [origin, defaultOrigin];
+  if (isSecure) {
+    originsList.push(`https://${hostname}`);
+  } else {
+    originsList.push(
       `http://${hostname}`,
-    ])
-  );
+      `http://localhost:3000`,
+      `http://127.0.0.1:3000`
+    );
+  }
+
+  const expectedOrigins = Array.from(new Set(originsList));
 
   return { rpID, rpName, origin, expectedOrigins };
 }

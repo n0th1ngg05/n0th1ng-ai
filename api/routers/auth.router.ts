@@ -529,6 +529,12 @@ authRouter.post("/device-trust/setup", async (c) => {
 });
 
 authRouter.post("/device-trust/revoke", async (c) => {
+  const sessionCookie = parseCookie(c, SESSION_COOKIE_NAME);
+  const session = await verifySession(sessionCookie);
+  if (!session) {
+    return c.json({ error: "Unauthorized" }, 401);
+  }
+
   const cookieValue = parseCookie(c, DEVICE_TRUST_COOKIE_NAME);
   if (cookieValue) {
     await revokeDeviceTrust(cookieValue).catch(() => {});

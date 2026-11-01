@@ -20,19 +20,14 @@ async function runTests() {
     throw new Error("Default local dev origins missing from allowed origins!");
   }
 
-  // Forwarded host in cloud proxy
-  const cloudReq = new Request("http://127.0.0.1:3000/api/auth/login", {
-    headers: {
-      host: "127.0.0.1:3000",
-      "x-forwarded-host": "n0th1ng.ai",
-      "x-forwarded-proto": "https",
-    },
-  });
-  const cloudOrigins = getAllowedOrigins(cloudReq);
+  // Cloud production origin via operator environment configuration
+  process.env.PRODUCTION_ORIGIN = "https://n0th1ng.ai";
+  const cloudOrigins = getAllowedOrigins();
   if (!cloudOrigins.includes("https://n0th1ng.ai")) {
-    throw new Error("Forwarded cloud origin was not properly resolved!");
+    throw new Error("Configured cloud production origin was not properly resolved!");
   }
-  console.log("✓ Allowed origins dynamically resolved for both local workstation and cloud proxy.\n");
+  delete process.env.PRODUCTION_ORIGIN;
+  console.log("✓ Allowed origins resolved for both local workstation and operator-configured production origins.\n");
 
   // 2. CSRF Sec-Fetch-Site Metadata Checks
   console.log("Test 2: Fetch Metadata (Sec-Fetch-Site) Protection...");

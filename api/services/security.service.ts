@@ -1,5 +1,3 @@
-import { getWebAuthnConfig } from "./auth.service";
-
 /**
  * n0th1ng AI - Production Security Service
  * Implements CSRF defense-in-depth and HTTP security response headers
@@ -11,29 +9,25 @@ export interface CsrfValidationResult {
 }
 
 /**
- * Derives all permitted HTTP origins for the active workstation instance
+ * Derives all permitted HTTP origins for the active workstation instance.
+ * Production origins must come from explicit operator environment configuration
+ * (PRODUCTION_ORIGIN, ALLOWED_ORIGINS, WEBAUTHN_ORIGIN) to prevent Host header injection.
  */
-export function getAllowedOrigins(req: Request): string[] {
+export function getAllowedOrigins(req?: Request): string[] {
   const origins = new Set<string>();
 
-  // 1. Common local development origins
+  // 1. Common local development origins (fixed strings, not attacker-influenced)
   origins.add("http://localhost:3000");
   origins.add("http://127.0.0.1:3000");
   origins.add("http://localhost:5173");
   origins.add("http://127.0.0.1:5173");
 
-  // 2. Dynamic host and forwarded host headers
-  const forwardedProto = req.headers.get("x-forwarded-proto") || "http";
-  const host = req.headers.get("x-forwarded-host") || req.headers.get("host");
-  if (host) {
-    const cleanHost = host.trim().toLowerCase();
-    origins.add(`${forwardedProto}://${cleanHost}`);
-    // Support both HTTP and HTTPS variants for reverse proxy environments
-    origins.add(`http://${cleanHost}`);
-    origins.add(`https://${cleanHost}`);
+  // 2. Explicit operator-configured production origins
+  if (process.env.PRODUCTION_ORIGIN) {
+    const prodOrigin = process.env.PRODUCTION_ORIGIN.trim().toLowerCase();
+    if (prodOrigin) origins.add(prodOrigin);
   }
 
-  // 3. Environment overrides
   if (process.env.ALLOWED_ORIGINS) {
     for (const item of process.env.ALLOWED_ORIGINS.split(",")) {
       const clean = item.trim().toLowerCase();
@@ -42,7 +36,8 @@ export function getAllowedOrigins(req: Request): string[] {
   }
 
   if (process.env.WEBAUTHN_ORIGIN) {
-    origins.add(process.env.WEBAUTHN_ORIGIN.trim().toLowerCase());
+    const webAuthnOrigin = process.env.WEBAUTHN_ORIGIN.trim().toLowerCase();
+    if (webAuthnOrigin) origins.add(webAuthnOrigin);
   }
 
   return Array.from(origins);
