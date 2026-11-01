@@ -1,4 +1,5 @@
 import "dotenv/config";
+import crypto from "crypto";
 import { Hono } from "hono";
 import { serve } from "@hono/node-server";
 import { spawn, type ChildProcess } from "child_process";
@@ -118,7 +119,7 @@ async function startTunnel(): Promise<void> {
         args = [
             "tunnel",
             "--no-autoupdate",
-            "--url", WORKER_URL,
+            "--url", `http://127.0.0.1:${PORT}`,
         ];
     }
 
@@ -287,6 +288,19 @@ async function logAccess(params: {
 
 // ── Auth middleware helper ────────────────────────────────────────────────────
 
+const API_PLACEHOLDER = "CHANGE_ME_generate_a_64_char_hex_key_here";
+const HUD_PLACEHOLDER = "CHANGE_ME_generate_a_32_char_hex_token_here";
+
+function safeCompare(a: string, b: string): boolean {
+    if (!a || !b) return false;
+    const bufA = Buffer.from(a);
+    const bufB = Buffer.from(b);
+    if (bufA.length !== bufB.length) {
+        return false;
+    }
+    return crypto.timingSafeEqual(bufA, bufB);
+}
+
 function getClientIp(req: Request): string {
     return req.headers.get("cf-connecting-ip")
         ?? req.headers.get("x-forwarded-for")?.split(",")[0].trim()
@@ -294,6 +308,9 @@ function getClientIp(req: Request): string {
 }
 
 function checkApiKey(req: Request): boolean {
+    if (!API_KEY || API_KEY === API_PLACEHOLDER) {
+        return false;
+    }
     const auth = req.headers.get("authorization") ?? "";
     let token = auth.startsWith("Bearer ") ? auth.slice(7) : auth;
     if (!token && req.url) {
@@ -301,13 +318,16 @@ function checkApiKey(req: Request): boolean {
             token = new URL(req.url).searchParams.get("key") ?? "";
         } catch {}
     }
-    return token === API_KEY && API_KEY.length > 0;
+    return safeCompare(token, API_KEY);
 }
 
 function checkHudToken(req: Request): boolean {
+    if (!HUD_TOKEN || HUD_TOKEN === HUD_PLACEHOLDER) {
+        return false;
+    }
     const auth = req.headers.get("authorization") ?? "";
     const token = auth.startsWith("Bearer ") ? auth.slice(7) : auth;
-    return token === HUD_TOKEN && HUD_TOKEN.length > 0;
+    return safeCompare(token, HUD_TOKEN);
 }
 
 // ── Hono app ──────────────────────────────────────────────────────────────────

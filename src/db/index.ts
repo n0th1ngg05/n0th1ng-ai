@@ -7,18 +7,19 @@ import * as schema from "./schema";
 
 const url = process.env.WORKER_DATABASE_URL;
 if (!url) {
-    throw new Error("[DB] WORKER_DATABASE_URL is not set in .env");
+    console.warn("[DB] WORKER_DATABASE_URL is not set in .env — worker database features disabled");
 }
 
-const pool = mysql.createPool(url);
+export const pool = url ? mysql.createPool(url) : null;
 
-export const db = drizzle(pool, { schema, mode: "default" });
+export const db = pool ? drizzle(pool, { schema, mode: "default" }) : (null as any);
 
 // ── Bootstrap: push tables if they don't exist ────────────────────────────────
 // We use raw SQL CREATE TABLE IF NOT EXISTS rather than running drizzle-kit
 // migrations at runtime — keeps startup clean with no CLI dependency.
 
 export async function initDb() {
+    if (!pool) return;
 
     const conn = await pool.getConnection();
 
@@ -94,6 +95,7 @@ export async function initDb() {
 // ── Config helpers ────────────────────────────────────────────────────────────
 
 export async function getConfig(key: string): Promise<string | null> {
+    if (!pool) return null;
     const conn = await pool.getConnection();
     try {
         const [rows] = await conn.execute<any[]>(
@@ -107,6 +109,7 @@ export async function getConfig(key: string): Promise<string | null> {
 }
 
 export async function setConfig(key: string, value: string): Promise<void> {
+    if (!pool) return;
     const conn = await pool.getConnection();
     try {
         await conn.execute(
