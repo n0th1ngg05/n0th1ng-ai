@@ -87,6 +87,76 @@ def reader(which: str, proc: subprocess.Popen) -> None:
         log(which, f"Process exited with code {code}.")
 
 
+
+def kill_port_listeners(port: int) -> None:
+    """Force-stop every process currently listening on the given TCP port."""
+    ps_script = f"""
+$ErrorActionPreference = 'Stop'
+$listeners = Get-NetTCPConnection -LocalPort {port} -State Listen -ErrorAction SilentlyContinue |
+    Select-Object -ExpandProperty OwningProcess -Unique
+
+foreach ($processId in $listeners) {{
+    try {{
+        Stop-Process -Id $processId -Force -ErrorAction Stop
+        Write-Output ('Stopped PID ' + $processId + ' on port {port}')
+    }}
+    catch {{
+        Write-Output ('FAILED to stop PID ' + $processId + ': ' + $_.Exception.Message)
+        exit 2
+    }}
+}}
+"""
+    result = subprocess.run(
+        [
+            "powershell.exe",
+            "-NoProfile",
+            "-NonInteractive",
+            "-ExecutionPolicy",
+            "Bypass",
+            "-Command",
+            ps_script,
+        ],
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+        errors="replace",
+        timeout=15,
+    )
+
+    output = (result.stdout or "").strip()
+    error = (result.stderr or "").strip()
+
+    if output:
+        log("amd", output)
+        log("nvidia", output)
+
+    if result.returncode != 0:
+        detail = error or output or f"PowerShell exited with code {result.returncode}"
+        raise RuntimeError(f"Could not clear port {port}. {detail}")
+
+    time.sleep(0.8)
+    result = subprocess.run(
+        ["powershell.exe", "-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-Command", ps_script],
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+        errors="replace",
+        timeout=15,
+    )
+
+    output = (result.stdout or "").strip()
+    error = (result.stderr or "").strip()
+    if output:
+        log("amd", output)  # Also visible in the dashboard's startup log.
+        log("nvidia", output)
+    if result.returncode != 0:
+        detail = error or output or f"PowerShell exited with code {result.returncode}"
+        raise RuntimeError(f"Could not clear port {port}. {detail}")
+
+    # Give Windows a moment to release the sockets before launching Ollama.
+    time.sleep(0.8)
+
+
 def start_server(which: str) -> tuple[bool, str]:
     with LOCK:
         current = PROCESSES.get(which)
@@ -266,8 +336,17 @@ def main():
     print("Ollama Dual-GPU Manager")
     print(f"Model store: {OLLAMA_MODELS}")
     print(f"Dashboard: http://{DASHBOARD_HOST}:{DASHBOARD_PORT}")
-    print("Starting both Ollama servers...")
+    print("Clearing existing listeners on ports 11434 and 11435...")
+    try:
+        kill_port_listeners(11434)
+        kill_port_listeners(11435)
+        print("Ports cleared.")
+    except Exception as exc:
+        print(f"Port cleanup failed: {exc}")
+        print("If access is denied, close the existing Ollama process or run this script as Administrator.")
+        raise SystemExit(1)
 
+    print("Starting both Ollama servers...")
     start_server("amd")
     start_server("nvidia")
 
