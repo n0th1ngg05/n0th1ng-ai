@@ -88,73 +88,91 @@ def reader(which: str, proc: subprocess.Popen) -> None:
 
 
 
+def listening_pids(port: int) -> set[int]:
+    """Return PIDs listening on a TCP port, using Windows netstat."""
+    result = subprocess.run(
+        ["netstat.exe", "-ano", "-p", "tcp"],
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+        errors="replace",
+        timeout=10,
+        check=False,
+    )
+
+    if result.returncode != 0:
+        raise RuntimeError(
+            f"netstat.exe failed with exit code {result.returncode}: "
+            f"{(result.stderr or result.stdout).strip()}"
+        )
+
+    pids: set[int] = set()
+    for line in result.stdout.splitlines():
+        columns = line.split()
+        if len(columns) < 5 or columns[0].upper() != "TCP":
+            continue
+
+        local_address = columns[1]
+        state = columns[3].upper()
+        pid_text = columns[4]
+
+        # Handles both IPv4 (127.0.0.1:11434) and IPv6 ([::]:11434).
+        if state != "LISTENING" or not local_address.endswith(f":{port}"):
+            continue
+
+        try:
+            pids.add(int(pid_text))
+        except ValueError:
+            continue
+
+    return pids
+
+
 def kill_port_listeners(port: int) -> None:
-    """Force-stop every process currently listening on the given TCP port."""
-    ps_script = f"""
-$ErrorActionPreference = 'Stop'
-$listeners = Get-NetTCPConnection -LocalPort {port} -State Listen -ErrorAction SilentlyContinue |
-    Select-Object -ExpandProperty OwningProcess -Unique
+    """Force-stop every process listening on the given TCP port."""
+    pids = listening_pids(port)
 
-foreach ($processId in $listeners) {{
-    try {{
-        Stop-Process -Id $processId -Force -ErrorAction Stop
-        Write-Output ('Stopped PID ' + $processId + ' on port {port}')
-    }}
-    catch {{
-        Write-Output ('FAILED to stop PID ' + $processId + ': ' + $_.Exception.Message)
-        exit 2
-    }}
-}}
-"""
-    result = subprocess.run(
-        [
-            "powershell.exe",
-            "-NoProfile",
-            "-NonInteractive",
-            "-ExecutionPolicy",
-            "Bypass",
-            "-Command",
-            ps_script,
-        ],
-        capture_output=True,
-        text=True,
-        encoding="utf-8",
-        errors="replace",
-        timeout=15,
+    if not pids:
+        log("amd", f"No existing TCP listeners found on port {port}.")
+        log("nvidia", f"No existing TCP listeners found on port {port}.")
+        return
+
+    for listener_pid in sorted(pids):
+        result = subprocess.run(
+            ["taskkill.exe", "/PID", str(listener_pid), "/T", "/F"],
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+            timeout=15,
+            check=False,
+        )
+
+        output = (result.stdout or result.stderr or "").strip()
+        if output:
+            log("amd", output)
+            log("nvidia", output)
+
+        # A process may exit naturally after netstat sees it. Verify below
+        # rather than treating taskkill's race-condition exit code as fatal.
+
+    # Wait for Windows to release the sockets, then verify both ports.
+    deadline = time.monotonic() + 8
+    while time.monotonic() < deadline:
+        remaining = listening_pids(port)
+        if not remaining:
+            time.sleep(0.5)
+            log("amd", f"Port {port} is clear.")
+            log("nvidia", f"Port {port} is clear.")
+            return
+        time.sleep(0.5)
+
+    remaining = listening_pids(port)
+    raise RuntimeError(
+        f"Could not clear port {port}. Still listening PID(s): "
+        + ", ".join(str(pid) for pid in sorted(remaining))
+        + ". Try running the manager as Administrator and inspect those processes."
     )
-
-    output = (result.stdout or "").strip()
-    error = (result.stderr or "").strip()
-
-    if output:
-        log("amd", output)
-        log("nvidia", output)
-
-    if result.returncode != 0:
-        detail = error or output or f"PowerShell exited with code {result.returncode}"
-        raise RuntimeError(f"Could not clear port {port}. {detail}")
-
-    time.sleep(0.8)
-    result = subprocess.run(
-        ["powershell.exe", "-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-Command", ps_script],
-        capture_output=True,
-        text=True,
-        encoding="utf-8",
-        errors="replace",
-        timeout=15,
-    )
-
-    output = (result.stdout or "").strip()
-    error = (result.stderr or "").strip()
-    if output:
-        log("amd", output)  # Also visible in the dashboard's startup log.
-        log("nvidia", output)
-    if result.returncode != 0:
-        detail = error or output or f"PowerShell exited with code {result.returncode}"
-        raise RuntimeError(f"Could not clear port {port}. {detail}")
-
-    # Give Windows a moment to release the sockets before launching Ollama.
-    time.sleep(0.8)
 
 
 def start_server(which: str) -> tuple[bool, str]:
@@ -169,12 +187,20 @@ def start_server(which: str) -> tuple[bool, str]:
         env["OLLAMA_MODELS"] = OLLAMA_MODELS
 
         if which == "amd":
+            # Force the ROCm backend. This machine previously detected the
+            # RX 9060 XT with ROCR_VISIBLE_DEVICES=1 alone. Do not set
+            # HIP_VISIBLE_DEVICES as well: the combined override hid the GPU.
             env["OLLAMA_HOST"] = AMD_HOST
+            env["OLLAMA_LLM_LIBRARY"] = "rocm_v7_1"
+            env.pop("HIP_VISIBLE_DEVICES", None)
             env["ROCR_VISIBLE_DEVICES"] = AMD_ROCR_VISIBLE_DEVICES
             env.pop("CUDA_VISIBLE_DEVICES", None)
         else:
+            # Force CUDA so this server does not auto-select the AMD ROCm GPU.
             env["OLLAMA_HOST"] = NVIDIA_HOST
+            env["OLLAMA_LLM_LIBRARY"] = "cuda_v12"
             env["CUDA_VISIBLE_DEVICES"] = NVIDIA_CUDA_VISIBLE_DEVICES
+            env.pop("HIP_VISIBLE_DEVICES", None)
             env.pop("ROCR_VISIBLE_DEVICES", None)
 
         proc = subprocess.Popen(
@@ -198,8 +224,10 @@ def start_server(which: str) -> tuple[bool, str]:
         log(which, f"Starting: {exe} serve")
         log(which, f"OLLAMA_HOST={env['OLLAMA_HOST']}")
         log(which, f"OLLAMA_MODELS={env['OLLAMA_MODELS']}")
+        log(which, f"OLLAMA_LLM_LIBRARY={env['OLLAMA_LLM_LIBRARY']}")
         log(which, "GPU visibility: " + (
-            f"ROCR_VISIBLE_DEVICES={env['ROCR_VISIBLE_DEVICES']}"
+            f"ROCR_VISIBLE_DEVICES={env['ROCR_VISIBLE_DEVICES']} "
+            f"(HIP_VISIBLE_DEVICES unset)"
             if which == "amd"
             else f"CUDA_VISIBLE_DEVICES={env['CUDA_VISIBLE_DEVICES']}"
         ))
@@ -273,7 +301,7 @@ main{padding:18px 20px;max-width:1800px;margin:auto}
    <div id="nvidia-log" class="log"></div><div class="footer">CUDA_VISIBLE_DEVICES configured by the manager</div>
   </section>
  </div>
- <div class="info"><b>Note:</b> The current Ollama 0.34.2 CUDA runner was observed skipping the GTX 1060 (compute capability 6.1). This dashboard can start its server process, but does not make that runner compatible. Check the NVIDIA log for the actual backend selected.</div>
+ <div class="info"><b>Backend pinning:</b> AMD is forced to <code>rocm_v7_1</code>; NVIDIA is forced to <code>cuda_v13</code>. This prevents the NVIDIA instance from falling back to the AMD ROCm GPU. <b>Compatibility caveat:</b> the GTX 1060 is Pascal (compute capability 6.1), which CUDA 13 no longer supports for offline compilation/library support. The NVIDIA server will be pinned to CUDA and will not fall back to AMD, but GPU inference on the GTX 1060 requires an Ollama CUDA 12.x runner built with sm_61 support.</div>
 </main>
 <script>
 async function action(gpu,verb){
@@ -343,7 +371,7 @@ def main():
         print("Ports cleared.")
     except Exception as exc:
         print(f"Port cleanup failed: {exc}")
-        print("If access is denied, close the existing Ollama process or run this script as Administrator.")
+        print("If access is denied, close the listed process or run this script as Administrator.")
         raise SystemExit(1)
 
     print("Starting both Ollama servers...")
