@@ -567,3 +567,79 @@ ul { list-style: none; }
   .composer-wrap { padding: 16px 16px calc(16px + env(safe-area-inset-bottom, 0px)) 16px; }
   .chat-stream { padding-bottom: calc(180px + env(safe-area-inset-bottom, 0px)); }
 }
+
+/* ============ LIVE TOOL & BUFFER STATUS ============ */
+.tool-status-live {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 16px;
+  margin: 6px 0 10px 0;
+  border-radius: 14px;
+  background: linear-gradient(135deg, rgba(212, 175, 55, 0.08) 0%, rgba(255, 255, 255, 0.02) 100%);
+  border: 1px solid rgba(212, 175, 55, 0.25);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  box-shadow: 0 4px 20px -4px rgba(0, 0, 0, 0.5), 0 0 15px rgba(212, 175, 55, 0.08);
+  font-size: 0.82rem;
+  color: var(--fg);
+  animation: toolStatusFadeIn 0.3s cubic-bezier(0.22, 1, 0.36, 1) forwards, pulse-gold-glow 2.4s infinite ease-in-out;
+  transition: all 0.3s ease;
+}
+
+.tool-status-live.synthesizing {
+  border-color: rgba(245, 215, 122, 0.45);
+  background: linear-gradient(135deg, rgba(212, 175, 55, 0.14) 0%, rgba(255, 255, 255, 0.03) 100%);
+  box-shadow: 0 4px 25px -2px rgba(0, 0, 0, 0.6), 0 0 22px rgba(245, 215, 122, 0.2);
+}
+
+.buffer-indicator-wrap {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+}
+
+.buffer-spinner {
+  animation: buffer-spin 0.85s linear infinite;
+  display: inline-block;
+  vertical-align: middle;
+}
+
+@keyframes buffer-spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@keyframes toolStatusFadeIn {
+  from { opacity: 0; transform: translateY(4px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes pulse-gold-glow {
+  0%, 100% {
+    box-shadow: 0 4px 20px -4px rgba(0, 0, 0, 0.5), 0 0 12px rgba(212, 175, 55, 0.08);
+  }
+  50% {
+    box-shadow: 0 4px 25px -2px rgba(0, 0, 0, 0.6), 0 0 20px rgba(245, 215, 122, 0.22);
+  }
+}
+
+.cutoff-transitioning {
+  opacity: 0.35;
+  filter: blur(0.5px);
+  transform: translateY(-2px);
+  transition: opacity 0.35s ease, filter 0.35s ease, transform 0.35s ease;
+  pointer-events: none;
+}
+
+.answer-fade-enter {
+  animation: answerFadeIn 0.4s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+@keyframes answerFadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}

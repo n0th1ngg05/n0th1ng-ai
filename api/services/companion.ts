@@ -315,11 +315,16 @@ async function runChatPipeline(ws: CompanionSocket, opts: ChatPipelineOptions) {
             buffer = lines.pop() ?? "";
 
             for (const line of lines) {
-                if (!line.trim()) continue;
+                let raw = line.trim();
+                if (!raw) continue;
+                if (raw.startsWith("data:")) {
+                    raw = raw.slice(5).trim();
+                }
+                if (!raw || raw === "[DONE]") continue;
 
                 let parsed: any;
                 try {
-                    parsed = JSON.parse(line);
+                    parsed = JSON.parse(raw);
                 } catch {
                     continue;
                 }

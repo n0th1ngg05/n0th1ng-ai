@@ -102,6 +102,16 @@ const TOOL_PATTERNS: Record<string, RegExp[]> = {
     /\bfind\s+out\s+(what|who|when|where)\b.*\b(now|today|currently|recently)\b/i,
     /\bwhat\s+time\s+is\s+it\s+in\b/i,
     /\bcurrent\s+(stock|crypto|bitcoin|market)\s+price\b/i,
+    /\b(current|latest|recent)\s+.+\s*(election|results|news|poll|update|score|price)/i,
+    /\b(election|midterm)\s+results\b/i,
+    /\bwhat\s+do\s+you\s+think\s+about\s+(the\s+)?(current|latest|recent)\b/i,
+    /\bwho\s+won\b/i,
+    /\bwho\s+is\s+(the\s+)?(current\s+)?(president|prime\s+minister|ceo|leader|governor|mayor|chancellor|pope|king|queen)\s+of\b/i,
+    /\b(who\s+won|winner\s+of)\s+(the\s+)?(super\s*bowl|world\s*cup|champions\s*league|oscar(s)?|grammy(s)?|election|nba|fifa|olympics?)\b/i,
+    /\bwhat\s+happened\s+(to|with|in)\s+.+\s+(today|yesterday|recently|this\s+week|this\s+month|this\s+year)\b/i,
+    /\b(is|has)\s+.+\s+(launched|released|died|resigned|stepped\s+down|canceled|cancelled|started)\s+(yet|recently|today)\b/i,
+    /\b(latest|current|recent)\s+(status|version|release|specifications|specs|features)\s+(of|for)\b/i,
+    /\b(latest|current|recent)\s+(news|updates?|developments?|headlines?)\b/i,
   ],
 
   research_query: [

@@ -700,6 +700,100 @@ export async function shouldUseTools(
 
 }
 
+
+/**
+ * Direct Tool Resolution (Bypasses Stage 0 and Stage 1 LLM Gate).
+ * Directly resolves tool intent via Stage 2 regex and Stage 3 (lfm2.5-thinking:1.2b).
+ */
+export async function resolveToolsDirectly(
+    prompt: string,
+    conversationContext = "",
+    uploadedAttachments: any[] = []
+): Promise<ToolDecision> {
+
+    const ROUTER_CONTEXT_CHAR_LIMIT = 400;
+
+    const trimmedContext = conversationContext.trim();
+
+    const contextForRouter =
+        trimmedContext.length > ROUTER_CONTEXT_CHAR_LIMIT
+            ? "…" + trimmedContext.slice(-ROUTER_CONTEXT_CHAR_LIMIT)
+            : trimmedContext;
+
+    const attachmentHint = buildAttachmentHint(uploadedAttachments);
+
+    // ── Stage 2 — regex matching ──────────────────────────────────────────────
+
+    const patternResult = matchPatterns(prompt);
+
+    let resolvedByRegex: ToolCall[] = [];
+    let unresolvedMatches: PatternMatch[] = [];
+    let ambiguousReason: string | null = null;
+
+    if (patternResult.status === "clean") {
+
+        for (const match of patternResult.matches) {
+            const call = regexCanFullyResolve(match, prompt);
+            if (call) {
+                resolvedByRegex.push(call);
+            } else {
+                unresolvedMatches.push(match);
+            }
+        }
+
+    } else if (patternResult.status === "ambiguous") {
+
+        ambiguousReason = patternResult.reason;
+        unresolvedMatches = patternResult.matches;
+
+    }
+
+    console.log(
+        `[ROUTER][DIRECT-STAGE2] status=${patternResult.status} ` +
+        `resolved=[${resolvedByRegex.map(t => t.tool).join(", ")}] ` +
+        `unresolved=[${unresolvedMatches.map(m => m.tool).join(", ")}]` +
+        (ambiguousReason ? ` reason="${ambiguousReason}"` : "")
+    );
+
+    // Clean regex resolution with zero leftover ambiguity/unresolved names → skip Stage 3
+    if (
+        patternResult.status === "clean" &&
+        unresolvedMatches.length === 0 &&
+        resolvedByRegex.length > 0
+    ) {
+
+        const finalTools = dedupe(resolvedByRegex);
+
+        return {
+            mode: inferMode(finalTools),
+            status: buildStatus(finalTools),
+            tools: finalTools,
+        };
+
+    }
+
+    // ── Stage 3 — small model fill-in (lfm2.5-thinking:1.2b) ─────────────────
+
+    const stage3Tools = await stage3FillIn(
+        prompt,
+        contextForRouter,
+        attachmentHint,
+        resolvedByRegex,
+        unresolvedMatches,
+        ambiguousReason
+    );
+
+    const finalTools = dedupe([...resolvedByRegex, ...stage3Tools]);
+
+    return {
+        mode: inferMode(finalTools),
+        status: buildStatus(finalTools),
+        tools: finalTools,
+    };
+
+}
+
+
 // ── Agent loop entry point ─────────────────────────────────────────────────────
 // Called from agentLoop.ts once per round that the main model wants a tool.
 //

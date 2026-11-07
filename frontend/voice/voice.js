@@ -350,6 +350,15 @@ class AudioQueue {
     this._firstPlayed = false;
   }
 
+  /** Clear pending segments and stop audio playback (e.g. on response reset). */
+  clear() {
+    this._pending = {};
+    this._chain = [];
+    this._nextSeq = 0;
+    this._playing = false;
+    this._engine.stopAudio?.();
+  }
+
   /** Enqueue a segment. May be called in any order. */
   push(sequence, base64Audio) {
     this._pending[sequence] = base64Audio;
@@ -2047,28 +2056,37 @@ class VoiceConversation {
     // ─────────────────────────────────────────────────────────────────────
 
     const processLine = async (line) => {
-      if (!line.trim()) return;
+      let raw = line.trim();
+      if (!raw) return;
+      if (raw.startsWith("data:")) {
+        raw = raw.slice(5).trim();
+      }
+      if (!raw || raw === "[DONE]") return;
       let json;
       try {
-          json = JSON.parse(line);
+          json = JSON.parse(raw);
       } catch {
           return;
       } 
       if (json.conversationId && !this.conversationId) {
           this.conversationId = json.conversationId;
       }
-      if (json.status) {
+      if (json.resetResponse) {
+        answer = "";
+        audioQueue.clear();
+        this.ui.updateAssistantMessage(messageId, "");
+        if (json.notification) {
+          this.ui.stateMgr.setState("THINKING", json.notification);
+        }
+        return;
+      }
 
+      if (json.status || json.notification) {
     this.ui.stateMgr.setState(
-
         "THINKING",
-
-        json.status
-
+        json.notification || json.status
     );
-
     return;
-
 }
       if (json.error) {
         // boot.ts can now send a structured error chunk mid-stream (Ollama

@@ -1,27 +1,75 @@
-# n0th1ng AI — Personal Intelligence Workstation
+# n0th1ng AI V2.0 — Personal Intelligence Workstation
 
 > **You Imagine, We Render.**
 
-n0th1ng AI is a fully self-hosted, privacy-first, personal artificial intelligence workstation. It is not a SaaS product, not a subscription service, and not a cloud tool. It is an entire intelligence operating environment that runs entirely on your own machine — your hardware, your models, your data, your rules.
+n0th1ng AI is a fully self-hosted, privacy-first, personal artificial intelligence workstation. It is not a SaaS product, not a subscription service, and not a cloud tool. It is an entire intelligence operating environment that runs on your own hardware — your models, your data, your rules.
 
-Built from the ground up as a unified platform, n0th1ng AI integrates large language models, image generation, cinematic video generation, speech intelligence, autonomous coding agents, document intelligence, real-time system monitoring, and a personal memory system — all under one roof, all local, all private.
+Built from the ground up as a unified platform, n0th1ng AI integrates large language models, image generation, cinematic video generation, speech intelligence, autonomous coding agents, document intelligence, real-time system monitoring, a persistent memory system, and distributed GPU cluster nodes — all under one roof, all private, and secured by an enterprise-grade **V2.0 Workstation Gatekeeper**.
+
+---
+
+## What's New in Version 2.0 (V2.0)
+
+Version 2.0 upgrades n0th1ng AI from a purely local prototype to a **cloud-hardened, production-ready workstation** that can be securely deployed both on a local workstation and exposed to the public internet on an Oracle Cloud Infrastructure (OCI) or VPS instance without compromise.
+
+- **Single-Operator Zero-Trust Gatekeeper**: Eliminates multi-tenant SaaS complexity while enforcing ironclad, defense-in-depth security. A single human session primitive handles multiple unlock methods without modifying existing frontend fetch calls.
+- **Layered Authentication**:
+  - **Master Password**: Memory-hard **Argon2id** password hashing (`64 MB`, `timeCost: 3`, `parallelism: 1`), fully tunable via environment variables.
+  - **RFC 6238 TOTP 2FA**: Time-based one-time passwords with secrets encrypted at rest via AES-256-GCM, strict clock drift tolerance (`window: 1`, ±30s), pending-token intermediate states, and atomic database test-and-set queries preventing replay attacks.
+  - **Trusted Device Pairing & Quick PIN**: Cryptographically signed `n0th1ng_device_trust` cookies paired with Argon2id-hashed PINs (4–8 digits) for instantaneous unlock on trusted devices.
+  - **WebAuthn / Passkeys (FIDO2)**: Hardware-backed biometrics via Windows Hello, Apple Touch ID / Face ID, Android biometrics, and physical YubiKeys via native zero-dependency WebAuthn Level 3.
+- **Tiered Trust & Step-Up Elevation**:
+  - Dual-tier scopes: `scope: "standard"` (read telemetry, browse, standard chat) vs `scope: "forge_unlocked"` (Forge & ForgeX code execution, shell commands, docker, runtime management).
+  - 30-minute idle auto-demotion to protect unattended workstations.
+  - Real-time interactive UI elevation modal and 1-click demote toggle in global navbar.
+- **Cloudflare Access Outer Perimeter**:
+  - Native RS256 JWK verification via pure Node `crypto` (zero third-party JWT dependencies).
+  - Validates Cloudflare Access Service Tokens for automated machine communication.
+  - Automatic, seamless passthrough for local development.
+- **Reverse Proxy & Hardened HTTP Transport**:
+  - Fetch Metadata `Sec-Fetch-Site: cross-site` CSRF blocking on all state-changing endpoints.
+  - Strict HTTP security headers (`X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`, `Referrer-Policy: strict-origin-when-cross-origin`, conditional `HSTS`).
+  - Production-ready Caddy reverse proxy profile with full SSE and WebSocket streaming support.
+- **Hardened Distributed GPU Workers**:
+  - Worker Exposure Gateway running an authenticated proxy on port `3443` in front of raw worker port `3001`.
+  - Constant-time comparison (`crypto.timingSafeEqual`) and default placeholder rejection.
+  - Optional database connection resilience (workers boot and authenticate cleanly even in DB-less environments).
+  - Operator CLI for worker key provisioning and revocation (`npm run worker:keys`).
+- **2AM Break-Glass CLI Recovery**:
+  - Shell-only recovery tool (`npm run auth:reset` / `scripts/reset-auth.ts`) allowing instant password resets, session revocation, and 2FA lockout bypass over SSH.
+- **Sub-Second TTFT Engine (<50ms Response) & Live SSE Pipeline**:
+  - **Tier 0 Intent Classifier (`api/services/intentClassifier.ts`)**: Pre-classifies user prompts in <1ms without LLM prefill across `GREETING`, `CASUAL`, `GENERAL`, `RAG_QUERY`, and `TOOL_TASK`.
+  - **Semantic Response Caching (`api/services/semanticCache.ts`)**: Sub-50ms Time to First Token for greetings, small talk, and intellectual FAQs using Tier A exact matching (<0.1ms) and Tier B vector cosine similarity (15–30ms) with simulated fluid word streaming.
+  - **Automatic Prefix Caching (APC) Prompt Builder (`api/lib/apcPrompt.ts`)**: Restructures prompts to keep static system instructions (Tokens 0..K) and conversation history (Tokens K..M) strictly at the invariant prefix, placing dynamic temporal timestamps and RAG chunks at the tail. Maximizes KV cache reuse in Ollama/vLLM backends, dropping cold TTFT by up to 90%.
+  - **Direct Tool Resolution & 6s Parallel Heartbeat**: Bypasses Stage 0/1 LLM pre-checks for `TOOL_TASK`, invoking lightweight small models directly while emitting background status heartbeats every 6s to eliminate perceived latency during tool execution.
+  - **Autonomous Knowledge Cutoff Detection & Internet Search Fallback (`api/lib/cutoffDetector.ts`)**: Evaluates model output mid-stream for knowledge cutoff refusals or post-cutoff event admissions (e.g., elections, current events beyond training cutoff). Automatically intercepts the refusal, queries live internet search via Tavily, and re-synthesizes an accurate answer in real time with source citations.
+  - **True Server-Sent Events (SSE) Live Token Streaming Protocol**: Upgrades `/api/chat/stream` and `/api/chat/agent-stream` to standard SSE (`Content-Type: text/event-stream; charset=utf-8`, `Cache-Control: no-cache, no-transform`, `Connection: keep-alive`, `X-Accel-Buffering: no`) with `data: ...\n\n` framing, eliminating TCP socket MTU buffering.
+  - **Decoupled Frontend Render Pipeline (`chat.js`)**: Decouples network read loops from DOM updates via `requestAnimationFrame` scheduling. Batches heavy markdown parsing (`marked.parse`) and syntax highlighting (`hljs.highlightElement`) to 60 FPS display frames, preventing main thread starvation and eliminating token dumping/freezes.
+  - **Aurora Gold Luxury Micro-Interactions**: Features an animated vector buffer ring (`getBufferSpinnerSvg()`) matching the workstation's gold luxury palette, soft-blur cutoff refusal transition (`.cutoff-transitioning`), and smooth upward slide-in (`.answer-fade-enter`) for synthesized answers.
+- **Instant Startup Boot & SSR Timeout Elimination**:
+  - **Vite Watcher Decoupling (`vite.config.ts`)**: Introduced `WATCH_IGNORED` regex to exclude `.venv`, `storage/`, `uploads/`, and media directories from recursive file watching, slashing boot time from 5–7 minutes to under 3 seconds.
+  - **Lazy Model Initialization**: Surya OCR, Surya Layout, and Marker PDF defer neural weight loading to first inference via `_ensure_loaded()`.
+  - **Asynchronous Server Warmup (`api/boot.ts`)**: Decoupled speech and Python runtime initialization from top-level `await` to eliminate Vite 60s `fetchModule` RPC timeouts.
+- **Multi-GPU Dual Ollama Architecture (`worker/ollama_dual.py`)**:
+  - Segregates heavy reasoning and Agent Loop inference (Port 11434) from background embedding, vision, and speech tasks (Port 11435).
+  - Isolates GPU compute contexts via pinned `CUDA_VISIBLE_DEVICES` with automated health recovery.
 
 ---
 
 ## Table of Contents
 
 1. [Philosophy](#philosophy)
-2. [High-Level Architecture](#high-level-architecture)
-3. [Module Overview](#module-overview)
-4. [Tech Stack](#tech-stack)
-5. [Database Schema](#database-schema)
-6. [Backend API](#backend-api)
-7. [Chatspace](#chatspace)
-8. [Image Studio](#image-studio)
-9. [FramesX](#framesx)
-10. [Voice Studio](#voice-studio)
-11. [Forge](#forge)
-12. [ForgeX](#forgex)
+2. [V2.0 Workstation Architecture](#v20-workstation-architecture)
+3. [Security & Authentication Subsystem](#security--authentication-subsystem)
+4. [Module Overview](#module-overview)
+5. [Tech Stack](#tech-stack)
+6. [Database Schema](#database-schema)
+7. [Backend API](#backend-api)
+8. [Chatspace](#chatspace)
+9. [Image Studio](#image-studio)
+10. [FramesX](#framesx)
+11. [Voice Studio](#voice-studio)
+12. [Forge & ForgeX (Tiered Execution)](#forge--forgex-tiered-execution)
 13. [Files and Document Intelligence](#files-and-document-intelligence)
 14. [Knowledge Base and RAG](#knowledge-base-and-rag)
 15. [Monitor](#monitor)
@@ -29,956 +77,623 @@ Built from the ground up as a unified platform, n0th1ng AI integrates large lang
 17. [Python Runtime](#python-runtime)
 18. [Speech Runtime](#speech-runtime)
 19. [Memory System](#memory-system)
-20. [Distributed Cluster Mode](#distributed-cluster-mode)
+20. [Distributed GPU Cluster Workers](#distributed-gpu-cluster-workers)
 21. [Frontend Architecture](#frontend-architecture)
-22. [Environment Variables](#environment-variables)
-23. [Installation and Setup](#installation-and-setup)
-24. [Running the Project](#running-the-project)
-25. [Project Structure](#project-structure)
+22. [Production Deployment Guide (Oracle Cloud / Caddy)](#production-deployment-guide-oracle-cloud--caddy)
+23. [Emergency 2AM Break-Glass Recovery Runbook](#emergency-2am-break-glass-recovery-runbook)
+24. [Environment Variables](#environment-variables)
+25. [Installation and Setup](#installation-and-setup)
+26. [Running the Project](#running-the-project)
+27. [Automated Verification Test Suite](#automated-verification-test-suite)
+28. [Project Structure](#project-structure)
 
 ---
 
 ## Philosophy
 
-Most AI tools are built around the idea of access. You access their models, you access their servers, your data passes through their infrastructure. n0th1ng AI is built around the opposite idea: **ownership**.
+Most AI tools are built around the idea of access: you access their models, you access their servers, and your data passes through their infrastructure. n0th1ng AI is built around the opposite idea: **ownership**.
 
-Every component runs locally:
+Every component runs locally or on your private infrastructure:
 - Models are served by Ollama on your own GPU or CPU
 - Image generation runs through ComfyUI on your own hardware
 - Video generation runs through LTX-Video and Wan2.1 locally
 - Speech synthesis and recognition run through dedicated local Python runtimes
-- All data is stored in your own MySQL database
+- All data is stored in your private MySQL database
 - No data ever leaves your machine unless you explicitly configure an external provider
+- Access is guarded by a single-user zero-trust workstation perimeter
 
 The distance between intention and creation should collapse to zero. Every thought should have a render path. That is the design goal of n0th1ng AI.
 
 ---
 
-## High-Level Architecture
+## V2.0 Workstation Architecture
 
-The application is structured as a central Hono Node.js server that bridges all subsystems:
+n0th1ng AI V2.0 employs a layered defense-in-depth pipeline bridging user authentication, reverse proxy termination, API services, and distributed compute workers.
 
-- **Browser** — multi-page plain HTML/CSS/JS frontend
-- **Hono API Server** (`api/boot.ts`) — tRPC routers, REST endpoints, SSE streams, WebSocket handlers, file upload, auth middleware
-- **MySQL Database** — all persistent state via Drizzle ORM
-- **Ollama** — local LLM serving
-- **ComfyUI** — image and video generation
-- **Python Runtimes** — OCR, vision analysis, speech, PDF parsing
+```text
+[ Browser / Native Authenticator ] 
+                │
+                ▼
+┌────────────────────────────────────────────────────────┐
+│  Cloudflare Access / Zero Trust (Phase 7)              │
+│  - Outer Perimeter RS256 JWK Validation                │
+│  - Service Token Verification for Automated Traffic    │
+└───────────────────────┬────────────────────────────────┘
+                        │
+                        ▼
+┌────────────────────────────────────────────────────────┐
+│  Reverse Proxy (Caddy / Nginx) (Phase 8)               │
+│  - TLS Termination & Strict Transport Security (HSTS)  │
+│  - SSE & WebSocket stream pass-through (127.0.0.1:3000)│
+└───────────────────────┬────────────────────────────────┘
+                        │
+                        ▼
+┌────────────────────────────────────────────────────────┐
+│  n0th1ng AI Workstation Gatekeeper (api/boot.ts)       │
+│  - Fetch Metadata CSRF Guard (Sec-Fetch-Site check)    │
+│  - Opaque Signed Session Token (HMAC-SHA256)           │
+│  - Argon2id Password / RFC 6238 TOTP / FIDO2 Passkeys  │
+│  - Trusted Device Pairing + Quick PIN Unlock           │
+│  - In-Memory Progressive Rate Limiting & Lockout       │
+└───────────────┬────────────────────────┬───────────────┘
+                │                        │
+       [Human Session]             [Worker Lane]
+                │                        │
+                ▼                        ▼
+┌──────────────────────────┐   ┌──────────────────────────┐
+│ Execution Gate (Phase 6) │   │ Cluster Worker Endpoint  │
+│ - scope: "standard"      │   │ - SHA-256 Key Registry   │
+│ - scope: "forge_unlocked"│   │ - Remote GPU Task Proxy  │
+│ - Step-Up Elevation      │   │ - Telemetry Ingestion    │
+└───────────────┬──────────┘   └──────────────────────────┘
+                │
+                ▼
+┌────────────────────────────────────────────────────────┐
+│  Core Workstation Engine & Local Runtimes              │
+│  - Hono API / tRPC v11 / Drizzle ORM (MySQL)           │
+│  - Ollama LLM / ComfyUI / LTX-Video / Wan2.1           │
+│  - Python FastAPI Sidecars (OCR, Vision, Speech, Moshi)│
+└────────────────────────────────────────────────────────┘
+```
 
-The server runs on Node.js and is served locally on port 3000.
+---
+
+## Security & Authentication Subsystem
+
+### 1. Master Password (Argon2id)
+- **Algorithm**: `argon2id` via native bindings.
+- **Parameters**: 64 MB memory cost (`m=65536`), 3 iterations (`t=3`), 1 thread (`p=1`). Fully tunable via `ARGON2_MEMORY_COST`, `ARGON2_TIME_COST`, and `ARGON2_PARALLELISM`.
+- **Storage**: Stored in a single-row `auth_credentials` table. Never stored in plain text.
+- **Password Updates**: Automatically revokes all existing sessions upon password reset.
+
+### 2. Time-Based One-Time Passwords (TOTP 2FA)
+- **Standard**: RFC 6238 HMAC-SHA1 TOTP using `speakeasy` and `qrcode`.
+- **Encryption at Rest**: Shared secrets are encrypted in `auth_totp_secrets.secret` via AES-256-GCM using keys derived from `APP_SECRET`.
+- **Clock Drift Tolerance**: Strictly bounded to `window: 1` (current step ± 1, allowing 90s total tolerance). Arbitrary or wide timestamp scans are rejected.
+- **Replay Protection**: Stores `lastVerifiedStep` in the database. Verifications perform an atomic SQL test-and-set query:
+  ```typescript
+  where(
+    and(
+      eq(authTotpSecrets.id, row.id),
+      or(
+        isNull(authTotpSecrets.lastVerifiedStep),
+        lt(authTotpSecrets.lastVerifiedStep, matchedStep)
+      )
+    )
+  )
+  ```
+  If `affectedRows === 0`, the attempt is rejected as `code_already_used`, preventing duplicate submissions or race conditions across login and elevation flows.
+- **Pending-Token Intermediate State**: Unauthenticated sessions waiting for second-factor entry receive a temporary 32-byte opaque token with a 5-minute TTL. Pending tokens cannot access any application routes.
+
+### 3. Trusted Device Pairing & Quick PIN Unlock
+- **Device Trust Model**: Upon successful full credential login, the operator can check "Remember this device". A 32-byte opaque token is cryptographically signed (`HMAC-SHA256`) and set as an `HttpOnly` cookie (`n0th1ng_device_trust`), completely isolated from the session cookie.
+- **Quick PIN Architecture**: A 4–8 digit PIN is hashed with Argon2id and stored exclusively on the paired device record. PIN unlock (`POST /api/auth/pin/unlock`) only succeeds when presented with a valid device trust cookie.
+- **Scope Isolation**: PIN-unlocked sessions are strictly assigned `scope: "standard"`. They cannot execute code or Forge tasks without step-up elevation.
+- **Auto-Lock on Inactivity**: Global activity tracker in `frontend/assets/nav.js` monitors user interaction. After 15 minutes of inactivity or system sleep, the session is terminated and returns to `/frontend/login/?idle=true`.
+
+### 4. WebAuthn / Passkeys (FIDO2)
+- **Standard**: W3C WebAuthn Level 3 / FIDO2 via audited `@simplewebauthn/server` and `@simplewebauthn/browser`.
+- **Supported Authenticators**: Windows Hello, Apple Touch ID / Face ID, Android biometrics, and physical YubiKeys / Titan keys.
+- **Challenge Lifecycle**: Cryptographic random challenges are tracked in-memory with a 5-minute TTL and atomically consumed upon verification to prevent replay attacks.
+- **Dynamic Origin Resolution**: Dynamically verifies Relying Party ID (`rpID`) and expected origins from the request, accepting both local development hosts and production HTTPS domains without code changes.
+
+### 5. Tiered Trust & Step-Up Elevation
+- **Scope Segregation**:
+  - `scope: "standard"`: Granted by PIN unlock. Allows reading chat history, inspecting telemetry, searching documents, and conversational querying.
+  - `scope: "forge_unlocked"`: Granted by full Master Password, TOTP, or Passkey authentication. Required to run Forge, ForgeX, execute arbitrary code, or modify server runtimes.
+- **tRPC Enforcement**: Procedures in `api/forge/`, `api/forgex/`, and `api/routers/runtime.ts` use `elevatedForgeProcedure`, returning `FORBIDDEN: ELEVATION_REQUIRED` for standard sessions.
+- **Idle Auto-Demotion**: Sessions with `forge_unlocked` that remain idle for 30 minutes are automatically downgraded to `standard` in the database.
+- **Elevation Modal**: The UI intercepts `ELEVATION_REQUIRED` errors and displays a glassmorphic prompt to re-authenticate with Master Password or Passkey without reloading the page.
+
+### 6. Cloudflare Access Outer Perimeter
+- **Native RS256 Verification**: Pure Node `crypto` JWK verification without external JWT libraries.
+- **Public Certificate Caching**: Automatically fetches and caches signing keys from Cloudflare Access (`/cdn-cgi/access/certs`) with a 1-hour TTL.
+- **Service Tokens**: Validates `CF-Access-Client-Id` and `CF-Access-Client-Secret` using constant-time string comparison (`crypto.timingSafeEqual`) for automated worker communication.
+- **Development Passthrough**: Seamlessly bypassed when running on `localhost:3000` with `CF_ACCESS_REQUIRED=false`.
+
+### 7. CSRF Defense & Security Headers
+- **Fetch Metadata Inspection**: Inspects `Sec-Fetch-Site`. Any state-changing method (`POST`, `PUT`, `DELETE`, `PATCH`) originating cross-site is immediately aborted with HTTP 403 `CSRF_DETECTED`.
+- **Explicit Origin Allowlist**: Validates `Origin` and `Referer` against explicit operator-configured variables (`ALLOWED_ORIGINS`, `PRODUCTION_ORIGIN`), never blindly trusting client-supplied Host headers.
+- **Response Headers**: Enforces `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`, `Referrer-Policy: strict-origin-when-cross-origin`, and conditional `Strict-Transport-Security` over HTTPS.
 
 ---
 
 ## Module Overview
 
-| Module | Description | Status |
-|--------|-------------|--------|
-| Chatspace | Multi-model AI conversation with tool use, RAG, memory, and agent mode | Live |
-| Image Studio | Text-to-image generation via ComfyUI with 10+ providers | Live |
-| FramesX | Multi-scene cinematic video generation via LTX-Video and Wan2.1 | Live |
-| Voice Studio | Local TTS/STT with 7+ providers, voice conversations with memory | Live |
-| Forge | Autonomous multi-task build agent with plan/act/evaluate loop | Live |
-| ForgeX | Advanced agentic coding via Claude Code CLI bridged to local Ollama | Live |
-| Files | Document library with OCR, PDF parsing, LangGraph analysis pipeline | Live |
-| Knowledge Base | RAG-powered knowledge store with semantic search and embeddings | Live |
-| Monitor | Real-time system telemetry: CPU, GPU, VRAM, RAM, network, services | Live |
-| Persona Studio | NVIDIA Moshi real-time voice-to-voice AI persona conversations | Live |
-| Robotics | Planned embodied AI layer | 2026 |
-| Settings | System configuration, model management, provider configuration | Live |
+| Module | Description | Access Tier | Status |
+|---|---|---|---|
+| **Chatspace** | Multi-model conversational AI with tool use, RAG, memory, and agent mode | Standard | Live |
+| **Image Studio** | Text-to-image generation via ComfyUI with 10+ configured workflows | Standard | Live |
+| **FramesX** | Multi-scene cinematic video generation via LTX-Video and Wan2.1 | Standard | Live |
+| **Voice Studio** | Local TTS/STT with 7+ providers and voice conversations with memory | Standard | Live |
+| **Forge** | Autonomous multi-task build agent with plan/act/evaluate loop | Elevated (`forge_unlocked`) | Live |
+| **ForgeX** | Agentic coding via Claude Code CLI bridged to local Ollama | Elevated (`forge_unlocked`) | Live |
+| **Files & Docs** | Document library with OCR, PDF parsing, and LangGraph analysis pipeline | Standard | Live |
+| **Knowledge Base** | RAG-powered vector store with semantic search and embeddings | Standard | Live |
+| **Monitor** | Real-time system telemetry: CPU, GPU, VRAM, RAM, network, services | Standard | Live |
+| **Persona Studio** | NVIDIA Moshi real-time voice-to-voice AI persona streaming | Standard | Live |
+| **Cluster System** | Remote GPU worker node management and log streaming | Elevated / Machine | Live |
+| **Settings** | System configuration, model management, provider keys | Standard | Live |
 
 ---
 
 ## Tech Stack
 
 ### Core Runtime
-
 | Layer | Technology |
-|-------|------------|
-| Server Framework | Hono v4 — ultra-fast HTTP framework for Node.js |
-| API Layer | tRPC v11 — end-to-end typesafe RPC |
-| ORM | Drizzle ORM v0.45 — fully typesafe SQL ORM |
-| Database | MySQL via mysql2 |
-| Language | TypeScript 5.9 strict mode throughout |
-| Build Tool | Vite 7 (frontend) + esbuild (backend bundle) |
-| Runtime | Node.js ESM |
+|---|---|
+| **Server Framework** | Hono v4 — ultra-fast HTTP framework for Node.js |
+| **API Layer** | tRPC v11 — end-to-end typesafe RPC |
+| **ORM** | Drizzle ORM v0.45 — fully typesafe SQL ORM |
+| **Database** | MySQL 8.0+ via `mysql2` |
+| **Security & Auth** | Argon2id, `@simplewebauthn/server`, `speakeasy`, native Node `crypto` |
+| **Language** | TypeScript 5.9 strict mode throughout |
+| **Build Tool** | Vite 7 (frontend) + esbuild (backend bundle) |
+| **Runtime** | Node.js v22+ (ESM) |
 
-### Frontend
-
+### Frontend Design System
 | Layer | Technology |
-|-------|------------|
-| Architecture | Multi-page application — plain HTML, CSS, vanilla JS per module |
-| Styling | Custom CSS design system with glassmorphism, aurora gradients, micro-animations |
-| Fonts | Inter Tight, JetBrains Mono via Google Fonts |
-| Animations | CSS keyframes, GSAP for advanced animations |
-| 3D | Three.js in the robotics module |
+|---|---|
+| **Architecture** | Multi-page application — plain HTML, CSS, vanilla JS per module |
+| **Design Language** | Aurora glassmorphism, responsive mobile drawer, micro-animations |
+| **Typography** | Inter Tight (UI), JetBrains Mono (Code/Telemetry) |
+| **Auth Integration** | Auto-lock inactivity timer, Step-Up elevation modal, WebAuthn browser handlers |
 
-### AI and Model Layer
-
+### AI and Runtimes
 | Component | Technology |
-|-----------|------------|
-| LLM Serving | Ollama — local model server supporting LLaMA, Qwen, DeepSeek, Mistral, and more |
-| Cloud LLMs | OpenRouter — optional cloud model bridge (supports extended-thinking models like Claude 3.7 Sonnet) |
-| Image Generation | ComfyUI — node-based generation pipeline |
-| Video Generation | LTX-Video 2B distilled and Wan2.1 1.3B T2V via ComfyUI |
-| Embeddings | Ollama embedding models such as nomic-embed-text and mxbai-embed-large |
-| Web Search | Tavily API |
-| Web Scraping | Firecrawl |
-
-### Python Runtimes
-
-| Runtime | Purpose |
-|---------|--------|
-| python-runtime | OCR via Tesseract, PaddleOCR, Surya, EasyOCR; PDF parsing via marker-pdf; Vision via Florence-2, InternVL, MiniCPM, Qwen3VL; LangGraph document analysis |
-| speech-runtime | TTS and STT local inference — Kokoro, Chatterbox, XTTS, Piper, FishSpeech, Dia, Whisper |
-| personaplex-runtime | NVIDIA Moshi real-time voice-to-voice streaming via WebSocket |
+|---|---|
+| **LLM Serving** | Local Ollama (Qwen, LLaMA, DeepSeek, Mistral) + OpenRouter bridge |
+| **Image Generation** | ComfyUI (FLUX, SDXL, SD 1.5, Photorealistic checkpoints) |
+| **Video Generation** | LTX-Video 2B distilled and Wan2.1 1.3B T2V via ComfyUI |
+| **Document Runtime** | FastAPI sidecar: Tesseract, Surya, PaddleOCR, marker-pdf, LangGraph |
+| **Speech Runtime** | FastAPI sidecar: Kokoro, Chatterbox, XTTS v2, Piper, Whisper |
+| **PersonaPlex** | NVIDIA Moshi speech-to-speech engine via bidirectional WebSockets |
 
 ---
 
 ## Database Schema
 
-The entire application state is stored in MySQL via Drizzle ORM. The schema in `db/schema.ts` defines over 30 tables.
+Persistent state is stored in MySQL via Drizzle ORM (`db/schema.ts`).
 
-### Core Tables
-
+### V2.0 Authentication & Security Tables
 | Table | Purpose |
-|-------|---------|
-| users | User accounts with admin and user roles |
-| conversations | Chat conversation sessions with model binding, folder organization, pin state |
-| messages | Individual chat messages with thinking (reasoning trace), is_extended (agent mode flag), execution_summary (post-loop synthesis) |
-| message_tool_calls | Per-round tool call records for agent loop sessions including tool name, arguments, result, success, and per-round thinking trace |
-| folders | Conversation folder hierarchy |
+|---|---|
+| `auth_credentials` | Stores the Argon2id master password hash and timestamp metadata |
+| `auth_totp_secrets` | Encrypted RFC 6238 TOTP secrets (AES-256-GCM), verification status, and `lastVerifiedStep` replay step |
+| `auth_webauthn_credentials` | FIDO2/Passkey credentials: credential ID, public key, counter, transports, and device label |
+| `sessions` | Active sessions: 64-char token, `scope` (`standard` vs `forge_unlocked`), `methodUsed`, IP, expiration, revocation |
+| `device_trust` | Paired trusted devices: signed token, Argon2id-hashed Quick PIN, device metadata, expiration |
+| `worker_api_keys` | Headless cluster machine keys: SHA-256 hash, label, last used timestamp, revocation status |
+| `auth_audit_log` | Security audit trail: timestamp, method, success status, IP, User-Agent, failure reason |
 
-### Generation Tables
-
-| Table | Purpose |
-|-------|---------|
-| ai_models | Registered Ollama models with VRAM usage, token speed, status |
-| generated_images | Image generation history — prompt, provider, model, resolution, steps, CFG, sampler, scheduler, seed, generation time, GPU and VRAM usage |
-| generated_videos | Video generation history — same as images plus frame rate, scene count, LLM planning model, multi-scene JSON snapshot |
-
-### File and Knowledge Tables
-
-| Table | Purpose |
-|-------|---------|
-| files | Uploaded file registry |
-| file_folders | File folder hierarchy with nesting |
-| file_contents | Extracted raw text content per file |
-| knowledge_chunks | Chunked text segments for RAG |
-| chunk_embeddings | Vector embeddings per chunk stored as JSON float arrays |
-| knowledge_entries | Curated knowledge base entries with tags and relevance scores |
-| document_analysis | LangGraph pipeline output per file including summary, entities, keywords, topics, pipeline status |
-| chat_attachments | Per-conversation file uploads with extracted text |
-| chat_attachment_chunks | Chunked attachment text for per-conversation RAG |
-| chat_attachment_embeddings | Embeddings for attachment chunks |
-
-### Voice Tables
-
-| Table | Purpose |
-|-------|---------|
-| voice_conversations | Voice conversation sessions with TTS/STT/voice mode, provider, model, voice ID |
-| voice_messages | Individual voice messages with base64 audio, duration, provider details |
-
-### Memory Tables
-
-| Table | Purpose |
-|-------|---------|
-| memories | Persistent memory entries with category, key, value, importance score, source |
-| memory_chunks | Chunked memory content |
-| memory_chunk_embeddings | Semantic embeddings for memory search |
-
-### Research and Workflow Tables
-
-| Table | Purpose |
-|-------|---------|
-| research_collections | Research project containers |
-| research_documents | Individual research documents with source URLs and bookmarks |
-| workflows | Saved automation workflows as node/edge graph JSON |
-| activity_logs | System-wide audit trail |
-| system_snapshots | Time-series hardware telemetry snapshots for CPU, GPU, RAM, VRAM, network |
-| services | Tracked background services including Ollama, ComfyUI, Python runtimes |
-
-### Forge Tables
-
-| Table | Purpose |
-|-------|---------|
-| forge_sessions | Autonomous build sessions with goal, stack profile, model, workspace path, allocated port |
-| forge_task_nodes | Hierarchical task tree with parent/child tasks, acceptance criteria, dependency graph |
-| forge_iterations | Per-round think/act/evaluate log for each task node |
-| forgex_sessions | ForgeX sessions bridging Claude Code CLI subprocess to local Ollama |
-| forgex_output | Line-by-line subprocess output capture for stdout, stderr, and system events |
+### Application Tables
+- **Chat & Conversations**: `users`, `conversations`, `messages`, `message_tool_calls`, `folders`
+- **Generations**: `ai_models`, `generated_images`, `generated_videos`
+- **Knowledge & RAG**: `files`, `file_folders`, `file_contents`, `knowledge_chunks`, `chunk_embeddings`, `knowledge_entries`, `document_analysis`, `chat_attachments`
+- **Voice & Personas**: `voice_conversations`, `voice_messages`
+- **Memory**: `memories`, `memory_chunks`, `memory_chunk_embeddings`
+- **Forge & ForgeX**: `forge_sessions`, `forge_task_nodes`, `forge_iterations`, `forgex_sessions`, `forgex_output`
+- **Telemetry & Monitoring**: `system_snapshots`, `services`, `activity_logs`, `workflows`
 
 ---
 
 ## Backend API
 
-The backend in `api/boot.ts` is a 2,500+ line Hono application exposing both tRPC and raw HTTP endpoints.
+Mounted in `api/boot.ts` with zero-trust gatekeeper middleware guarding all procedures.
 
-### tRPC Routers
-
-| Router | Responsibilities |
-|--------|-----------------|
-| chat.ts | Conversation and message queries |
-| conversation.ts | Full conversation management — create, delete, rename, pin, move to folder |
-| message.ts | Message CRUD, tool call retrieval, thinking trace access |
-| image.ts | Generated image history, deletion, metadata queries |
-| video.ts | Generated video history and management |
-| file.ts | File library CRUD, folder management, indexing status |
-| fileContent.ts | File content retrieval |
-| knowledge.ts | Knowledge entry management |
-| model.ts | AI model registry with install status, VRAM and performance stats |
-| system.ts | System service status, system snapshots history |
-| activity.ts | Activity log queries |
-| workflow.ts | Workflow save, load, delete |
-| research.ts | Research collection and document management |
-| cluster.ts | Distributed worker node registration and management |
-| providers.ts | Image and video provider listing |
-| runtime.ts | Python runtime status |
-| personaplex.ts | PersonaPlex session management and WebSocket proxy |
-
-### REST and SSE Endpoints
-
-| Endpoint | Description |
-|----------|-------------|
-| POST /api/chat/stream | Main LLM streaming with thinking, RAG injection, memory context |
-| POST /api/chat/stream/extended | Agent loop mode with full tool use and multi-round reasoning |
-| POST /api/generate/image | Triggers ComfyUI image generation job |
-| GET /api/generate/image/stream/:jobId | SSE stream for image generation progress |
-| POST /api/generate/video | Triggers FramesX video generation |
-| GET /api/generate/video/stream/:jobId | SSE stream for video generation progress |
-| POST /api/upload | File upload to knowledge base |
-| POST /api/chat-upload | File upload within a conversation |
-| GET /api/files/:id/analyze-stream | SSE stream for LangGraph document analysis |
-| POST /api/voice/tts | Text-to-speech synthesis |
-| POST /api/voice/stt | Speech-to-text transcription |
-| POST /api/voice/conversation | Full voice conversation turn: STT then LLM then TTS |
-| WS /api/forge/stream | WebSocket stream for Forge autonomous agent |
-| WS /api/forgex/stream | WebSocket stream for ForgeX Claude Code sessions |
-| GET /api/monitor/... | Real-time system metrics |
-| POST /api/cluster/register | Worker node self-registration |
+### V2.0 Authentication Router (`/api/auth/*`)
+| Method | Endpoint | Access | Purpose |
+|---|---|---|---|
+| `GET` | `/api/auth/status` | Public | Returns whether Master Password is initialized |
+| `POST` | `/api/auth/setup` | Public (First-Run) | Sets initial Master Password (disabled once configured) |
+| `POST` | `/api/auth/login` | Public (Rate-Limited) | Verifies password; returns session cookie or TOTP requirement |
+| `POST` | `/api/auth/logout` | Public / Session | Revokes active session in database and clears session cookies |
+| `GET` | `/api/auth/me` | Session | Returns current session status, device info, and active scope |
+| `POST` | `/api/auth/totp/verify-login` | Public (Rate-Limited) | Consumes pending token and 6-digit TOTP code to mint session |
+| `GET` | `/api/auth/totp/status` | Session | Checks if TOTP 2FA is active on the account |
+| `POST` | `/api/auth/totp/enroll` | Session | Generates new encrypted TOTP secret and returns QR data URL |
+| `POST` | `/api/auth/totp/verify` | Session | Verifies initial enrollment code and activates TOTP 2FA |
+| `POST` | `/api/auth/totp/disable` | Session | Disables TOTP 2FA (requires master password verification) |
+| `GET` | `/api/auth/device-trust/status` | Public | Checks if incoming request has a valid `n0th1ng_device_trust` cookie |
+| `POST` | `/api/auth/pin/unlock` | Device Trust | Unlocks workstation using 4–8 digit PIN; mints `standard` session |
+| `POST` | `/api/auth/device-trust/revoke` | Session | Revokes trust for the current device and removes pairing record |
+| `GET` | `/api/auth/webauthn/status` | Public | Returns whether WebAuthn/Passkey authentication is available |
+| `POST` | `/api/auth/webauthn/login-options` | Public | Returns assertion challenge and allowed credential IDs |
+| `POST` | `/api/auth/webauthn/login-verify` | Public | Verifies passkey assertion signature; mints operator session |
+| `POST` | `/api/auth/webauthn/register-options`| Session | Generates attestation challenge for registering a new passkey |
+| `POST` | `/api/auth/webauthn/register-verify` | Session | Verifies and stores new passkey public key and credential ID |
+| `GET` | `/api/auth/webauthn/credentials` | Session | Lists registered passkeys (ID, label, creation, last used) |
+| `DELETE`| `/api/auth/webauthn/credentials/:id` | Session | Deletes and revokes a registered passkey |
+| `POST` | `/api/auth/elevate` | Session | Step-Up re-authentication (Password, TOTP, or Passkey) to `forge_unlocked` |
+| `POST` | `/api/auth/demote` | Session | Drops session from `forge_unlocked` back to `standard` scope |
+| `GET` | `/api/auth/cloudflare/status` | Public | Diagnostic endpoint reporting Cloudflare Access configuration |
 
 ---
 
-## Chatspace
-
-Chatspace is the primary intelligence interface — far more than a simple chat box.
-
-### Standard Chat
-
-Every conversation is bound to an Ollama model at creation time. Messages stream in real-time via SSE. The system maintains:
-
-- **Rolling conversation context** via `services/contextWindow.ts` — intelligently manages the context window, truncating old messages while preserving the most relevant history
-- **Conversation summarization** via `services/conversationSummary.ts` — when conversations grow long, old messages are summarized and compressed, with the summary injected as context on subsequent turns
-- **Thinking and reasoning traces** — for models with native chain-of-thought support such as Qwen3 and Qwen3.5, the reasoning trace is captured live, stored in `messages.thinking`, and rehydrated from the database on conversation reload
-
-### Memory System Integration
-
-Every chat turn automatically:
-1. Searches the semantic memory store for relevant memories via cosine similarity
-2. Injects relevant memories into the system prompt context
-3. After each assistant response, runs a background memory extraction pass to identify and store new memorable information including names, preferences, facts, and relationships
-
-### RAG — Retrieval-Augmented Generation
-
-When files have been indexed in the knowledge base:
-1. The user query is embedded using the selected Ollama embedding model
-2. Cosine similarity search runs across all chunk_embeddings
-3. The top-K most relevant chunks are retrieved
-4. They are injected into the prompt context before sending to the LLM
-
-Chat attachments uploaded within a conversation receive their own per-attachment RAG pipeline, isolated from the global knowledge base.
-
-### Agent Loop — Extended Mode
-
-Extended mode activates `services/agentLoop.ts` — a full autonomous multi-round agent.
-
-Round structure:
-1. Main model receives conversation history plus tool definitions and emits a single instruction
-2. The instruction passes through a 3-stage routing pipeline in `services/toolRouter.ts` that pattern-matches against 30+ tool signatures
-3. The tool is executed via `services/toolExecutor.ts`
-4. The result is fed back into the next round
-5. The loop continues until the model emits a final answer
-
-Available tools in agent mode include:
-- internet_search — Tavily web search
-- read_url — Firecrawl URL scraping
-- search_knowledge — semantic search over the knowledge base
-- store_memory and search_memory — persistent memory read and write
-- run_python — Python code execution via the python-runtime
-- analyze_image — vision model inference
-- generate_image — ComfyUI image generation
-- list_files and read_file — file system access
-- run_sql_query — direct database queries
-- get_system_info — hardware telemetry
-- And 20+ more tools
-
-After the loop completes, `synthesizeExecutionSummary()` runs — a separate LLM call generating a comprehensive session summary stored in `messages.execution_summary`.
-
-All tool calls, round-by-round thinking traces, and results are persisted to `message_tool_calls` for perfect session replay from history.
-
-### OpenRouter Bridge
-
-If an OpenRouter-compatible model ID is detected via `services/openRouter.ts`, chat is transparently routed to the OpenRouter API — giving access to GPT-4, Claude, Gemini, and hundreds of cloud models through the same interface.
-
----
-
-## Image Studio
-
-Image Studio provides a full-featured text-to-image interface backed by ComfyUI.
-
-### Providers
-
-Ten or more generation providers are supported, each with its own pre-configured ComfyUI workflow JSON:
-
-| Provider | Model |
-|----------|-------|
-| FLUX.1 Schnell | Fast FLUX generation |
-| FLUX.2 Klein | Higher quality FLUX |
-| SDXL Base | Stable Diffusion XL |
-| SD 1.5 | Classic Stable Diffusion |
-| Juggernaut XL | Photorealistic SDXL |
-| DreamShaper | Creative SDXL |
-| Pony Diffusion | Stylized generations |
-| And more | Configurable |
-
-### Generation Parameters
-
-- Resolution: Custom width by height presets from 512x512 to 2048x2048
-- Steps: Denoising step count
-- CFG Scale: Classifier-free guidance strength
-- Sampler and Scheduler: Full selection including Euler, DPM++, DDIM, and others
-- Seed: Deterministic generation with seed control
-- Batch Size: Multi-image generation
-- Negative Prompt: Exclusion prompt support
-- Denoise: Inpainting and img2img denoising strength
-
-### Generation Pipeline
-
-1. User submits generation request to POST /api/generate/image
-2. Server creates a job in the generationJobs in-memory Map
-3. The appropriate ComfyUI workflow JSON is parameter-injected
-4. The workflow is submitted to ComfyUI's /prompt API
-5. A polling loop tracks queue position and progress
-6. Events are emitted to the SSE stream
-7. On completion, the image is saved and the record persisted to generated_images
-
-All generation parameters are stored for every image, enabling complete reproduction of any past generation.
-
----
-
-## FramesX
-
-FramesX is the video generation module, supporting multi-scene cinematic workflows.
-
-### Models
-
-| Model | Description |
-|-------|-------------|
-| LTX-Video 2B distilled | Fast 2B parameter video generation |
-| Wan2.1 1.3B T2V | Text-to-video, compact and fast |
-
-### Multi-Scene Generation
-
-1. User provides a long-form cinematic prompt
-2. A planning LLM breaks the prompt into a structured scene breakdown — each scene with its own sub-prompt, duration, mood, and visual style
-3. Each scene is generated as a separate video clip with independent parameters
-4. Clips are concatenated into a final video
-5. The full scene plan JSON is stored in generated_videos.scenes for complete session reproducibility
-
-### Progress Streaming
-
-FramesX streams granular progress events via SSE:
-- planning — LLM scene breakdown in progress
-- scene_start — individual scene generation beginning
-- progress — per-scene ComfyUI step progress
-- scene_done — individual scene complete
-- concatenating — merging scene clips
-- done or error — final states
-
----
-
-## Voice Studio
-
-Voice Studio provides a complete local speech intelligence layer.
-
-### TTS Providers
-
-| Provider | Description |
-|----------|-------------|
-| Kokoro | High-quality neural TTS with multiple voices |
-| Chatterbox | Expressive TTS with emotion control |
-| XTTS v2 | Coqui XTTS with voice cloning capability |
-| Piper | Fast, lightweight TTS |
-| FishSpeech | Natural-sounding TTS |
-| Dia | Dialogue-optimized TTS |
-
-### STT Providers
-
-| Provider | Description |
-|----------|-------------|
-| Whisper | OpenAI Whisper running locally with multiple model sizes |
-
-### Voice Conversation Mode
-
-Full voice conversation sessions work as follows:
-1. User speaks and WAV audio is captured in the browser
-2. Audio is sent to /api/voice/stt
-3. Backend passes audio to the speech-runtime STT provider
-4. Transcription is sent to the selected Ollama LLM
-5. LLM response is sent to the speech-runtime TTS provider
-6. Generated audio WAV is returned to the browser for playback
-
-Voice conversations maintain their own rolling memory and summary system. Every exchange is stored in voice_conversations and voice_messages with base64-encoded audio for history playback.
-
----
-
-## Forge
-
-Forge is n0th1ng AI's autonomous coding agent. Given a goal and a tech stack, it builds software without human intervention.
-
-### Stack Profiles
-
-- Node.js with Express — REST API server
-- React with Vite — Frontend application
-- Full-Stack — Express backend with React frontend
-- Python with FastAPI — Python API server
-- General — Any language or framework via free-text specification
-
-### The Think, Act, Evaluate Loop
-
-For each task, Forge runs a tight three-phase iteration loop.
-
-Think phase: The model receives the task description, acceptance criteria, codebase structure, shared contracts, and previous context. It produces a structured implementation plan.
-
-Act phase: The model writes or modifies actual source files. File operations execute via the filesystem. The dev server starts if not running.
-
-Evaluate phase: The model inspects results — console output, server response — and decides whether the task passes its acceptance criteria or needs another iteration.
-
-### Task Tree
-
-A Forge session builds a hierarchical task dependency tree:
-- Tasks can depend on other tasks
-- Integration check tasks verify component interoperability
-- Failed tasks retry with additional context
-- The session tracks iterationCount across all tasks
-
-### Workspace Management
-
-Each Forge session:
-1. Creates an isolated workspace directory
-2. Allocates a free TCP port via actual port scanning — no hardcoded defaults
-3. Spawns a dev server within the workspace
-4. Stores the workspace path in the session record
-
-All sessions, task trees, and per-round iterations are fully persisted to the database.
-
----
-
-## ForgeX
-
-ForgeX bridges Claude Code CLI to local Ollama models instead of implementing its own agent loop.
-
-### How It Works
-
-1. Sets ANTHROPIC_BASE_URL to point at the local Ollama endpoint
-2. Spawns claude as a subprocess in headless stream-json mode
-3. Captures all subprocess output line-by-line: stdout, stderr, system events
-4. Streams it to the browser via WebSocket in real-time
-5. On subsequent turns, passes --resume with the claudeSessionId so context carries across turns
-
-This gives you the full power of Claude Code's agentic loop — file editing, shell execution, web search, code analysis — running against your local Ollama model with no API costs.
-
-Sessions are stored in forgex_sessions, all output line-by-line in forgex_output, and sessions can be resumed across browser restarts.
-
----
-
-## Files and Document Intelligence
-
-### Supported File Types
-
-- PDF — via pdf-parse in JavaScript and marker-pdf in Python for high-fidelity extraction
-- Word .docx — via mammoth
-- Text files — direct ingestion
-- Images — OCR via Tesseract.js or Surya, PaddleOCR, EasyOCR in Python
-
-### Processing Pipeline
-
-When a file is uploaded:
-1. Text is extracted based on MIME type
-2. Content is stored in file_contents
-3. Text is chunked into overlapping segments
-4. Each chunk is embedded via the selected Ollama embedding model
-5. Embeddings are stored in chunk_embeddings
-6. The file is marked is_indexed true
-
-### LangGraph Document Analysis
-
-Each file can run through a deep analysis pipeline:
-1. ingesting — text extraction and preprocessing
-2. summarizing — LLM generates a comprehensive summary
-3. extracting — entity extraction for people, organizations, locations, dates
-4. synthesizing — keyword and topic extraction, language detection, document type classification
-5. complete — results written to document_analysis table
-
-### OCR Providers
-
-| Provider | Description |
-|----------|-------------|
-| Tesseract | Classic OCR with good general coverage |
-| Surya | State-of-the-art neural OCR with excellent accuracy |
-| PaddleOCR | Strong multilingual support, fast |
-| EasyOCR | Easy-to-use with good accuracy |
-
----
-
-## Knowledge Base and RAG
-
-### Architecture
-
-- Storage: MySQL tables for knowledge_entries, knowledge_chunks, chunk_embeddings
-- Embeddings: Any Ollama embedding model
-- Search: Cosine similarity over stored embedding vectors
-
-### Semantic Search
-
-`services/semanticSearch.ts` implements vector search:
-1. Embeds the query using the active embedding model
-2. Loads all chunk_embeddings from the database
-3. Computes cosine similarity between the query vector and each stored vector
-4. Returns the top-K chunks ranked by similarity score
-
-`services/rag.ts` builds a formatted RAG context block from retrieved chunks, injected into the system prompt before each LLM call.
-
-`services/backfillEmbeddings.ts` can retroactively embed any files indexed before an embedding model was configured.
-
----
-
-## Monitor
-
-### Hardware Metrics
-
-| Metric | Source |
-|--------|--------|
-| CPU usage percent | systeminformation |
-| CPU temperature Celsius | systeminformation |
-| RAM usage and total | systeminformation |
-| GPU usage percent | systeminformation |
-| GPU temperature Celsius | systeminformation |
-| VRAM usage and total | systeminformation |
-| Storage usage | systeminformation |
-| Network Rx and Tx rates | systeminformation |
-
-Using ps-list and pidusage, Monitor also tracks all running processes with CPU and memory usage, Ollama model processes specifically, and Python runtime processes.
-
-`services/telemetry.ts` runs a background collector that polls metrics and writes time-series snapshots to system_snapshots, enabling historical charts in the Monitor UI.
-
----
-
-## Persona Studio
-
-Persona Studio provides real-time, low-latency voice-to-voice AI persona conversations using NVIDIA's Moshi architecture.
-
-Moshi is a real-time speech-to-speech LLM developed by Kyutai. Unlike TTS/STT pipelines that work in serial, Moshi processes audio in a fully streaming fashion — enabling natural real-time conversation with sub-second latency.
-
-### Architecture
-
-- personaplex-runtime/ — integrated Moshi server
-- The runtime exposes a WebSocket endpoint streaming audio chunks bidirectionally
-- The Hono backend via api/routers/personaplex.ts acts as a session manager and WebSocket proxy
-- The browser connects via WebSocket and streams raw PCM audio
-
----
-
-## Python Runtime
-
-A FastAPI sidecar service handling all Python-dependent AI workloads.
-
-### Services Exposed
-
-| Route | Description |
-|-------|-------------|
-| POST /analyze | Full document analysis pipeline via LangGraph |
-| POST /ocr | OCR on an image or document |
-| POST /vision/analyze | Vision model inference |
-| POST /pdf/parse | High-fidelity PDF parsing via marker-pdf |
-| GET /models | List available vision and OCR models |
-| GET /health | Health check and capability report |
-
-### Key Dependencies
-
-- FastAPI and Uvicorn — ASGI web server
-- LangGraph — document analysis pipeline orchestration
-- marker-pdf — state-of-the-art PDF-to-markdown conversion
-- Surya OCR — neural OCR engine
-- PaddleOCR — multilingual OCR
-- EasyOCR — accessible OCR
-- Tesseract — classic OCR fallback
-- Transformers from HuggingFace — vision model inference for Florence-2, InternVL, MiniCPM, Qwen3VL
-- OpenCV — image preprocessing
-- CUDA support via PaddlePaddle GPU and PyTorch
-
-### Setup
+## Distributed GPU Cluster Workers
+
+n0th1ng AI supports offloading intensive inference (LLMs, ComfyUI image/video, speech synthesis) to dedicated remote GPU worker machines via the `worker/` subsystem.
+
+### Worker Architecture & Reverse Tunnels
+Each remote worker machine runs:
+1. **Raw Worker Server (`worker/src/server.ts`)**: Runs on loopback `127.0.0.1:3001` handling tool execution (`POST /execute`, `POST /tool`, `POST /speech`).
+2. **Exposure Gateway Proxy (`worker/src/exposureService.ts`)**: Runs on `127.0.0.1:3443` (configurable via `EXPOSE_PORT`).
+   - Sits directly in front of the raw server.
+   - Enforces `checkApiKey` using constant-time comparison (`crypto.timingSafeEqual`).
+   - Automatically rejects default placeholders (`CHANGE_ME_generate_a_64_char_hex_key_here`).
+   - Enforces IP sliding-window rate limiting.
+   - Logs remote requests to MySQL access log table.
+3. **Cloudflare Tunnel Routing**:
+   - **Quick Mode**: Automatically starts `cloudflared` targeting `http://127.0.0.1:3443` (the authenticated proxy), ensuring unauthenticated traffic can never reach raw port `3001`.
+   - **Named Mode**: Named tunnels must configure ingress to route to `http://127.0.0.1:3443`.
+4. **Resilient DB Decoupling**: If `WORKER_DATABASE_URL` is omitted, the worker operates smoothly in DB-less mode without startup crashes or broken auth.
+
+### Managing Worker Keys (Master Node)
+Cluster workers authenticate using SHA-256 pre-shared API keys. Manage them from the master workstation via CLI:
 
 ```bash
-cd python-runtime
-python -m venv .venv
-.venv\Scripts\activate
-pip install -r requirements.txt
-python -m uvicorn app.main:app --host 0.0.0.0 --port 8001
+# Provision a new worker key
+npm run worker:keys create "GPU-Desktop-RTX4090"
+
+# List active and revoked worker keys
+npm run worker:keys list
+
+# Revoke a compromised worker key
+npm run worker:keys revoke <KEY_ID>
 ```
 
 ---
 
-## Speech Runtime
+## Production Deployment Guide (Oracle Cloud / Caddy)
 
-A standalone FastAPI service for speech synthesis and recognition.
+Deploying n0th1ng AI V2.0 on a public Oracle Cloud Infrastructure (OCI) Compute Instance or VPS behind Caddy and Cloudflare Zero Trust.
 
-### Architecture
+### 1. Reverse Proxy Configuration (`/etc/caddy/Caddyfile`)
+Caddy provides automatic TLS, robust HTTP/2 and HTTP/3 support, and unbuffered streaming for Server-Sent Events (SSE) and WebSockets.
 
-- speech-runtime/main.py — FastAPI entry point
-- speech-runtime/providers/ — one module per TTS/STT provider
-- speech-runtime/inference/ — inference pipelines for streaming, batching, STT, TTS, voice chat
-- speech-runtime/api/ — route handlers
-- speech-runtime/utils/ — shared utilities for model downloader, checksum verification, path management
+```caddy
+# Production Domain
+ai.yourdomain.com {
+    # Reverse proxy to local n0th1ng AI workstation
+    reverse_proxy 127.0.0.1:3000 {
+        header_up Host {host}
+        header_up X-Real-IP {remote_host}
+        header_up X-Forwarded-For {remote_host}
+        header_up X-Forwarded-Proto {scheme}
+        header_up X-Forwarded-Host {host}
 
-### Provider Interface
+        # Keep unbuffered flush for live LLM tokens and Forge WebSocket streaming
+        flush_interval -1
+    }
 
-Each provider follows a common interface:
-- load_model() — lazy model loading with VRAM management
-- synthesize(text, voice_id, params) — TTS inference
-- transcribe(audio_bytes) — STT inference for Whisper
-- list_voices() — available voice enumeration
+    # Hardened Security Headers
+    header {
+        Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+        X-Content-Type-Options "nosniff"
+        X-Frame-Options "DENY"
+        Referrer-Policy "strict-origin-when-cross-origin"
+    }
 
-Models are downloaded on first use, verified via checksum, and VRAM is managed by unloading inactive models.
+    # Access Logging
+    log {
+        output file /var/log/caddy/n0th1ng-access.log {
+            roll_size 20MB
+            roll_keep 5
+        }
+    }
+}
+```
 
-### Setup
+### 2. Systemd Service Unit (`/etc/systemd/system/n0th1ng-ai.service`)
+```ini
+[Unit]
+Description=n0th1ng AI V2.0 Workstation Server
+After=network.target mysql.service
 
+[Service]
+Type=simple
+User=ubuntu
+WorkingDirectory=/opt/n0th1ng-ai/app
+EnvironmentFile=/opt/n0th1ng-ai/app/.env
+ExecStart=/usr/bin/npm start
+Restart=always
+RestartSec=5
+LimitNOFILE=65535
+
+[Install]
+WantedBy=multi-user.target
+```
+
+Reload and enable the service:
 ```bash
-cd speech-runtime
-python -m venv .venv
-.venv\Scripts\activate
-pip install -r requirements.txt
-python launcher.py
+sudo systemctl daemon-reload
+sudo systemctl enable --now n0th1ng-ai
 ```
 
 ---
 
-## Memory System
+## Emergency 2AM Break-Glass Recovery Runbook
 
-n0th1ng AI maintains a persistent, semantically searchable memory system.
+If you are locked out of your workstation (forgotten master password, lost 2FA authenticator, broken security key, or locked session):
 
-### Memory Store
+### Interactive Terminal Recovery
+1. **SSH into the Host / Cloud Instance**:
+   ```bash
+   ssh -i ~/.ssh/id_rsa ubuntu@your-server-ip
+   cd /opt/n0th1ng-ai/app
+   ```
+2. **Run the Auth Reset Tool**:
+   ```bash
+   npm run auth:reset
+   ```
+3. Follow the prompt to enter a new Master Password (min 8 characters) or press Enter to generate a secure random passphrase.
+4. If TOTP 2FA is active, the tool will prompt:
+   `TOTP is active. Disable TOTP to remove 2FA lockout? (y/N):`
+   Type `y` to disable 2FA immediately.
 
-`services/memory.ts` provides:
-- memoryStore(key, value, category, importance) — write a memory
-- memorySearch(query, topK) — semantic search over memories
-- getAllMemories() — retrieve all stored memories
+### Non-Interactive CLI Recovery
+To recover in a single command without interactive prompts:
+```bash
+npx tsx scripts/reset-auth.ts --password="YourNewSecureMasterPassword123!" --reset-totp
+```
 
-### Memory Schema
-
-Each memory entry has:
-- category — type classification such as person, preference, fact, relationship
-- key — short identifier
-- value — full memory content
-- importance — float score from 0 to 1 for prioritization
-- source — which conversation produced this memory
-
-Memories are chunked and embedded just like knowledge base files. At query time, cosine similarity is computed against all memory_chunk_embeddings to find the most contextually relevant memories.
-
-### Automatic Memory Extraction
-
-After every LLM response, a background job runs a memory extraction prompt — asking the model to identify any memorable information in the exchange and writing it to the memory store.
-
----
-
-## Distributed Cluster Mode
-
-n0th1ng AI supports a distributed architecture where multiple machines serve as inference workers.
-
-### Architecture
-
-- One machine runs the primary Hono server
-- Additional machines run as worker nodes
-- Workers register via POST /api/cluster/register
-- Workers send heartbeats to stay active
-- The primary tracks worker health via removeOfflineWorkers()
-
-### Worker Registration
-
-Each worker provides:
-- Node ID and display name
-- Available capabilities such as Ollama URL and ComfyUI URL
-- Hardware specs including VRAM and RAM
-
-`services/clusterMetricsHistory.ts` records per-worker performance metrics over time, enabling monitoring of the entire cluster from the primary Monitor dashboard.
-
----
-
-## Frontend Architecture
-
-The frontend is a multi-page application built with plain HTML, CSS, and vanilla JavaScript — one index.html per module under frontend/.
-
-### Design System
-
-Built from scratch in frontend/assets/:
-- nav.css — Global navigation styles with glassmorphism navbar and mobile drawer
-- nav.js — Navigation behavior including scroll effects, mobile drawer, and dropdown menus
-- page-transitions.css — Cross-page transition animations
-- page-transitions.js — Transition orchestration
-
-### Visual Language
-
-- Color palette: Aurora gradient system with deep purples, electric blues, warm golds
-- Glass effects: Backdrop-filter glassmorphism with glass, glass-liquid, glass-strong utility classes
-- Typography: Inter Tight for UI text, JetBrains Mono for code and labels
-- Animations: CSS keyframe animations, GSAP for complex sequences, Intersection Observer for scroll-reveal
-- Dark theme: System-wide dark mode only — no light mode toggle
+The recovery script atomically:
+- Hashes the new password with Argon2id and writes it to `auth_credentials`
+- Revokes all existing active sessions in `sessions`
+- Disables TOTP in `auth_totp_secrets` (if requested)
+- Resets rate limiting lockouts
 
 ---
 
 ## Environment Variables
 
-Create a .env file in the project root based on .env.example:
+Configure these settings in `app/.env` (based on `app/.env.example`):
 
 ```env
-# Application
-APP_ID=your_app_id
-APP_SECRET=your_jwt_secret
+# ── Core Application ────────────────────────────────────────────────────────
+APP_ID=n0th1ng-ai
+APP_SECRET=your_super_secret_64_char_hex_key_here
+PORT=3000
 
-# Database
-DATABASE_URL=mysql://user:password@localhost:3306/n0th1ng_ai
+# ── Database ─────────────────────────────────────────────────────────────────
+DATABASE_URL=mysql://root:password@localhost:3306/nothingai
+
+# ── V2.0 Argon2id Tuning (Optional) ──────────────────────────────────────────
+ARGON2_MEMORY_COST=65536     # 64 MB
+ARGON2_TIME_COST=3           # 3 iterations
+ARGON2_PARALLELISM=1         # 1 thread
+
+# ── V2.0 Origin & WebAuthn Configuration ─────────────────────────────────────
+# Operator domain when deployed on public cloud
+PRODUCTION_ORIGIN=https://ai.yourdomain.com
+ALLOWED_ORIGINS=https://ai.yourdomain.com,http://localhost:3000
+WEBAUTHN_RP_ID=yourdomain.com
+WEBAUTHN_ORIGIN=https://ai.yourdomain.com
+
+# ── V2.0 Cloudflare Access Outer Perimeter (Optional) ────────────────────────
+CF_ACCESS_REQUIRED=false
+CF_ACCESS_TEAM_DOMAIN=https://your-team.cloudflareaccess.com
+CF_ACCESS_AUD=your_cloudflare_access_application_aud_tag
+
+# ── External AI Providers ────────────────────────────────────────────────────
+OPENROUTER_API_KEY=your_openrouter_key
+TAVILY_API_KEY=your_tavily_key
+FIRECRAWL_API_KEY=your_firecrawl_key
+
+# ── Local Runtimes ───────────────────────────────────────────────────────────
+OLLAMA_BASE_URL=http://localhost:11434
+COMFYUI_URL=http://localhost:8188
+CLAUDE_CODE_BIN=C:\Users\username\.local\bin\claude.exe
+
+# ── Remote Cluster Worker Pre-Shared Keys ────────────────────────────────────
+WORKER_DESKTOP_URL=https://worker.yourdomain.com
+WORKER_DESKTOP_KEY=your_worker_preshared_key
 ```
-
-### Optional External Integrations Configured in Settings UI
-
-| Integration | Purpose |
-|-------------|---------|
-| Tavily API Key | Web search in agent mode |
-| Firecrawl API Key | URL scraping in agent mode |
-| OpenRouter API Key | Cloud model access |
-| Ollama URL | Default is http://localhost:11434 |
-| ComfyUI URL | Default is http://localhost:8188 |
 
 ---
 
 ## Installation and Setup
 
 ### Prerequisites
+- **Node.js**: v22.0.0 or higher
+- **npm**: v10.0.0 or higher
+- **MySQL**: 8.0 or higher
+- **Ollama**: Latest version (for local LLMs)
+- **Python**: 3.10–3.12 (for sidecars; PersonaPlex requires <= 3.12)
+- **CUDA**: 12+ (optional, for local GPU acceleration)
 
-| Requirement | Version | Purpose |
-|-------------|---------|---------|
-| Node.js | 22 or higher | Main application server |
-| npm | 10 or higher | Package management |
-| MySQL | 8 or higher | Database |
-| Ollama | Latest | Local LLM serving |
-| Python | 3.10 - 3.12 | Python runtimes (PersonaPlex specifically requires <= 3.12 for pre-built wheels) |
-| CUDA | 12 or higher, optional | GPU acceleration |
-| ComfyUI | Latest, optional | Image and video generation |
+### Step-by-Step Setup
 
-### Step 1: Clone the Repository
+1. **Clone the repository**:
+   ```bash
+   git clone https://github.com/n0th1ngg05/n0th1ng-ai.git
+   cd n0th1ng-ai/app
+   ```
 
-```bash
-git clone https://github.com/n0th1ngg05/n0th1ng-ai.git
-cd n0th1ng-ai
-```
+2. **Install Node dependencies**:
+   ```bash
+   npm install
+   ```
 
-### Step 2: Install Node Dependencies
+3. **Configure Environment**:
+   ```bash
+   cp .env.example .env
+   # Edit .env with your MySQL credentials and a secure APP_SECRET
+   ```
 
-```bash
-npm install
-```
+4. **Initialize Database**:
+   ```bash
+   # Push baseline schema
+   npm run db:push
 
-### Step 3: Configure Environment
+   # Apply V2.0 security tables
+   npx tsx scripts/migrate-auth.ts
+   ```
 
-```bash
-copy .env.example .env
-# Edit .env with your database URL and app credentials
-```
+5. **Initialize Master Password**:
+   ```bash
+   # Set your workstation master password via CLI
+   npm run auth:reset
+   ```
 
-### Step 4: Set Up the Database
+6. **(Optional) Set up Python Sidecars**:
+   ```bash
+   # Document Analysis & OCR Runtime
+   cd python-runtime
+   python -m venv .venv
+   source .venv/bin/activate  # Or .venv\Scripts\activate on Windows
+   pip install -r requirements.txt
+   cd ..
 
-```bash
-npm run db:push
-```
-
-### Step 5: Set Up the Python Runtime — Optional, for OCR, Vision, Document Analysis
-
-```bash
-cd python-runtime
-python -m venv .venv
-.venv\Scripts\activate
-pip install -r requirements.txt
-```
-
-### Step 6: Set Up the Speech Runtime — Optional, for TTS and STT
-
-```bash
-cd speech-runtime
-python -m venv .venv
-.venv\Scripts\activate
-pip install -r requirements.txt
-```
-
-### Step 7: Set Up the PersonaPlex Runtime — Optional, for Persona Studio
-
-PersonaPlex uses NVIDIA Moshi and requires **Python 3.12 max** (3.13+ will fail to build `sentencepiece`).
-If your default `python` is 3.12, the UI's automatic setup will work. If not, set it up manually:
-
-```bash
-cd personaplex-runtime
-python3.12 -m venv venv
-venv\Scripts\activate
-python -m pip install --upgrade pip
-pip install torch --index-url https://download.pytorch.org/whl/cu121
-pip install "numpy>=1.26,<2.2" "sentencepiece==0.2" "sphn>=0.1.4,<0.2" "safetensors>=0.4.0,<0.5" "huggingface-hub>=0.24,<0.25" "einops==0.7" "sounddevice==0.5" "aiohttp>=3.10.5,<3.11" accelerate
-pip install -e moshi/
-```
-
-### Step 8: Install and Configure Ollama
-
-```bash
-# Install Ollama from https://ollama.com
-ollama pull qwen3:8b
-ollama pull nomic-embed-text
-```
-
-### Step 9: Set Up ComfyUI — Optional, for image and video generation
-
-Follow the ComfyUI installation guide at https://github.com/comfyanonymous/ComfyUI and run it on http://localhost:8188.
+   # Speech Studio Runtime
+   cd speech-runtime
+   python -m venv .venv
+   source .venv/bin/activate
+   pip install -r requirements.txt
+   cd ..
+   ```
 
 ---
 
 ## Running the Project
 
-### Main Application
-
+### Development Mode
+Runs the Vite frontend dev server and Hono API server with live reloading:
 ```bash
 npm run dev
 ```
+Workstation UI will be available at: `http://localhost:3000` (or `http://localhost:5173`).
 
-Available at http://localhost:3000.
-
-### Python Runtime — separate terminal
-
-```bash
-cd python-runtime
-.venv\Scripts\activate
-python -m uvicorn app.main:app --host 0.0.0.0 --port 8001 --reload
-```
-
-### Speech Runtime — separate terminal
-
-```bash
-cd speech-runtime
-.venv\Scripts\activate
-python launcher.py
-```
-
-### PersonaPlex Runtime — separate terminal, optional
-
-```bash
-cd personaplex-runtime
-# Follow personaplex-runtime/README.md for setup
-```
-
-### ComfyUI — separate terminal, optional
-
-```bash
-python main.py --listen 0.0.0.0 --port 8188
-```
-
-### Production Build
-
+### Production Mode
+Builds client bundles and executes the production Hono server:
 ```bash
 npm run build
-npm run start
+npm start
+```
+
+### Starting Distributed GPU Workers
+On your remote GPU machine:
+```bash
+cd worker
+npm install
+npm run dev
+```
+
+---
+
+## Automated Verification Test Suite
+
+n0th1ng AI V2.0 includes standalone automated test suites in `scripts/` validating every security phase against live database queries and cryptographic assertions:
+
+```bash
+# Phase 3: TOTP Drift, Encryption & Replay Protection
+npx tsx scripts/test-phase3-totp.ts
+
+# Phase 4: Device Trust, Cookie Signing & Quick PIN
+npx tsx scripts/test-phase4-pin.ts
+
+# Phase 5: WebAuthn / Passkeys (FIDO2) Assertion & Challenges
+npx tsx scripts/test-phase5-webauthn.ts
+
+# Phase 6: Tiered Trust, tRPC Scope Gate & Step-Up Elevation
+npx tsx scripts/test-phase6-tiered-trust.ts
+
+# Phase 7: Cloudflare Access Outer Perimeter RS256 Verification
+npx tsx scripts/test-phase7-cloudflare.ts
+
+# Phase 8: Production CSRF, Origin Allowlist & Security Headers
+npx tsx scripts/test-phase8-hardening.ts
 ```
 
 ---
 
 ## Project Structure
 
-```
+```text
 n0th1ng-ai/
-├── api/                          # Hono backend
-│   ├── boot.ts                   # Main server, 2500+ lines
-│   ├── router.ts                 # tRPC root router
-│   ├── context.ts                # tRPC context builder
-│   ├── middleware.ts             # Auth middleware
-│   ├── routers/                  # tRPC procedure routers, 17 files
-│   ├── services/                 # Business logic, 50+ service files
-│   │   ├── agentLoop.ts          # Autonomous agent loop engine
-│   │   ├── toolRouter.ts         # 3-stage tool routing pipeline
-│   │   ├── toolExecutor.ts       # Tool execution runtime
-│   │   ├── toolPattern.ts        # Tool pattern matching
-│   │   ├── comfy.ts              # ComfyUI integration
-│   │   ├── framesx.ts            # FramesX video generation
-│   │   ├── companion.ts          # Companion service
-│   │   ├── memory.ts             # Persistent memory store
-│   │   ├── semanticSearch.ts     # Vector similarity search
-│   │   ├── rag.ts                # RAG context builder
-│   │   ├── contextWindow.ts      # Context window management
-│   │   ├── conversationSummary.ts # Auto-summarization
-│   │   ├── telemetry.ts          # System metrics collection
-│   │   ├── cluster.ts            # Distributed worker management
-│   │   ├── openRouter.ts         # OpenRouter cloud bridge
+├── app/                              # Primary Workstation Master Node
+│   ├── api/                          # Hono Backend Application
+│   │   ├── boot.ts                   # Gateway middleware, routes, asset filters
+│   │   ├── router.ts                 # Root tRPC router
+│   │   ├── context.ts                # Session-aware tRPC context
+│   │   ├── middleware.ts             # Elevated Forge procedure guards
+│   │   ├── routers/
+│   │   │   ├── auth.router.ts        # V2.0 Authentication & Passkey HTTP router
+│   │   │   ├── chat.ts               # Chatspace conversations & messages
+│   │   │   ├── cluster.ts            # Distributed GPU worker registration
+│   │   │   └── ...                   # 15+ specialized routers
+│   │   ├── services/
+│   │   │   ├── auth.service.ts       # Central auth logic: Argon2id, TOTP, WebAuthn, PIN
+│   │   │   ├── security.service.ts   # CSRF protection & HTTP security headers
+│   │   │   ├── cloudflare.service.ts # RS256 JWK certs & service token verification
+│   │   │   ├── agentLoop.ts          # Extended multi-round tool agent engine
+│   │   │   ├── memory.ts             # Persistent semantic memory store
+│   │   │   └── ...                   # 40+ business logic services
+│   │   └── forge/                    # Forge & ForgeX autonomous build controllers
+│   ├── db/
+│   │   ├── schema.ts                 # Complete Drizzle schema (37+ tables)
+│   │   └── migrations/               # Schema migration journals & snapshots
+│   ├── frontend/                     # Multi-page Aurora Design System UI
+│   │   ├── assets/
+│   │   │   ├── nav.js                # Navbar, idle auto-lock, Step-Up elevation modal
+│   │   │   └── nav.css               # Glassmorphic aurora navigation styling
+│   │   ├── login/                    # V2.0 Workstation Login & Setup UI
+│   │   │   ├── index.html            # Password, TOTP, PIN, and Passkey interfaces
+│   │   │   ├── login.js              # WebAuthn and credential unlock handlers
+│   │   │   └── login.css             # Glassmorphic login styling
+│   │   ├── chatspace/                # Primary chat interface
+│   │   ├── studio/                   # ComfyUI Image Studio
+│   │   ├── framesx/                  # FramesX cinematic video generator
+│   │   ├── voice/                    # Voice Studio TTS/STT
+│   │   ├── forge/                    # Autonomous agent builder
+│   │   ├── forgex/                   # Claude Code CLI interactive UI
+│   │   ├── monitor/                  # System hardware telemetry
 │   │   └── ...
-│   ├── speech/                   # Speech subsystem
-│   ├── forge/                    # Forge agent routes
-│   ├── forgex/                   # ForgeX routes
-│   ├── queries/                  # Database query helpers
-│   └── lib/                      # Shared utilities
+│   ├── scripts/
+│   │   ├── reset-auth.ts             # 2AM emergency CLI password recovery tool
+│   │   ├── manage-worker-keys.ts     # CLI worker pre-shared key manager
+│   │   ├── migrate-auth.ts           # Non-destructive schema migration runner
+│   │   └── test-phase*.ts            # Automated security regression test suites
+│   ├── python-runtime/               # Document Intelligence FastAPI Sidecar
+│   ├── speech-runtime/               # TTS & STT FastAPI Sidecar
+│   ├── personaplex-runtime/          # NVIDIA Moshi Real-Time Voice Sidecar
+│   └── package.json                  # Workstation scripts and dependencies
 │
-├── db/
-│   ├── schema.ts                 # Full database schema, 850 lines, 30+ tables
-│   ├── relations.ts              # Drizzle ORM relations
-│   ├── seed.ts                   # Database seed data
-│   └── migrations/               # SQL migration files
+├── worker/                           # Remote GPU Cluster Node Subsystem
+│   ├── src/
+│   │   ├── server.ts                 # Raw local inference server (port 3001)
+│   │   ├── exposureService.ts        # Authenticated Gateway Proxy (port 3443)
+│   │   ├── capabilities.ts           # Hardware & runtime capability discovery
+│   │   └── db/                       # Resilient worker database client
+│   └── package.json
 │
-├── frontend/                     # Multi-page frontend
-│   ├── assets/                   # Global design system
-│   ├── chatspace/                # Chat interface
-│   ├── studio/                   # Image Studio
-│   ├── framesx/                  # FramesX video generation
-│   ├── voice/                    # Voice Studio
-│   ├── forge/                    # Forge agent UI
-│   ├── forgex/                   # ForgeX UI
-│   ├── files/                    # File library
-│   ├── monitor/                  # System monitor
-│   ├── personastudio/            # Persona Studio
-│   ├── robotics/                 # Robotics
-│   ├── settings/                 # Settings panel
-│   └── model/                    # Model manager
-│
-├── python-runtime/               # Python FastAPI sidecar
-│   ├── app/
-│   │   ├── providers/            # OCR, vision, PDF, layout providers
-│   │   ├── tools/                # LangGraph analysis tools
-│   │   ├── routes/               # API route handlers
-│   │   └── managers/             # Runtime managers
-│   └── requirements.txt
-│
-├── speech-runtime/               # Python speech sidecar
-│   ├── providers/                # TTS and STT provider implementations
-│   ├── inference/                # Inference pipelines
-│   ├── api/                      # FastAPI routes
-│   └── utils/                    # Shared utilities
-│
-├── personaplex-runtime/          # Moshi voice-to-voice runtime
-├── contracts/                    # Shared TypeScript type contracts
-├── shared/                       # Shared utilities
-├── index.html                    # Home page entry point
-├── vite.config.ts                # Vite configuration
-├── drizzle.config.ts             # Drizzle ORM configuration
-├── tailwind.config.js            # Tailwind configuration
-├── tsconfig.json                 # TypeScript configuration
-├── package.json                  # Node.js dependencies
-└── .env.example                  # Environment variable template
+└── README.md                         # Project Documentation
 ```
 
 ---
 
 ## License
 
-Built by n0th1ng Studios.
+Built by **n0th1ng Studios**.
 
 *You Imagine, We Render.*

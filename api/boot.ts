@@ -32,7 +32,7 @@ import { getConversationMemory, getConversationMessages, } from "./services/conv
 import { buildConversationContext, MAX_CONTEXT_TOKENS, MAX_CONTEXT_MESSAGES, } from "./services/contextWindow";
 import { runAgentLoop, synthesizeExecutionSummary, type AgentEvent, } from "./services/agentLoop";
 import { processTools, } from "./services/toolPipeline";
-import { searchInternet, } from "./services/tavily";
+import { searchInternet, formatSearchResults } from "./services/tavily";
 import { readUrl, } from "./services/firecrawl";
 import { memoryStore, memorySearch, getAllMemories, } from "./services/memory";
 import { buildMemoryContext, } from "./services/memoryContext";
@@ -51,7 +51,11 @@ import { writeFileAtomic } from "./speech/utils/fileUtils";
 import { voiceConversations, voiceMessages } from "@db/schema";
 import { randomUUID } from "crypto";
 import { getVoiceConversationMemory, getVoiceConversationMessages, getVoiceConversationSummary, updateVoiceConversationSummary, getVoiceConversationSummarizedCount, } from "./services/voiceConversationMemory";
-import { shouldUseTools } from "./services/toolRouter";
+import { shouldUseTools, resolveToolsDirectly, type ToolDecision } from "./services/toolRouter";
+import { classifyIntent, type IntentCategory } from "./services/intentClassifier";
+import { semanticCache } from "./services/semanticCache";
+import { buildApcPrompt } from "./lib/apcPrompt";
+import { isKnowledgeCutoffRefusal } from "./lib/cutoffDetector";
 import { removeOfflineWorkers } from "./services/cluster";
 import {registerWorker,heartbeat,getWorkers,} from "./services/cluster";
 import { recordMetricPoint } from "./services/clusterMetricsHistory";
@@ -75,8 +79,11 @@ function supportsThinking(model: string): boolean {
 
     // Native Ollama thinking support
     return (
-        normalized.startsWith("qwen3:") ||
-        normalized.startsWith("qwen3.5:")
+        normalized.includes("qwen3") ||
+        normalized.includes("deepseek-r1") ||
+        normalized.includes("qwq") ||
+        normalized.includes("thinking") ||
+        normalized.includes("reasoning")
     );
 }
 
@@ -394,342 +401,30 @@ app.post("/api/chat/stream", async (c) => {
     return c.json({ error: "Request body is missing or not valid JSON." }, 400);
   }
 
-  let toolResult = null;
+  // 1. Immediately create TransformStream & return HTTP response headers (TTFT < 5ms)
+  const { readable, writable } = new TransformStream();
+  const writer = writable.getWriter();
+  const encoder = new TextEncoder();
+
+  const flush = async (data: Record<string, unknown> | string) => {
+    try {
+      const line = typeof data === "string" ? data : JSON.stringify(data);
+      await writer.write(encoder.encode(`data: ${line}\n\n`));
+    } catch {
+      // client disconnected
+    }
+  };
 
   const isVoice = body.mode === "voice";
-
   body.responseMode ??= "text";
 
   console.log("========== RESPONSE MODE ==========");
   console.log(body.responseMode);
-  
-    const skipRagTools = [
-        "scientific_calculator",
-        "system_monitor",
-        "model_manager",
-        "ollama_control",
-        "sql_query",
-        "internet_search",
-        "url_reader",
-        "research_query",
-        "memory_store",
-        "memory_search",
-        "memory_update",
-        "memory_delete",
-        "local_vision_ocr",
-        "layout_analyzer",
-        "marker_pdf_pipeline",
-        "local_vision_analyzer",
-    ];
 
-  let toolContext = "";
-
-  // FIX 2: hoist attachmentContext declaration BEFORE the if-block so it's in scope for ragPrompt
-  let attachmentContext = "";
-
-if (body.conversationId) {
-
-    const attachmentChunks =
-        await searchChatAttachments(
-
-            body.conversationId,
-
-            body.prompt,
-
-            8
-
-        );
-
-    if (attachmentChunks.length > 0) {
-
-        attachmentContext =
-`
-==================================================
-ATTACHMENT CONTEXT
-==================================================
-
-${attachmentChunks.map(chunk => chunk.content).join("\n\n")}
-
-==================================================
-
-The above information comes from the user's attached documents.
-Use it as the primary reference whenever relevant.
-`;
-
-    }
-
-}
-
-  // Context window: keep up to MAX_CONTEXT_MESSAGES (50) / MAX_CONTEXT_TOKENS
-  // (150k, estimated) of the most recent messages verbatim. Anything older
-  // than that gets folded into (and kept fresh in) the stored summary, so
-  // conversation.ts / voiceConversationMemory.ts stay in sync via the new
-  // summarizedMessageCount column instead of silently dropping history.
-  let conversationMessages: any[] = [];
-  let finalConversationContext = "";
-  let needsSummary = false;
-
-  if (body.conversationId) {
-      const existingSummary = isVoice
-          ? await getVoiceConversationSummary(body.conversationId)
-          : await getConversationSummary(Number(body.conversationId));
-
-      const summarizedMessageCount = isVoice
-          ? await getVoiceConversationSummarizedCount(body.conversationId)
-          : await getConversationSummarizedCount(Number(body.conversationId));
-
-      const built = await buildConversationContext({
-          conversationId: body.conversationId,
-          isVoice,
-          existingSummary,
-          summarizedMessageCount,
-      });
-
-      conversationMessages = built.allMessages;
-      finalConversationContext = built.context;
-      needsSummary = built.needsSummary;
-
-      console.log(
-          "[CONTEXT WINDOW]",
-          {
-              totalMessages: built.allMessages.length,
-              windowMessages: built.windowMessageCount,
-              windowTokens: built.windowTokens,
-              maxTokens: MAX_CONTEXT_TOKENS,
-              maxMessages: MAX_CONTEXT_MESSAGES,
-              needsSummary,
-          }
-      );
-
-      if (needsSummary) {
-          console.log("[CONVERSATION] Regenerating summary (window overflowed)...");
-
-          // built.messagesToSummarize is the FULL overflow set (every
-          // message older than the current window), not just messages new
-          // since the last summary -- so this regenerates the summary from
-          // scratch each time rather than concatenating with the old one
-          // (which would duplicate content and grow unbounded).
-          const messagesToSummarize = built.messagesToSummarize;
-          const combinedSummary = await summarizeConversation(
-              messagesToSummarize,
-              body.model
-          );
-
-          if (isVoice) {
-              await updateVoiceConversationSummary(
-                  body.conversationId,
-                  combinedSummary,
-                  messagesToSummarize.length
-              );
-          } else {
-              await updateConversationSummaryWithCount(
-                  Number(body.conversationId),
-                  combinedSummary,
-                  messagesToSummarize.length
-              );
-          }
-
-          console.log("[CONVERSATION] Summary stored.");
-
-          // Rebuild the context block with the freshly stored summary so
-          // this turn's prompt already reflects it instead of waiting for
-          // the next request.
-          const rebuilt = await buildConversationContext({
-              conversationId: body.conversationId,
-              isVoice,
-              existingSummary: combinedSummary,
-              summarizedMessageCount: messagesToSummarize.length,
-          });
-          finalConversationContext = rebuilt.context;
-      }
-  }
-
-  const decision = await shouldUseTools(
-      body.model,
-      body.prompt,
-      finalConversationContext,
-      body.uploadedAttachments ?? []
-  );
-    console.log("========== ROUTER ==========");
-    console.log(decision);
-
-    // processTools() needs the uploaded attachment objects (with .path and
-    // .mimeType) so it can inject image_path / pdf_path into tool calls.
-    // These arrive from the frontend under `uploadedAttachments` — NOT under
-    // `selectedFiles`, which contains numeric RAG knowledge-base file IDs.
-    const runTools = async () => {
-        try {
-            return await processTools(
-                decision.tools,
-                body.uploadedAttachments ?? [],
-                body.prompt
-            );
-        } catch (err) {
-            console.error("[PIPELINE] processTools threw:", err);
-            return null;
-        }
-    };
-
-    switch (decision.mode) {
-
-    case "CHAT":
-        break;
-
-    case "TOOL":
-
-        toolResult = await runTools();
-
-        break;
-
-    case "RAG":
-
-        body.useRag = true;
-
-        break;
-
-    case "TOOL_RAG":
-
-        body.useRag = true;
-
-        toolResult = await runTools();
-
-        break;
-
-}
-
-  const shouldSkipRag =
-    decision.mode === "TOOL" &&
-    toolResult &&
-    toolResult.toolCalls.some(
-        (tool: any) =>
-            skipRagTools.includes(tool.tool)
-    );
-
-  if (toolResult) {
-    toolContext = `
-==================================================
-TOOL RESULT
-==================================================
-
-Tools Used:
-
-${toolResult.toolCalls.map((tool: any) => tool.tool).join(", ")}
-
-Result:
-
-${toolResult.toolCalls
-  .map(
-    (tool: any, index: number) => `
-Tool ${index + 1}: ${tool.tool}
-
-Result:
-
-${JSON.stringify(toolResult.results[index], null, 2)}
-`
-  )
-  .join("\n")}
-
-==================================================
-`;
-  }
-
-  console.log("[CHAT TOOL RESULT]", toolResult);
-
-  console.log("[SHOULD SUMMARIZE]", needsSummary);
-  console.log("[MESSAGE COUNT]", conversationMessages.length);
-  console.log("[CHAT REQUEST]", { prompt: body.prompt, selectedFiles: body.selectedFiles });
-  console.log("[MODEL USED]", body.model);
-
-  const memoryContext = await buildMemoryContext(body.prompt);
-  console.log("[MEMORY CONTEXT]");
-  console.log(memoryContext || "None");
-
-  let ragPrompt = "";
-  let ragResult: { sources: any[]; prompt?: string } = { sources: [] };
-
-  // Mandatory on every prompt sent to a local model — see lib/temporalContext.ts.
-  // Synced to the DEVICE's own timezone via body.timezone.
-  const temporalContext = buildTemporalContext({ timezone: body.timezone });
-
-  if (shouldSkipRag || body.useRag === false) {
-    console.log(body.useRag === false ? "[RAG] Disabled by User" : "[RAG] Skipped (Tool Result)");
-
-    // FIX: finalConversationContext (the windowed history + summary from
-    // contextWindow.ts) was computed above and used for tool routing, but
-    // was never actually included in the generation prompt on this branch.
-    // Since /api/chat/stream hits this branch whenever RAG is off or a
-    // tool ran, the model never saw prior turns at all — hence "What is
-    // my Name?" failing even right after "My name is Humza".
-    ragPrompt = `
-${temporalContext}
-
-${memoryContext}
-
-${attachmentContext}
-
-${finalConversationContext}
-
-${toolContext}
-
-User Question:
-
-${body.prompt}
-
-Use the tool result to answer naturally.
-`;
-  } else {
-    ragResult = await buildRagPrompt(body.prompt, body.selectedFiles, finalConversationContext);
-
-    ragPrompt = `
-${temporalContext}
-
-${memoryContext}
-
-${attachmentContext}
-
-${toolContext}
-
-${ragResult.prompt}
-`;
-  }
-
-  latestSources = ragResult.sources;
-
-  console.log("[RAG SOURCES]", latestSources);
-  console.log("\n========== FINAL PROMPT ==========\n");
-  console.log(ragPrompt);
-  console.log("\n==================================\n");
-
-  // FIX 11: this fetch had no timeout at all. If Ollama is still busy from
-  // the router call moments earlier (or generally GPU-starved — your
-  // telemetry shows sustained 99-100% CPU/GPU), this can hang indefinitely.
-  // The server would sit on `await fetch(...)` or later on `reader.read()`
-  // with literally nothing to log, while the FRONTEND'S OWN timeout fires
-  // first and reports "streaming failed" — explaining a clean FINAL PROMPT
-  // log immediately followed by silence, with no server-side error at all.
-  const GENERATE_TIMEOUT_MS = 120_000;
-  const generateController = new AbortController();
-  const generateTimeoutId = setTimeout(
-    () => generateController.abort(),
-    GENERATE_TIMEOUT_MS
-  );
-
-  let ollamaResponse: Response;
-
-  // ── Streaming Speech Pipeline (setup) ──────────────────────────────────
-  // Moved above the OpenRouter/Ollama fork so BOTH branches can drive the
-  // same voice pipeline. Previously this lived only in the Ollama branch
-  // below, which meant `isOpenRouterModel(body.model)` requests returned
-  // before any of this ever ran — no isVoiceMode, no speech settings, no
-  // sentence-boundary detection — so OpenRouter voice replies never
-  // produced a single `speech`/`fullAudio` chunk and the frontend's voice
-  // pipeline had nothing to play.
+  // ── Streaming Speech Pipeline (setup) ──
   const isVoiceMode =
     body.responseMode === "voice" || body.responseMode === "text+voice";
 
-  // Speech settings are resolved once, before either branch's read loop,
-  // so that the many per-sentence synthesis tasks started inside the loop
-  // don't race on the same database read.
   let speechProviderId: ProviderId | undefined;
   let speechModelId:    string | undefined;
   let speechVoiceId:    string | undefined;
@@ -738,7 +433,8 @@ ${ragResult.prompt}
   let speechTemperature: number | undefined;
   let speechVolume:      number | undefined;
 
-  if (isVoiceMode) {
+  const setupSpeech = async () => {
+    if (!isVoiceMode) return;
     if (body.conversationId) {
       const db = getDb();
       const [conv] = await db
@@ -751,14 +447,9 @@ ${ragResult.prompt}
         speechVoiceId    = conv.voiceId       ?? undefined;
       }
     }
-    // Per-request overrides win over stored conversation settings.
     speechProviderId = (body.providerId as ProviderId | undefined) ?? speechProviderId;
     speechModelId    = body.speechModelId ?? body.modelId ?? speechModelId;
     speechVoiceId    = body.voiceId ?? speechVoiceId;
-
-    // Voice tuning sliders from the frontend (Speed/Pitch/Temperature/
-    // Volume Booster panel). Falls back to each provider's own default
-    // when the frontend doesn't send a value.
     speechSpeed       = typeof body.speed       === "number" ? body.speed       : undefined;
     speechPitch       = typeof body.pitch       === "number" ? body.pitch       : undefined;
     speechTemperature = typeof body.temperature === "number" ? body.temperature : undefined;
@@ -770,51 +461,13 @@ ${ragResult.prompt}
       speechModelId    = speechModelId ?? profile?.modelId;
       speechVoiceId    = speechVoiceId ?? profile?.voiceId;
     }
+  };
 
-    console.log("[VOICE] Resolved speech settings for streaming:", {
-      speechProviderId,
-      speechModelId,
-      speechVoiceId,
-      speechSpeed,
-      speechPitch,
-      speechTemperature,
-      speechVolume,
-    });
-  }
-
-  // Sentence accumulation buffer and per-task tracking. Each provider
-  // branch gets its own independent set of these (declared here, but a
-  // fresh `sentenceBuffer`/`speechSequence`/etc. per branch instance is
-  // created below since OpenRouter and Ollama each run their own IIFE) —
-  // NOTE: kept as shared `let`/`const` at this scope is fine because only
-  // one branch ever executes per-request (the `if`/return below is
-  // exclusive), so there's no cross-branch race.
   let sentenceBuffer = "";
   let speechSequence = 0;
   const pendingSpeechTasks: Promise<void>[] = [];
-
-  // ── Full-response audio capture ─────────────────────────────────────────
-  // Each streamed sentence is still flushed to the client immediately for
-  // realtime playback — this map additionally holds each chunk's raw WAV
-  // bytes keyed by its sequence number, purely so the finalization step
-  // can later stitch every chunk back together in the right order into one
-  // continuous recording for replay. Keyed by seq (not push order) because
-  // synthesis tasks can resolve out of submission order.
   const audioChunksBySeq = new Map<number, Buffer>();
 
-  // ── Streaming sentence parser ─────────────────────────────────────────────
-  // Scans `text` for the first genuine sentence-ending punctuation mark and
-  // returns the index just after that boundary, or -1 if none found.
-  //
-  // Rules for '.':
-  //   • Followed immediately by a digit        → decimal or version number (3.14, v1.5)
-  //   • Preceded by a single uppercase letter
-  //     that is itself after a '.' or space     → mid-abbreviation (U.S.)
-  //   • Preceded by a known abbreviation word  → not a boundary (Dr., Mr., etc.)
-  //   • Otherwise                              → genuine boundary
-  // '!' and '?' are always boundaries.
-  // Any boundary is only confirmed when followed by whitespace or end-of-string,
-  // which also naturally skips ellipsis sequences ("...").
   const ABBREV_WORDS = new Set([
     "dr", "mr", "mrs", "ms", "prof", "sr", "jr",
     "vs", "etc", "approx", "dept", "est",
@@ -823,65 +476,37 @@ ${ragResult.prompt}
   function findSentenceBoundary(text: string): number {
     for (let i = 0; i < text.length; i++) {
       const ch = text[i];
-
       if (ch === "!" || ch === "?") {
-        // Consume a run of the same terminator ("!!", "???")
         let end = i + 1;
         while (end < text.length && (text[end] === "!" || text[end] === "?")) end++;
-        if (end >= text.length || text[end] === " " || text[end] === "\n") {
-          return end;
-        }
+        if (end >= text.length || text[end] === " " || text[end] === "\n") return end;
         i = end - 1;
         continue;
       }
-
       if (ch === ".") {
-        // Skip ellipsis — advance past the dot run and continue scanning
         if (i + 1 < text.length && text[i + 1] === ".") {
           while (i + 1 < text.length && text[i + 1] === ".") i++;
           continue;
         }
-        // Followed immediately by a digit → decimal / version number
         if (i + 1 < text.length && /\d/.test(text[i + 1])) continue;
-        // Preceded by a single uppercase letter that itself follows a dot or
-        // space → likely mid-abbreviation (e.g. the middle dot of "U.S.")
         if (
           i > 0 &&
           /[A-Z]/.test(text[i - 1]) &&
           (i < 2 || text[i - 2] === "." || text[i - 2] === " ")
         ) continue;
-        // Preceded by a known abbreviation word (case-insensitive)
         const wordMatch = text.slice(0, i).match(/([a-zA-Z]+)$/);
         if (wordMatch && ABBREV_WORDS.has(wordMatch[1].toLowerCase())) continue;
-        // If this '.' is the last character seen so far, we don't yet know
-        // what follows it — it could be whitespace (genuine boundary) or a
-        // digit that just hasn't streamed in yet (e.g. "34" then "." then
-        // "25" arriving as three separate LLM tokens for "34.25"). Treat
-        // this as "undecided" and wait for more tokens rather than firing
-        // a boundary early, which is what previously caused decimals to
-        // get cut into two separate TTS sentences ("34" / "25 percent").
         const next = i + 1;
-        if (next >= text.length) {
-          return -1;
-        }
-        // Boundary only if followed by whitespace
-        if (text[next] === " " || text[next] === "\n") {
-          return next;
-        }
+        if (next >= text.length) return -1;
+        if (text[next] === " " || text[next] === "\n") return next;
       }
     }
     return -1;
   }
 
-  // ── Shared per-sentence TTS dispatch ────────────────────────────────────
-  // Used by BOTH the OpenRouter and Ollama branches below. Feed it each
-  // token as it streams in; it accumulates into sentenceBuffer, detects
-  // completed sentences, and fires off background synthesis + `flush()`
-  // of a `{ speech: {...} }` chunk for each one — exactly what the Ollama
-  // branch always did inline, now shared so OpenRouter gets it too.
   function dispatchSentenceChunks(
     token: string,
-    flush: (chunk: string) => Promise<void>
+    flushFn: (chunk: string) => Promise<void>
   ): void {
     if (!isVoiceMode || !token) return;
     sentenceBuffer += token;
@@ -891,7 +516,6 @@ ${ragResult.prompt}
       sentenceBuffer = sentenceBuffer.slice(boundary).replace(/^\s+/, "");
       if (sentence) {
         const seq = speechSequence++;
-        console.log(`[VOICE STREAM] Sentence ${seq}:`, sentence);
         const task = (async () => {
           try {
             const speech = await (await getSpeechManager()).synthesize({
@@ -905,7 +529,7 @@ ${ragResult.prompt}
               volume:      speechVolume,
             });
             audioChunksBySeq.set(seq, speech.audioData);
-            await flush(JSON.stringify({
+            await flushFn(JSON.stringify({
               speech: {
                 sequence:   seq,
                 audio:      speech.audioData.toString("base64"),
@@ -915,7 +539,6 @@ ${ragResult.prompt}
                 voice:      speech.voiceId,
               },
             }));
-            console.log(`[VOICE STREAM] Sentence ${seq} synthesis done.`);
           } catch (synthErr) {
             console.error(`[VOICE STREAM] Sentence ${seq} synthesis failed:`, synthErr);
           }
@@ -926,17 +549,11 @@ ${ragResult.prompt}
     }
   }
 
-  // ── Shared voice-pipeline finalisation ──────────────────────────────────
-  // Call once after a branch's token stream ends: synthesizes any trailing
-  // remainder, awaits all in-flight synthesis tasks, then concatenates
-  // every succeeded chunk into one saved WAV and flushes `{ fullAudio }`
-  // so the frontend replay button has something to fetch.
   async function finalizeVoicePipeline(
-    flush: (chunk: string) => Promise<void>
+    flushFn: (chunk: string) => Promise<void>
   ): Promise<void> {
     if (isVoiceMode && sentenceBuffer.trim().length > 0) {
       const seq = speechSequence++;
-      console.log(`[VOICE STREAM] Final remainder (sentence ${seq}):`, sentenceBuffer.trim());
       const finalTask = (async () => {
         try {
           const speech = await (await getSpeechManager()).synthesize({
@@ -950,7 +567,7 @@ ${ragResult.prompt}
             volume:      speechVolume,
           });
           audioChunksBySeq.set(seq, speech.audioData);
-          await flush(JSON.stringify({
+          await flushFn(JSON.stringify({
             speech: {
               sequence:   seq,
               audio:      speech.audioData.toString("base64"),
@@ -960,7 +577,6 @@ ${ragResult.prompt}
               voice:      speech.voiceId,
             },
           }));
-          console.log(`[VOICE STREAM] Final sentence ${seq} synthesis done.`);
         } catch (synthErr) {
           console.error(`[VOICE STREAM] Final sentence ${seq} synthesis failed:`, synthErr);
         }
@@ -969,9 +585,7 @@ ${ragResult.prompt}
     }
 
     if (pendingSpeechTasks.length > 0) {
-      console.log(`[VOICE STREAM] Awaiting ${pendingSpeechTasks.length} synthesis task(s)...`);
       await Promise.all(pendingSpeechTasks);
-      console.log("[VOICE STREAM] All synthesis tasks complete.");
     }
 
     if (isVoiceMode && audioChunksBySeq.size > 0) {
@@ -979,25 +593,17 @@ ${ragResult.prompt}
         const orderedChunks = Array.from(audioChunksBySeq.keys())
           .sort((a, b) => a - b)
           .map((seq) => audioChunksBySeq.get(seq)!);
-
         const fullAudio = WavUtil.concat(orderedChunks);
         const recordingId = randomUUID();
         const savePath = getGeneratedAudioPath(recordingId);
-
         await writeFileAtomic(savePath, fullAudio);
-
         const { sampleRate, channels, bitDepth } = WavUtil.parseHeader(fullAudio);
         const bytesPerFrame = channels * (bitDepth / 8);
         const totalDuration = fullAudio.length > 44 && bytesPerFrame > 0
           ? (fullAudio.length - 44) / (sampleRate * bytesPerFrame)
           : 0;
 
-        console.log(
-          `[VOICE STREAM] Saved full-response recording ${recordingId} ` +
-          `(${orderedChunks.length} chunks, ${totalDuration.toFixed(2)}s) -> ${savePath}`
-        );
-
-        await flush(JSON.stringify({
+        await flushFn(JSON.stringify({
           fullAudio: {
             id:       recordingId,
             url:      `/api/voice/audio/${recordingId}`,
@@ -1009,356 +615,475 @@ ${ragResult.prompt}
       }
     }
   }
-  // ─────────────────────────────────────────────────────────────────────────
 
-  // ── Route inference: OpenRouter vs Ollama ──────────────────────────────
-  if (isOpenRouterModel(body.model)) {
-    clearTimeout(generateTimeoutId);
-    const orController = new AbortController();
-    const orTimeoutId  = setTimeout(() => orController.abort(), GENERATE_TIMEOUT_MS);
+  // ── Main Asynchronous Streaming Worker ──
+  (async () => {
+    try {
+      await setupSpeech();
 
-    // Use the same TransformStream/ReadableStream pattern as the Ollama path
-    // so the frontend reader loop gets identical NDJSON lines either way.
-    const { readable: orReadable, writable: orWritable } = new TransformStream();
-    const orWriter  = orWritable.getWriter();
-    const orEncoder = new TextEncoder();
+      const hasAttachments = Boolean(body.uploadedAttachments && body.uploadedAttachments.length > 0);
+      const hasSelectedFiles = Boolean(body.selectedFiles && body.selectedFiles.length > 0);
 
-    const orFlush = async (obj: Record<string, unknown>) => {
-      try {
-        await orWriter.write(orEncoder.encode(JSON.stringify(obj) + "\n"));
-      } catch { /* client disconnected */ }
-    };
+      // ── Step 1: Tier 0 Option A Intent Classifier (<1ms) ──
+      const intent = classifyIntent(body.prompt, {
+        hasAttachments,
+        hasSelectedFiles,
+      });
 
-    // dispatchSentenceChunks()/finalizeVoicePipeline() (defined above the
-    // provider fork) take a `flush(chunk: string)` — same shape as the
-    // Ollama branch's `flush` — so wrap orFlush's object-based writer to
-    // match instead of duplicating the write logic.
-    const orFlushRaw = async (chunk: string) => {
-      try {
-        await orWriter.write(orEncoder.encode(chunk + "\n"));
-      } catch { /* client disconnected */ }
-    };
+      console.log(`[ROUTER][TIER0] Intent classified: ${intent.category} (${intent.confidence}) - ${intent.reason}`);
 
-    // Fire-and-forget: stream tokens → NDJSON while the readable is returned.
-    (async () => {
-      let fullResponse = "";
-      try {
-        for await (const tok of streamOpenRouterTyped(body.model, ragPrompt, undefined, orController.signal)) {
-          if (tok.type === 'thinking') {
-            // Route thinking/reasoning tokens (delta.reasoning) into the same
-            // { thinking } event shape the Ollama branch uses so the frontend
-            // thinkingText accumulator and thinking box fill in live.
-            await orFlush({ thinking: tok.text });
-          } else {
-            // Visible response token.
-            fullResponse += tok.text;
-            await orFlush({ response: tok.text, done: false });
+      // ── Step 2: Tier 0 Point 2 Semantic Response Cache Lookup (<20ms) ──
+      if (intent.category === "GREETING" || intent.category === "CASUAL" || intent.category === "GENERAL") {
+        const cached = await semanticCache.get(body.prompt, intent.category);
+        if (cached) {
+          console.log(`[SEMANTIC CACHE] Cache hit for: "${body.prompt}" (Streaming tokenized animation...)`);
 
-            // Same per-sentence TTS dispatch the Ollama branch uses.
-            dispatchSentenceChunks(tok.text, orFlushRaw);
+          // Tokenize into natural words/tokens for smooth streaming animation
+          const tokens = cached.response.match(/\S+\s*|\s+/g) || [cached.response];
+
+          for (const token of tokens) {
+            await flush({ response: token });
+            if (isVoiceMode) {
+              dispatchSentenceChunks(token, flush);
+            }
+            // Micro-delay per token for realistic fluid typing cadence (~55-60 tok/sec)
+            await new Promise((r) => setTimeout(r, 16));
           }
+
+          await flush({ response: "", done: true });
+          if (isVoiceMode) {
+            await finalizeVoicePipeline(flush);
+          }
+          await writer.close();
+          return;
         }
-        await orFlush({ response: "", thinking: "", done: true });
-
-        // Synthesizes any trailing remainder, awaits in-flight synthesis,
-        // and flushes { fullAudio } for the replay button — same as the
-        // Ollama branch's finalization step.
-        await finalizeVoicePipeline(orFlushRaw);
-
-        // NOTE: message persistence is intentionally NOT done here. The
-        // frontend (chat.js saveMessage(), voice.js this.api.saveMessage())
-        // already persists both user and assistant turns via
-        // trpc.message.create / POST /api/voice/message after the stream
-        // completes, for both Ollama and OpenRouter models — see chat.js
-        // line ~379 and voice.js's stream() completion handler. The
-        // previous code here tried to *also* save server-side via
-        // dynamically-imported saveMessage/saveVoiceMessage functions that
-        // were never actually exported from queries/conversation.ts or
-        // services/voiceConversationMemory.ts (only summary/getter
-        // functions live there) — every call threw
-        // "TypeError: ... is not a function", logged loudly, and did
-        // nothing, since the frontend save already covers persistence.
-      } catch (err) {
-        const isAbort = err instanceof Error && err.name === "AbortError";
-        console.error(isAbort ? "[OPENROUTER] Timed out" : "[OPENROUTER] Stream error:", err);
-        await orFlush({ error: isAbort ? "OpenRouter timed out" : String(err), done: true });
-      } finally {
-        clearTimeout(orTimeoutId);
-        try { await orWriter.close(); } catch { /* already closed */ }
       }
-    })();
 
-    return new Response(orReadable, {
-      headers: { "Content-Type": "application/x-ndjson" },
-    });
-  }
+      // ── Step 3: Fast Parallel Context Fetching (Tier 2 Point 3) ──
+      let attachmentContext = "";
+      let finalConversationContext = "";
+      let memoryContext = "";
+      let toolContext = "";
+      let toolResult: any = null;
 
-  // ── Ollama streaming path (unchanged below) ──────────────────────────────
+      const temporalContext = buildTemporalContext({ timezone: body.timezone });
 
-  try {
+      // Run Context Window and DB Reads in parallel
+      const loadContextPromise = async () => {
+        if (!body.conversationId) return;
+        try {
+          const existingSummary = isVoice
+            ? await getVoiceConversationSummary(body.conversationId)
+            : await getConversationSummary(Number(body.conversationId));
 
-      const ollamaPayload: any = {
-          model: body.model,
-          prompt: ragPrompt,
-          stream: true,
+          const summarizedMessageCount = isVoice
+            ? await getVoiceConversationSummarizedCount(body.conversationId)
+            : await getConversationSummarizedCount(Number(body.conversationId));
+
+          const built = await buildConversationContext({
+            conversationId: body.conversationId,
+            isVoice,
+            existingSummary,
+            summarizedMessageCount,
+          });
+
+          finalConversationContext = built.context;
+
+          if (built.needsSummary) {
+            // Background summarization so current request is not blocked
+            summarizeConversation(built.messagesToSummarize, body.model)
+              .then(async (combinedSummary) => {
+                if (isVoice) {
+                  await updateVoiceConversationSummary(body.conversationId, combinedSummary, built.messagesToSummarize.length);
+                } else {
+                  await updateConversationSummaryWithCount(Number(body.conversationId), combinedSummary, built.messagesToSummarize.length);
+                }
+              })
+              .catch((err) => console.error("[CONVERSATION] Background summary error:", err));
+          }
+        } catch (err) {
+          console.error("[CONTEXT] Error loading conversation context:", err);
+        }
       };
 
-      if (supportsThinking(body.model)) {
-          ollamaPayload.think = true;
+      // ── Step 4: Branch by Intent ──
+
+      if (intent.category === "TOOL_TASK") {
+        // Direct to Stage 2 / Stage 3 (lfm2.5-thinking:1.2b) & Parallel 6-second heartbeat!
+        await loadContextPromise();
+
+        // Immediate user notification (TTFT < 20ms)
+        await flush({
+          status: "Preparing tool execution...",
+          notification: "Looking into this for you right now, please give me a moment while I query the system...",
+        });
+
+        let elapsedSeconds = 0;
+        const heartbeatTimer = setInterval(async () => {
+          elapsedSeconds += 6;
+          const messages = [
+            "Still working on your tool request, please wait a moment...",
+            "Executing background tool, almost there...",
+            "Processing the tool output for you, thanks for your patience...",
+            "Finalizing the results, preparing your answer...",
+          ];
+          const msg = messages[Math.min(Math.floor(elapsedSeconds / 6) - 1, messages.length - 1)];
+          await flush({
+            status: `Executing tool (${elapsedSeconds}s)...`,
+            notification: msg,
+            heartbeat: true,
+          });
+        }, 6000);
+
+        try {
+          // Direct Stage 2 (regex) + Stage 3 (lfm2.5-thinking:1.2b), bypassing Stage 1 gate!
+          const toolDecision = await resolveToolsDirectly(
+            body.prompt,
+            finalConversationContext,
+            body.uploadedAttachments ?? []
+          );
+
+          if (toolDecision.status) {
+            await flush({ status: toolDecision.status });
+          }
+
+          toolResult = await processTools(
+            toolDecision.tools,
+            body.uploadedAttachments ?? [],
+            body.prompt
+          );
+        } catch (err) {
+          console.error("[TOOL TASK] Error during tool execution:", err);
+        } finally {
+          clearInterval(heartbeatTimer);
+        }
+
+        await flush({
+          status: "Tool finished, generating response...",
+          notification: "Tool finished, generating your answer...",
+        });
+
+        if (toolResult && toolResult.toolCalls) {
+          toolContext = `
+==================================================
+TOOL RESULT
+==================================================
+Tools Used: ${toolResult.toolCalls.map((t: any) => t.tool).join(", ")}
+Result:
+${toolResult.toolCalls.map((t: any, idx: number) => `Tool ${idx + 1}: ${t.tool}\n${JSON.stringify(toolResult.results?.[idx] ?? t.arguments, null, 2)}`).join("\n")}
+==================================================`;
+        }
+      } else if (intent.category === "RAG_QUERY" || body.useRag) {
+        // Parallel retrieval of attachments, context, and memory
+        await Promise.all([
+          loadContextPromise(),
+          (body.conversationId && hasAttachments)
+            ? searchChatAttachments(body.conversationId, body.prompt, 8).then((chunks) => {
+                if (chunks.length > 0) {
+                  attachmentContext = `\n==================================================\nATTACHMENT CONTEXT\n==================================================\n${chunks.map((c) => c.content).join("\n\n")}\n==================================================\n`;
+                }
+              })
+            : Promise.resolve(),
+          buildMemoryContext(body.prompt).then((mem) => { memoryContext = mem; }),
+        ]);
+      } else {
+        // GREETING, CASUAL, or GENERAL:
+        // Skip heavy document RAG, skip tool router, load conversation context
+        await loadContextPromise();
       }
 
-      ollamaResponse = await fetch(
-          "http://localhost:11434/api/generate",
-          {
+      // ── Step 5: Format Prompt for Automatic Prefix Caching (Tier 2 Point 2) ──
+      let ragResult: { sources: any[]; prompt?: string } = { sources: [] };
+      let ragContext = "";
+
+      if ((intent.category === "RAG_QUERY" || body.useRag) && hasSelectedFiles) {
+        ragResult = await buildRagPrompt(body.prompt, body.selectedFiles, finalConversationContext);
+        ragContext = ragResult.prompt || "";
+        latestSources = ragResult.sources;
+      }
+
+      const ragPrompt = buildApcPrompt({
+        conversationContext: finalConversationContext,
+        temporalContext,
+        memoryContext,
+        attachmentContext,
+        toolContext,
+        ragContext,
+        userPrompt: body.prompt,
+      });
+
+      console.log("\n========== FINAL APC PROMPT ==========\n");
+      console.log(ragPrompt.slice(0, 500) + "\n...[truncated for log]...");
+      console.log("\n======================================\n");
+
+      // ── Step 6: Stream Inference (OpenRouter or Ollama) ──
+      const GENERATE_TIMEOUT_MS = 120_000;
+      let completeResponse = "";
+
+      async function runModelInference(promptToUse: string): Promise<string> {
+        let accumulated = "";
+
+        if (isOpenRouterModel(body.model)) {
+          const orController = new AbortController();
+          const orTimeoutId = setTimeout(() => orController.abort(), GENERATE_TIMEOUT_MS);
+          try {
+            for await (const tok of streamOpenRouterTyped(body.model, promptToUse, undefined, orController.signal)) {
+              if (tok.type === "thinking") {
+                await flush({ thinking: tok.text });
+              } else {
+                accumulated += tok.text;
+                await flush({ response: tok.text, done: false });
+                dispatchSentenceChunks(tok.text, flush);
+              }
+            }
+          } finally {
+            clearTimeout(orTimeoutId);
+          }
+        } else {
+          // Ollama local streaming path
+          const generateController = new AbortController();
+          const generateTimeoutId = setTimeout(() => generateController.abort(), GENERATE_TIMEOUT_MS);
+
+          const ollamaPayload: any = {
+            model: body.model,
+            prompt: promptToUse,
+            stream: true,
+          };
+
+          if (supportsThinking(body.model)) {
+            ollamaPayload.think = true;
+          }
+
+          let ollamaResponse: Response;
+          try {
+            ollamaResponse = await fetch("http://localhost:11434/api/generate", {
               method: "POST",
-              headers: {
-                  "Content-Type": "application/json",
-              },
+              headers: { "Content-Type": "application/json" },
               body: JSON.stringify(ollamaPayload),
               signal: generateController.signal,
+            });
+          } catch (fetchErr) {
+            clearTimeout(generateTimeoutId);
+            const isAbort = fetchErr instanceof Error && fetchErr.name === "AbortError";
+            await flush({ error: isAbort ? "Model backend timed out generating a response." : "Failed to reach the model backend." });
+            return accumulated;
           }
-      );
 
-  } catch (err) {
-    clearTimeout(generateTimeoutId);
-    // Ollama unreachable / connection refused / reset while GPU busy /
-    // aborted by GENERATE_TIMEOUT_MS above.
-    const isAbort = err instanceof Error && err.name === "AbortError";
-    console.error(
-      isAbort
-        ? `[OLLAMA] generate timed out after ${GENERATE_TIMEOUT_MS}ms`
-        : "[OLLAMA] generate fetch failed:",
-      err
-    );
-    return c.json(
-      {
-        error: isAbort
-          ? "Model backend timed out generating a response."
-          : "Failed to reach the model backend.",
-        detail: String(err),
-      },
-      isAbort ? 504 : 502
-    );
-  }
+          clearTimeout(generateTimeoutId);
 
-  clearTimeout(generateTimeoutId);
+          if (!ollamaResponse.ok || !ollamaResponse.body) {
+            const errText = await ollamaResponse.text().catch(() => "");
+            await flush({ error: `Model backend returned ${ollamaResponse.status}`, detail: errText });
+            return accumulated;
+          }
 
-  // FIX 4: Ollama can return a non-2xx response (model still loading from the
-  // router call moments earlier, OOM, context too large after tool-result
-  // injection, etc). This was never checked, so the body — an error payload,
-  // not NDJSON — was read line by line, every JSON.parse silently failed in
-  // the catch{continue} below, and the stream closed having flushed ZERO
-  // tokens. That is indistinguishable from "not answering" on the frontend,
-  // which matches exactly what you're seeing once a tool result is injected.
-  if (!ollamaResponse.ok || !ollamaResponse.body) {
-    const errText = await ollamaResponse.text().catch(() => "");
-    console.error(`[OLLAMA] generate returned ${ollamaResponse.status}:`, errText);
-    return c.json(
-      { error: `Model backend returned ${ollamaResponse.status}`, detail: errText },
-      502
-    );
-  }
+          const reader = ollamaResponse.body.getReader();
+          const decoder = new TextDecoder();
+          let streamBuffer = "";
+          let inThinkBlock = false;
 
-  // FIX 3: transform Ollama's raw NDJSON into the { response, thinking } shape
-  // the frontend expects. Ollama streams lines like: { "response": "token", "done": false }
-  // We pass "response" tokens through directly; thinking tokens (if model supports it via
-  // a <think> tag convention) are split out. Without this transform the frontend's
-  // processLine() never gets valid JSON it can parse into answerTarget.
-  let completeResponse = "";
+          const STALL_TIMEOUT_MS = 60_000;
+          const readWithStallTimeout = (): ReturnType<typeof reader.read> => {
+            return Promise.race([
+              reader.read(),
+              new Promise<never>((_, reject) =>
+                setTimeout(
+                  () => reject(new Error(`No data from model for ${STALL_TIMEOUT_MS}ms — stream stalled`)),
+                  STALL_TIMEOUT_MS
+                )
+              ),
+            ]);
+          };
 
-  // NOTE: isVoiceMode, speech settings, sentenceBuffer, findSentenceBoundary,
-  // dispatchSentenceChunks(), and finalizeVoicePipeline() are now all set up
-  // once, above, before the OpenRouter/Ollama fork — see the "Streaming
-  // Speech Pipeline (setup)" block earlier in this handler. Both branches
-  // share the same instances.
-
-  const { readable, writable } = new TransformStream();
-  const writer = writable.getWriter();
-  const encoder = new TextEncoder();
-
-  (async () => {
-    const reader = ollamaResponse.body!.getReader();
-    const decoder = new TextDecoder();
-    let buffer = "";
-    let inThinkBlock = false;
-    let thinkBuffer = "";
-
-    const flush = async (chunk: string) => {
-      try {
-        await writer.write(encoder.encode(chunk + "\n"));
-      } catch (err) {
-        // Writer already closed (client disconnected) — log and swallow so
-        // this doesn't throw out of the read loop and leave the reader
-        // dangling / become an unhandled rejection.
-        console.error("[STREAM] write failed:", err);
-      }
-    };
-
-    if (decision.status) {
-
-    await flush(
-
-        JSON.stringify({
-
-            status: decision.status
-
-        })
-
-    );
-
-}
-
-    // FIX 12: reader.read() had no timeout at all. If Ollama accepts the
-    // connection (status 200, headers fine) but then stalls mid-stream —
-    // GPU stuck on the previous call, model swapping, OOM mid-generation —
-    // this awaits forever with zero server-side log output. That matches
-    // exactly what you're seeing: a clean FINAL PROMPT log and then nothing,
-    // because the server genuinely has nothing to report yet — it's still
-    // waiting. A per-chunk stall watchdog turns that silent hang into a
-    // logged, client-visible error after a bounded wait.
-    const STALL_TIMEOUT_MS = 60_000;
-    const readWithStallTimeout = (): ReturnType<typeof reader.read> => {
-      return Promise.race([
-        reader.read(),
-        new Promise<never>((_, reject) =>
-          setTimeout(
-            () => reject(new Error(`No data from model for ${STALL_TIMEOUT_MS}ms — stream stalled`)),
-            STALL_TIMEOUT_MS
-          )
-        ),
-      ]);
-    };
-
-    try {
-      while (true) {
-        const { value, done } = await readWithStallTimeout();
-        if (done) break;
-
-        buffer += decoder.decode(value, { stream: true });
-        const lines = buffer.split("\n");
-        buffer = lines.pop() ?? "";
-
-        for (const line of lines) {
-          if (!line.trim()) continue;
-
-          let parsed: any;
           try {
-            parsed = JSON.parse(line);
-          } catch {
-            continue;
-          }
+            while (true) {
+              const { value, done } = await readWithStallTimeout();
+              if (done) break;
 
-          const token: string = parsed.response ?? "";
+              streamBuffer += decoder.decode(value, { stream: true });
+              const lines = streamBuffer.split("\n");
+              streamBuffer = lines.pop() ?? "";
 
-          // FIX 5: Ollama emits valid-JSON error lines like
-          // {"error":"model requires more system memory..."} mid-stream.
-          // These pass JSON.parse fine, have no .response field, and were
-          // previously falling through as a silent empty token — the loop
-          // would keep reading, hit done, and close with nothing ever sent
-          // to the user. Surface it instead.
-          if (parsed.error) {
-            console.error("[OLLAMA] stream error payload:", parsed.error);
-            await flush(JSON.stringify({ error: String(parsed.error) }));
-            continue;
-          }
+              for (const line of lines) {
+                if (!line.trim()) continue;
+                let parsed: any;
+                try {
+                  parsed = JSON.parse(line);
+                } catch {
+                  continue;
+                }
 
-          // Ollama's native reasoning field (present when "think": true is
-          // sent in the request above, on Ollama versions/models that
-          // support it). Streamed incrementally, one small chunk per line,
-          // same as "response" tokens — forward each chunk as it arrives
-          // instead of buffering the whole trace until the end, so the
-          // thinking box fills in live.
-          if (parsed.thinking) {
-            await flush(JSON.stringify({ thinking: parsed.thinking }));
-            continue;
-          }
+                const token: string = parsed.response ?? "";
 
-          // Detect <think>...</think> blocks emitted by reasoning models
-          // as literal tags inside "response" — fallback path for
-          // models/Ollama versions that don't use the native "thinking"
-          // field above.
-          if (token.includes("<think>")) {
-            inThinkBlock = true;
-            const after = token.split("<think>")[1] ?? "";
-            if (after) thinkBuffer += after;
-            continue;
-          }
+                if (parsed.error) {
+                  console.error("[OLLAMA] stream error payload:", parsed.error);
+                  await flush({ error: String(parsed.error) });
+                  continue;
+                }
 
-          if (inThinkBlock) {
-            if (token.includes("</think>")) {
-              inThinkBlock = false;
-              const before = token.split("</think>")[0] ?? "";
-              thinkBuffer += before;
-              // Emit buffered thinking in one go
-              await flush(JSON.stringify({ thinking: thinkBuffer }));
-              thinkBuffer = "";
-              const after = token.split("</think>")[1] ?? "";
-              if (after) await flush(JSON.stringify({ response: after }));
-            } else {
-              thinkBuffer += token;
+                if (parsed.thinking) {
+                  await flush({ thinking: parsed.thinking });
+                  continue;
+                }
+
+                if (token.includes("<think>")) {
+                  inThinkBlock = true;
+                  const after = token.split("<think>")[1] ?? "";
+                  if (after) {
+                    if (after.includes("</think>")) {
+                      inThinkBlock = false;
+                      const [thinkPart, afterPart] = after.split("</think>");
+                      if (thinkPart) await flush({ thinking: thinkPart });
+                      if (afterPart) {
+                        accumulated += afterPart;
+                        await flush({ response: afterPart });
+                        dispatchSentenceChunks(afterPart, flush);
+                      }
+                    } else {
+                      await flush({ thinking: after });
+                    }
+                  }
+                  continue;
+                }
+
+                if (inThinkBlock) {
+                  if (token.includes("</think>")) {
+                    inThinkBlock = false;
+                    const [before, after] = token.split("</think>");
+                    if (before) await flush({ thinking: before });
+                    if (after) {
+                      accumulated += after;
+                      await flush({ response: after });
+                      dispatchSentenceChunks(after, flush);
+                    }
+                  } else {
+                    // Stream thinking tokens in REAL TIME
+                    await flush({ thinking: token });
+                  }
+                  continue;
+                }
+
+                if (token) {
+                  accumulated += token;
+                  await flush({ response: token });
+                  dispatchSentenceChunks(token, flush);
+                }
+              }
             }
-            continue;
-          }
-
-          if (token) {
-            completeResponse += token;
-            await flush(JSON.stringify({ response: token }));
-
-            // Accumulate tokens and dispatch each confirmed sentence for
-            // TTS synthesis immediately, without waiting for the full LLM
-            // response to finish. Shared with the OpenRouter branch — see
-            // dispatchSentenceChunks() defined above the provider fork.
-            dispatchSentenceChunks(token, flush);
+          } finally {
+            try {
+              reader.releaseLock();
+            } catch {
+              /* ignore */
+            }
           }
         }
+
+        return accumulated;
+      }
+
+      completeResponse = await runModelInference(ragPrompt);
+
+      // ── Step 6.5: Knowledge Cutoff / Inability Refusal Fallback ──
+      // If the LLM refused or admitted lack of knowledge / post-cutoff events,
+      // automatically execute live web search via Tavily, wipe the refusal,
+      // re-synthesize with the live web results, and stream the real answer!
+      if (
+        completeResponse &&
+        intent.category !== "TOOL_TASK" &&
+        isKnowledgeCutoffRefusal(completeResponse)
+      ) {
+        console.log(`[CUTOFF FALLBACK] Detected knowledge cutoff refusal in response: "${completeResponse.slice(0, 100)}...". Triggering automatic Tavily search.`);
+
+        await flush({
+          notification: "Searching the internet for the latest information...",
+          status: "Searching internet for latest info...",
+        });
+
+        try {
+          const rawResults = await searchInternet(body.prompt);
+          const formattedResults = formatSearchResults(rawResults);
+
+          if (rawResults?.results && Array.isArray(rawResults.results)) {
+            latestSources = rawResults.results.map((r: any) => ({
+              title: r.title,
+              url: r.url,
+              content: r.content,
+            }));
+          }
+
+          sentenceBuffer = ""; // Reset voice buffer
+          await flush({
+            resetResponse: true,
+            notification: "Synthesizing answer from internet results...",
+            status: "Synthesizing answer from internet...",
+          });
+
+          const fallbackToolContext = `
+==================================================
+INTERNET SEARCH RESULTS (LATEST LIVE DATA)
+==================================================
+The user asked a question requiring real-time, recent, or post-cutoff information. Live internet search was executed.
+Query: ${body.prompt}
+
+Search Results:
+${formattedResults}
+==================================================
+INSTRUCTION: Answer the user's question accurately, completely, and naturally using the search results above. Do not mention your knowledge cutoff or say you lack real-time access. Synthesize the findings directly.
+==================================================`;
+
+          const fallbackPrompt = buildApcPrompt({
+            conversationContext: finalConversationContext,
+            temporalContext,
+            memoryContext,
+            attachmentContext,
+            toolContext: fallbackToolContext,
+            ragContext,
+            userPrompt: body.prompt,
+          });
+
+          completeResponse = await runModelInference(fallbackPrompt);
+        } catch (searchErr) {
+          console.error("[CUTOFF FALLBACK] Error during internet search fallback:", searchErr);
+        }
+      }
+
+      await flush({ response: "", thinking: "", done: true });
+      await finalizeVoicePipeline(flush);
+
+      // ── Step 7: Cache for future instant TTFT (Point 2) ──
+      if (
+        completeResponse &&
+        (intent.category === "GENERAL" || intent.category === "GREETING" || intent.category === "CASUAL")
+      ) {
+        semanticCache.set(body.prompt, completeResponse, intent.category).catch((err) => {
+          console.warn("[SEMANTIC CACHE] Background cache write failed:", err);
+        });
       }
     } catch (err) {
-      // FIX 6: previously there was no catch here at all — only finally.
-      // A throw inside the read loop (connection reset, decode error, etc)
-      // would run finally then rethrow, becoming an unhandled rejection in
-      // this detached IIFE. The client never learns anything went wrong;
-      // the stream just stops. Surface it as a proper error chunk instead.
-      console.error("[STREAM] read loop failed:", err);
-      await flush(JSON.stringify({ error: String(err instanceof Error ? err.message : err) }));
+      console.error("[STREAM] Error in stream worker:", err);
+      await flush({ error: String(err instanceof Error ? err.message : err) });
     } finally {
-
-    // Synthesizes any trailing remainder, awaits all in-flight synthesis
-    // tasks, then concatenates every succeeded chunk into one saved WAV and
-    // flushes `{ fullAudio }`. Shared with the OpenRouter branch — see
-    // finalizeVoicePipeline() defined above the provider fork.
-    await finalizeVoicePipeline(flush);
-
-    await writer.close();
-
-}
+      try {
+        await writer.close();
+      } catch {
+        /* already closed */
+      }
+    }
   })();
 
   return new Response(readable, {
-    headers: { "Content-Type": "application/x-ndjson" },
+    headers: {
+      "Content-Type": "text/event-stream; charset=utf-8",
+      "Cache-Control": "no-cache, no-transform",
+      "Connection": "keep-alive",
+      "X-Accel-Buffering": "no",
+    },
   });
 });
 
 // ─────────────────────────────────────────────────────────────────────────
 // /api/chat/agent-stream — "Extended Thinking" toggle.
-//
-// Separate endpoint from /api/chat/stream (which is left completely
-// untouched above). Same request body shape, but instead of one Ollama
-// call + optional single-shot tool router, this runs services/agentLoop.ts:
-// generate -> optional tool call -> execute -> feed result back ->
-// generate again -> ... -> final answer, no round cap. See agentLoop.ts
-// for the full design rationale.
-//
-// Reuses the same context-building pieces as /api/chat/stream (attachment
-// search, conversation window + summary, memory context) so the agent loop
-// starts from the same grounded context — it just doesn't go through
-// toolRouter.ts/toolPipeline.ts, since the agent loop does its own
-// multi-round tool calling instead of a single pre-decided plan.
-//
-// Wire protocol: NDJSON, one JSON object per line, same convention as
-// /api/chat/stream. Event shapes are a superset — { round }, { thinking },
-// { tool_call }, { tool_result }, { response }, { status }, { error } — see
-// AgentEvent in agentLoop.ts.
-// ─────────────────────────────────────────────────────────────────────────
 app.post("/api/chat/agent-stream", async (c) => {
   const body: any = await safeJson(c);
   if (!body) {
@@ -1471,7 +1196,7 @@ ${memoryContext}
 
   const flush = async (event: AgentEvent) => {
     try {
-      await writer.write(encoder.encode(JSON.stringify(event) + "\n"));
+      await writer.write(encoder.encode(`data: ${JSON.stringify(event)}\n\n`));
     } catch (err) {
       // Writer already closed (client disconnected) — same defensive
       // swallow as /api/chat/stream's flush().
@@ -1528,7 +1253,12 @@ ${memoryContext}
   })();
 
   return new Response(readable, {
-    headers: { "Content-Type": "application/x-ndjson" },
+    headers: {
+      "Content-Type": "text/event-stream; charset=utf-8",
+      "Cache-Control": "no-cache, no-transform",
+      "Connection": "keep-alive",
+      "X-Accel-Buffering": "no",
+    },
   });
 });
 

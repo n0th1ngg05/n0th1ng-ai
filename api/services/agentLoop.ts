@@ -1033,20 +1033,35 @@ async function runOneRound(
         if (token.includes("<think>")) {
           inThinkBlock = true;
           const after = token.split("<think>")[1] ?? "";
-          if (after) thinkBuffer += after;
+          if (after) {
+            if (after.includes("</think>")) {
+              inThinkBlock = false;
+              const [thinkPart, afterPart] = after.split("</think>");
+              if (thinkPart) {
+                thinkFullText += thinkPart;
+                await emit({ thinking: thinkPart });
+              }
+              if (afterPart) await fence.push(afterPart);
+            } else {
+              thinkFullText += after;
+              await emit({ thinking: after });
+            }
+          }
           continue;
         }
         if (inThinkBlock) {
           if (token.includes("</think>")) {
             inThinkBlock = false;
-            thinkBuffer += token.split("</think>")[0] ?? "";
-            thinkFullText += thinkBuffer;
-            await emit({ thinking: thinkBuffer });
-            thinkBuffer = "";
-            const after = token.split("</think>")[1] ?? "";
+            const [before, after] = token.split("</think>");
+            if (before) {
+              thinkFullText += before;
+              await emit({ thinking: before });
+            }
             if (after) await fence.push(after);
           } else {
-            thinkBuffer += token;
+            // Stream thinking tokens in REAL TIME
+            thinkFullText += token;
+            await emit({ thinking: token });
           }
           continue;
         }

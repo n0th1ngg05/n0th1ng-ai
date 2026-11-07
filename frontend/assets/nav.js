@@ -35,7 +35,6 @@ document.addEventListener('DOMContentLoaded', () => {
     window.addEventListener('scroll', handleScroll);
     handleScroll(); // init
   }
-});
 
   // Features Dropdown Mega-Menu Hover Grace Period
   const navDd = document.getElementById('ddFeatures');

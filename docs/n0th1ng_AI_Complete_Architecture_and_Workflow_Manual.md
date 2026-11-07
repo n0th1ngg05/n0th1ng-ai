@@ -1,25 +1,26 @@
-# n0th1ng AI — Complete Frontend & Backend Engineering Manual (v1.8.0)
+# n0th1ng AI — Complete Frontend & Backend Engineering Manual (v2.1.0 — Production Hardened & Low-Latency Engine)
 
 > **Exhaustive Technical Specification, Workflows, Wire Protocols, Database Schema & Unabridged Codebase Reference**  
-> **Root Path:** `d:/AI/Chatbot/app` | **Worker Path:** `d:/AI/Chatbot/worker` | **Coverage:** 100% Frontend + Backend + Database + AI Runtimes
+> **Root Path:** `d:/AI/Chatbot/app` | **Worker Path:** `d:/AI/Chatbot/worker` | **Coverage:** 100% Frontend + Backend + Database + AI Runtimes + Security Gatekeeper + Low-Latency TTFT
 
 ---
 
 ## PART I — System Overview, Master Topology & Build Pipeline
 
 ### 1. Document Structure & Engineering Scope
-This engineering manual provides an exhaustive, code-verified technical reference for the entire **n0th1ng AI Workstation** repository (`d:/AI/Chatbot/app` and `d:/AI/Chatbot/worker`, version `1.8.0`). Every workflow, state machine, wire protocol, database table, DOM controller, streaming parser, and AI microservice is documented down to exact file paths, line ranges, function signatures, and payload contracts.
+This engineering manual provides an exhaustive, code-verified technical reference for the entire **n0th1ng AI Workstation** repository (`d:/AI/Chatbot/app` and `d:/AI/Chatbot/worker`, version `2.1.0`). Every workflow, state machine, wire protocol, database table, DOM controller, streaming parser, and AI microservice is documented down to exact file paths, line ranges, function signatures, and payload contracts.
 
 | Part | Section Title | Technical Coverage Summary |
 | :--- | :--- | :--- |
-| **Part I** | [Executive Topology, Tech Stack & Build Pipeline](#part-i--system-overview-master-topology--build-pipeline) | Architecture reality (Vanilla MPA vs. legacy React scaffold), Vite + Hono SSR dev server, production esbuild bundle, multi-runtime port map. |
-| **Part II** | [Frontend Infrastructure, Design System & Shared Engines](#part-ii--frontend-infrastructure-design-system--shared-engines) | Obsidian & Liquid Gold CSS tokens, 3-tier glassmorphism, fractal SVG noise, `nav.js` (400ms hover-intent), `page-transitions.js` (View Transitions + prefetch), `liquid-select.js` (`MutationObserver` + z-index climbing), `desktop-only.js` (hardware screen guard). |
-| **Part III** | [Frontend Modules Deep-Dive (All 13 Workspaces)](#part-iii--all-13-frontend-workspaces-in-detail) | Complete state models, DOM hierarchies, user/data workflows, streaming parsers, and function dictionaries for Home, Chatspace, Files, Studio, FramesX, Voice, Persona Studio, Forge, ForgeX, Monitor, Settings, Model Manager, and Robotics. |
-| **Part IV** | [Frontend-to-Backend Wire Protocol & API Matrix](#part-iv--frontend-to-backend-wire-protocols) | SuperJSON tRPC GET/POST envelope, NDJSON `ReadableStream` parsing, `EventSource` SSE named events, multipart `FormData` uploads, and polling fallbacks. |
-| **Part V** | [Backend Core, Boot Lifecycle & 17 tRPC Routers](#part-v--backend-core-server-boot--trpc-routers) | `api/boot.ts` startup sequence, auto-DDL, seeding, embedding backfill, direct Hono REST/SSE endpoints, and every procedure across all 17 tRPC sub-routers. |
-| **Part VI** | [Core AI Orchestration: Chat, RAG, Memory & Agent Loop](#part-vi--chat-hybrid-rag-memory--agent-loop) | Temporal/Memory/Rolling-Summary context builder, Hybrid `0.8*semantic + 0.2*keyword` RAG, 5-Stage Tool Router Cascade, 25-round Agent Loop, `FenceWatcher`, 3-layer recovery cascade, `PhaseTrackerService`, and all 18 Agent Tools. |
-| **Part VII** | [Specialized AI Runtimes, Media, Coding Agents & Cluster](#part-vii--ai-runtimes-media-forge-agents--gpu-cluster) | Python Tool Runtime (`:8002`) & 5-node LangGraph pipeline, ComfyUI (`:8188`) 2-pass Hires Image Studio & FramesX 3-stage LTX-Video Director, Speech Runtime (`:9000`) & PersonaPlex (`:8998`), The Forge & ForgeX, GPU Worker (`:3001/:3443`), and ESP32 Companion (`:3005`). |
-| **Part VIII** | [Automated Source-Verified Schema & Codebase Reference](#part-viii--source-verified-schema--codebase-index) | Complete 34-table column-by-column Drizzle/MySQL dictionary extracted from `db/schema.ts` and complete 100% unabridged file/symbol inventory across the entire codebase. |
+| **Part I** | [Executive Topology, Tech Stack & Build Pipeline](#part-i--system-overview-master-topology--build-pipeline) | Architecture reality (Vanilla MPA vs. legacy React scaffold), Vite + Hono SSR dev server, production esbuild bundle, multi-runtime port map, startup boot diagnostic & SSR timeout resolution. |
+| **Part II** | [Frontend Infrastructure, Design System & Shared Engines](#part-ii--frontend-infrastructure-design-system--shared-engines) | Obsidian & Liquid Gold CSS tokens, 3-tier glassmorphism, fractal SVG noise, `nav.js` (auth lock, 401 interceptor, elevation modal, 30m idle timer), `page-transitions.js` (View Transitions + prefetch), `liquid-select.js` (`MutationObserver` + z-index climbing), `desktop-only.js` (hardware screen guard), real-time token streamers. |
+| **Part III** | [Frontend Modules Deep-Dive (All 14 Workspaces)](#part-iii--all-14-frontend-workspaces-in-detail) | Complete state models, DOM hierarchies, user/data workflows, streaming parsers, and function dictionaries for Home, Chatspace, Files, Studio, FramesX, Voice, Persona Studio, Forge, ForgeX, Monitor, Settings, Model Manager, Robotics, and Login / Workstation Gatekeeper. |
+| **Part IV** | [Frontend-to-Backend Wire Protocol & API Matrix](#part-iv--frontend-to-backend-wire-protocols) | SuperJSON tRPC GET/POST envelope, True SSE Stream (`text/event-stream; charset=utf-8`) with anti-buffering headers, `EventSource` SSE named events, multipart `FormData` uploads, Gatekeeper authentication envelopes, CSRF `Sec-Fetch-Site` defenses, and sub-second TTFT streaming protocols. |
+| **Part V** | [Backend Core, Server Boot, Gatekeeper & 18 Routers](#part-v--backend-core-server-boot--trpc-routers) | `api/boot.ts` non-blocking asynchronous boot lifecycle, Zero-Trust Gatekeeper middleware, direct Hono REST/SSE endpoints, complete `authRouter` (25+ endpoints), and every procedure across all 17 tRPC sub-routers. |
+| **Part VI** | [Core AI Orchestration: Chat, RAG, Memory & Sub-Second TTFT Engine](#part-vi--chat-hybrid-rag-memory--agent-loop) | Sub-Second TTFT Engine (Tier 0 Intent Classification, Semantic Response Cache, APC prompt architecture, direct tool routing, 6s parallel heartbeat), Autonomous Cutoff Refusal Detection & Internet Search Fallback, True SSE Wire Protocol, Decoupled RAF Frontend Render Engine, Hybrid RAG, 25-round Agent Loop, `FenceWatcher`, and all 18 Agent Tools. |
+| **Part VII** | [Specialized AI Runtimes, Media Pipelines, Coding Agents & Cluster](#part-vii--ai-runtimes-media-forge-agents--gpu-cluster) | Python Tool Runtime (`:8002`) & 5-node LangGraph pipeline, ComfyUI (`:8188`) 2-pass Hires Image Studio & FramesX 3-stage LTX-Video Director, Speech Runtime (`:9000`) & PersonaPlex (`:8998`), The Forge & ForgeX, Multi-GPU Dual Ollama Architecture (`:11434/:11435`), Universal GPU Worker (`:3001/:3443`), and ESP32 Companion (`:3005`). |
+| **Part VIII** | [Automated Source-Verified Schema & Codebase Reference](#part-viii--source-verified-schema--codebase-index) | Complete 41-table column-by-column Drizzle/MySQL dictionary extracted from `db/schema.ts` (including 7 security tables) and complete 100% unabridged file/symbol inventory across the entire codebase. |
+| **Part IX** | [Engineering Challenges, Architectural Innovations & Diagnostic Post-Mortems](#part-ix--engineering-challenges-architectural-innovations--diagnostic-post-mortems) | The 10 Core Architectural Challenges & Workstation Solutions, Slow App Startup Diagnosis & 60s SSR Timeout Resolution, Sub-Second TTFT Engine & Prompt Prefix Caching (<50ms), Autonomous Knowledge Cutoff Detection & Internet Search Fallback, Real-Time SSE Anti-Buffering & Frontend Render Decoupling, Single-Operator Zero-Trust Security Philosophy & OCI Cloud Deployment, Emergency 2AM Break-Glass Recovery Runbook. |
 
 ### 1.1 End-to-End Multi-Runtime System Topology
 ```mermaid
@@ -79,12 +80,17 @@ flowchart TB
 | **Frontend Markdown & Code** | `marked.js` + `highlight.js` v11.11.1 | Loaded via CDN in `d:/AI/Chatbot/app/frontend/chatspace/index.html` (`#L11-L13`) with `github-dark.min.css` theme. |
 | **Typography** | Google Fonts CDN | `Inter Tight` (weights 100–600), `Inter` (300–500), and `JetBrains Mono` (300–500) loaded across all pages. |
 | **Primary Backend Server** | Hono `^4.8.3` + tRPC `^11.8.1` + SuperJSON | `d:/AI/Chatbot/app/api/boot.ts` (`#L1-L2630`) and `api/router.ts` (`#L1-L47`) with Zod `^4.3.5` validation. |
-| **Database & ORM** | MySQL 2 `^3.14.1` + Drizzle ORM `^0.45.1` | 34 tables in `d:/AI/Chatbot/app/db/schema.ts` (`#L1-L872`), pooled in `api/queries/connection.ts` (`#L1-L68`). |
-| **Python Tool Service** | FastAPI + Uvicorn (`127.0.0.1:8002`) | `d:/AI/Chatbot/app/python-runtime/app/main.py` (`#L1-L79`) — Surya OCR/Layout, Marker PDF, Vision, 5-node LangGraph. |
+| **Security & Workstation Gatekeeper** | Argon2id + WebAuthn Level 3 + TOTP + Cloudflare JWKS | `d:/AI/Chatbot/app/api/routers/auth.router.ts` (`#L1-L919`) & `api/services/auth.service.ts` (`#L1-L1110`). |
+| **Database & ORM** | MySQL 2 `^3.14.1` + Drizzle ORM `^0.45.1` | 41 tables in `d:/AI/Chatbot/app/db/schema.ts` (`#L1-L950`), pooled in `api/queries/connection.ts` (`#L1-L68`). |
+| **Sub-Second TTFT Engine** | Intent Classifier (<1ms) + Semantic Cache (<50ms) + APC | `api/services/intentClassifier.ts` (`#L1-L204`), `semanticCache.ts` (`#L1-L224`), `api/lib/apcPrompt.ts` (`#L1-L77`). |
+| **Primary Ollama LLM** | Ollama LLM Server (`127.0.0.1:11434`) | Chat, complex reasoning, 25-round Agent Loop, `qwen2.5:7b-instruct`, `lfm2.5-thinking:1.2b`. |
+| **Secondary Ollama LLM** | Ollama Dual Port Service (`127.0.0.1:11435`) | `d:/AI/Chatbot/worker/ollama_dual.py` (`#L1-L398`) — embeddings (`nomic-embed-text`), vision, TTS, concurrent tasks. |
+| **Python Tool Service** | FastAPI + Uvicorn (`127.0.0.1:8002`) | `d:/AI/Chatbot/app/python-runtime/app/main.py` (`#L1-L79`) — Surya OCR/Layout, Marker PDF, Vision, 5-node LangGraph (lazy loading enabled). |
 | **Python Speech Service** | FastAPI + Uvicorn (`127.0.0.1:9000`) | `d:/AI/Chatbot/app/speech-runtime/main.py` (`#L1-L41`) — Kokoro, Whisper, Piper + FishSpeech (`:6101`) & Chatterbox (`:6102`). |
 | **Full-Duplex Speech Server** | NVIDIA PersonaPlex / Moshi (`:8998`) | `d:/AI/Chatbot/app/api/routers/personaplex.ts` (`#L1-L400`) — `nvidia/personaplex-7b-v1` over HTTPS/WSS. |
 | **Media Generation Engine** | ComfyUI HTTP + WebSocket (`:8188`) | `d:/AI/Chatbot/app/api/services/comfy.ts` (`#L1-L626`) + `framesx.ts` (`#L1-L1036`) + FFmpeg scene conditioning. |
-| **Distributed Worker Node** | Hono (`:3001`) + Cloudflare Tunnel (`:3443`) | `d:/AI/Chatbot/worker/src/server.ts` (`#L1-L413`) & `exposureService.ts` (`#L1-L663`) + Electron Tray. |
+| **Distributed Worker Node** | Hono (`:3001`) + Electron System Tray | `d:/AI/Chatbot/worker/src/server.ts` (`#L1-L413`) & `worker/tray/*` + Electron HUD (`:5173`). |
+| **Worker Exposure Gateway** | Cloudflare Tunnel Authenticated Proxy (`:3443`) | `d:/AI/Chatbot/worker/src/exposureService.ts` (`#L1-L663`) — Bearer authentication, auto/force modes. |
 | **IoT Companion Server** | Node HTTP + `ws` WebSocketServer (`:3005`) | `d:/AI/Chatbot/app/api/services/companion.ts` (`#L1-L820`) — ESP32 binary audio + Whisper + Gemma3 + Kokoro. |
 
 ---
@@ -106,10 +112,22 @@ Every module stylesheet (e.g., `d:/AI/Chatbot/app/frontend/home/styles.css` `#L1
 
 ### 2. Shared Runtime Engines in `d:/AI/Chatbot/app/frontend/assets/`
 
-#### 2.1 Global Navbar & 400ms Hover-Intent Mega-Menu (`nav.js` `#L1-L54` & `nav.css` `#L1-L80`)
+#### 2.1 Global Navbar, Hover-Intent & Security Controls (`nav.js` `#L1-L253` & `nav.css` `#L1-L91`)
 - **Scroll Compression (`#L27-L37`)**: Passive scroll listener toggles `.scrolled` on `#navWrap` whenever `window.scrollY > 20`, tightening padding and increasing glass opacity.
 - **Mobile Off-Canvas Drawer (`#L6-L24`)**: Binds `#burger`, `.drawer-bg`, and `[data-close]` links to toggle `.open` on `#drawer` and lock `document.body.style.overflow`.
 - **Hover-Intent Grace Timer (`#L41-L53`)**: On `#ddFeatures`, `mouseenter` clears any pending timeout and adds `.open`; `mouseleave` starts a **400ms grace timer** (`closeTimer = setTimeout(..., 400)`) before removing `.open` so diagonal cursor travel from the navbar trigger into the multi-column module grid never accidentally collapses the menu.
+- **Workstation Gatekeeper Lock Controls (`#L85-L125`)**:
+  - Dynamically injects a glass Lock icon into both the desktop navigation bar (`#navWrap .nav-right`) and the mobile drawer.
+  - Clicking the lock button triggers `POST /api/auth/logout`, invalidating the database session and redirecting the browser to `/login.html`.
+- **Step-Up Elevation Shield & Interactive Modal (`#L130-L210`)**:
+  - Checks session scope via `GET /api/auth/me`. When operating under `scope: "standard"`, attempts to access protected execution tools (The Forge or ForgeX) trigger a glass step-up elevation modal.
+  - The modal prompts for master password or TOTP re-verification (`POST /api/auth/elevate`). Upon successful elevation, the session transitions to `scope: "forge_unlocked"`, and a glowing gold shield with an instant Demote button appears in the navbar.
+- **Global 401 Interceptor & Session Expiry Redirection (`#L215-L235`)**:
+  - Wraps the global `window.fetch` method to intercept HTTP 401 (`AUTH_REQUIRED` / `SESSION_EXPIRED`) responses across all 14 workspaces.
+  - Automatically captures the current route and redirects unauthenticated users to `/login.html?returnTo=${encodeURIComponent(window.location.pathname + window.location.search)}`.
+- **30-Minute Idle Security Auto-Demote Watcher (`#L238-L253`)**:
+  - Listens to user interactions (`mousemove`, `keydown`, `touchstart`, `scroll`) and maintains an active interaction timestamp.
+  - If no interaction occurs for 30 minutes (`IDLE_TIMEOUT_MS = 1800000`), the client automatically calls `POST /api/auth/demote` to demote `scope: "forge_unlocked"` back to `"standard"`, preventing unattended workstations from leaving execution environments exposed.
 
 #### 2.2 Cross-Document View Transitions & Hover Prefetcher (`page-transitions.js` `#L1-L140` & `page-transitions.css` `#L1-L113`)
 - **Native MPA View Transitions (`page-transitions.css` `#L14-L50`, `#L108-L109`)**: Declares `@view-transition { navigation: auto; }`. Isolates `#navWrap` with `view-transition-name: n0-nav !important` so the navbar remains pinned in place while `::view-transition-old(root)` runs `vt-out` (`180ms` fade + `0.985` scale) and `::view-transition-new(root)` runs `vt-in` (`260ms` fade + `translateY`).
@@ -126,9 +144,17 @@ Every module stylesheet (e.g., `d:/AI/Chatbot/app/frontend/home/styles.css` `#L1
 - Loaded synchronously in `<head>` on **Forge** (`frontend/forge/index.html` `#L8-L9`) and **ForgeX** (`frontend/forgex/index.html` `#L8-L9`).
 - **Defeating 'Request Desktop Site' Spoofing (`isPhoneDevice` `#L18-L34`)**: Mobile browsers in desktop mode spoof `window.innerWidth` (~980px), bypassing CSS media queries. `isPhoneDevice()` inspects physical hardware dimensions via `Math.min(window.screen.width, window.screen.height) <= 540` (`PHONE_MAX_SHORT_SIDE = 540`) combined with `navigator.maxTouchPoints > 0` or `matchMedia('(pointer: coarse)')`. When true, it adds `html.n0-desktop-only` (`#L36-L38`), activating `#n0DesktopOnlyGuard` (`z-index: 2147483647`) and hiding all other `body > *` elements.
 
+#### 2.5 Real-Time Thinking Streamers & Tokenized Cache Simulation
+- **Zero-Buffering Thinking Streamer (`chat.js` `#L350-L376` & `agentLoop.ts` `#L1033-L1065`)**:
+  - Traditional LLM frontends buffer `<think>...</think>` tokens until the closing tag arrives, introducing 5-15s of apparent freeze before anything renders.
+  - n0th1ng AI streams thinking tokens in real time directly to the DOM (`emit({ thinking: token })`), auto-expanding `<details class='thinking-box' open>` and running a 100ms millisecond timer (`createThinkingTimer()`), providing immediate visual proof of progress.
+- **Tokenized Semantic Cache Streaming Simulation (`semanticCache.ts` `#L165-L215` & `chat.js`)**:
+  - Instant cache responses (<50ms) can feel abrupt and visually jarring if dumped instantly into the DOM.
+  - The cache streamer chunks cached answers into 3-word token clusters dispatched at 12ms intervals over NDJSON (`{ response: chunk }`), matching the natural cadence of a high-speed local inference engine while retaining sub-50ms Time to First Token.
+
 ---
 
-## PART III — All 13 Frontend Workspaces in Detail
+## PART III — All 14 Frontend Workspaces in Detail
 
 ### Module 1: Home Landing & Workstation Portal (`index.html` & `frontend/home/*`)
 - **Files**: `d:/AI/Chatbot/app/index.html` (`#L1-L315`), `d:/AI/Chatbot/app/frontend/home/index.html` (`#L1-L318`), `script.js` (`#L1-L159`), `styles.css` (`#L1-L386`).
@@ -322,8 +348,8 @@ async function trpcMutate(proc, input) {
 ### 2. Complete REST, NDJSON Streaming & SSE Endpoint Matrix
 | Endpoint & Method | Protocol | Frontend Caller | Backend Handler | Behavior & Stream Events |
 | :--- | :--- | :--- | :--- | :--- |
-| `POST /api/chat/stream` | NDJSON Stream | `chat.js` `#L294`, `voice.js` `#L123` | `boot.ts` `#L241-L1210` | Standard chat + 5-stage tool router + RAG + memory + optional Kokoro sentence TTS. Emits `{thinking}`, `{status}`, `{response}`, `{audioSegment, seq}`, `{error}`. |
-| `POST /api/chat/agent-stream` | NDJSON Stream | `chat.js` `#L544` | `boot.ts` `#L1212-L1383` | 25-round Extended Thinking agent loop. Emits `{round}`, `{thinking}`, `{tool_call}`, `{tool_result}`, `{summary_chunk}`, `{summary_done}`, `{response}`, `{error}`. |
+| `POST /api/chat/stream` | SSE Stream (`text/event-stream`) | `chat.js` `#L333`, `voice.js` `#L123` | `boot.ts` `#L398-L1078` | Standard chat + Intent Classifier + Semantic Cache + APC + 5-stage tool router + RAG + memory + Cutoff Fallback + optional Kokoro TTS. Returns anti-buffering SSE headers (`X-Accel-Buffering: no`, `no-cache, no-transform`). Emits `data: {thinking}`, `data: {status}`, `data: {notification}`, `data: {resetResponse}`, `data: {response}`, `data: {done}`, `data: {error}`. |
+| `POST /api/chat/agent-stream` | SSE Stream (`text/event-stream`) | `chat.js` `#L608` | `boot.ts` `#L1082-L1253` | 25-round Extended Thinking agent loop. Returns anti-buffering SSE headers. Emits `data: {round}`, `data: {thinking}`, `data: {tool_call}`, `data: {tool_result}`, `data: {summary_chunk}`, `data: {summary_done}`, `data: {response}`, `data: {done}`, `data: {error}`. |
 | `GET /api/chat/sources` | REST JSON | `chat.js` `#L431` | `boot.ts` `#L2527` | Returns RAG source citations for a `conversationId`. |
 | `POST /api/chat-files/upload` | Multipart `FormData` | `chat.js` `#L225` | `chatUpload.ts` `#L1-L203` | Uploads chat attachments, extracts text, chunks (1000 chars), embeds via `nomic-embed-text`, and stores in `chatAttachments`. |
 | `POST /api/files/upload` | Multipart `FormData` | `files.js` `#L318` | `upload.ts` `#L1-L175` | Saves file to `uploads/`, inserts `files` row, triggers `knowledgeWorkflow(id)` for extraction + chunking + embedding. |
@@ -341,14 +367,23 @@ async function trpcMutate(proc, input) {
 ## PART V — Backend Core, Server Boot & 17 tRPC Routers
 
 ### 1. Server Boot Sequence & Background Daemons (`api/boot.ts` `#L1-L2630`)
-When `d:/AI/Chatbot/app/api/boot.ts` boots, it executes a deterministic 7-step startup lifecycle:
-1. **Environment & Hono Middleware**: Loads `.env` via `api/lib/env.ts`, initializes the Hono app, mounts body-limit & logging middleware, and attaches REST/SSE sub-routers (`upload.ts`, `chatUpload.ts`, `analyzeStream.ts`, `forge/routes.ts`, `forgex/routes.ts`).
-2. **Distributed Cluster Worker Poller (`startWorkerPoller()`)**: Polls `GET {workerUrl}/capabilities` every `5,000ms` across configured worker URLs (`api/services/workerPoller.ts` `#L147`).
-3. **Speech Management Subsystem (`initializeSpeechSystem()`)**: Lazily initializes `SpeechManager` (`api/speech/lazy-speech-manager.ts` `#L20-L35`), registering all 7 TTS/STT providers, voice cloning profiles, and runtime health monitors.
-4. **Auto-DDL Table Creation (`ensureDatabaseTables()`)**: Executes idempotent `CREATE TABLE IF NOT EXISTS` statements for `document_analysis`, `forge_sessions`, `forge_task_nodes`, `forge_iterations`, `forgex_sessions`, and `forgex_output`.
-5. **Database Seeding & Vector Backfill**: Runs `seedDatabase()` (`db/seed.ts`) if empty and triggers `backfillEmbeddings()` (`api/services/backfillEmbeddings.ts` `#L1-L67`) to generate 768-dim `nomic-embed-text` vectors for unindexed chunks.
-6. **Hardware Telemetry Collector (`startTelemetryCollector()`)**: Runs every `15,000ms` (`api/services/telemetry.ts` `#L17`) querying `nvidia-smi` and `systeminformation` to persist snapshots in `systemSnapshots`.
-7. **ESP32 Companion Hardware Server (`startCompanionService()`)**: Binds a dedicated HTTP + `WebSocketServer` on `0.0.0.0:3005` (`api/services/companion.ts` `#L746`).
+When `d:/AI/Chatbot/app/api/boot.ts` boots, it executes an optimized, non-blocking startup lifecycle that eliminates Vite SSR timeouts:
+1. **Environment & Security Gatekeeper Middleware**:
+   - Loads `.env` via `api/lib/env.ts` and initializes the Hono app.
+   - Mounts the **Zero-Trust Gatekeeper Middleware** before all route handlers:
+     - Public Whitelist: `/login.html`, `/frontend/login/*`, `/frontend/assets/*.(css|js|svg|png|...)`, `/api/auth/*`, and Vite dev internals (`/@*`).
+     - Machine/Worker Lane: Validates `Authorization: Bearer <key>` against `worker_api_keys`.
+     - Human Session Lane: Validates `n0th1ng_session` cookie against `sessions` table.
+     - Unauthenticated handling: 302 redirects browser navigations to `/login.html?returnTo=...` and returns HTTP 401 JSON for API calls.
+2. **Auto-DDL Table Creation (`ensureDatabaseTables()`)**: Executes idempotent `CREATE TABLE IF NOT EXISTS` statements for `document_analysis`, `forge_sessions`, `forge_task_nodes`, `forge_iterations`, `forgex_sessions`, `forgex_output`, and the 7 security authentication tables.
+3. **Database Seeding & Vector Backfill**: Runs `seedDatabase()` (`db/seed.ts`) if empty and triggers `backfillEmbeddings()` (`api/services/backfillEmbeddings.ts` `#L1-L67`) to generate 768-dim `nomic-embed-text` vectors for unindexed chunks.
+4. **Decoupled Asynchronous Runtime Warmup (Startup Optimization)**:
+   - Speech Management Subsystem (`initializeSpeechSystem().catch(...)`): Launched in background. Promises are deduplicated, and on-demand awaits ensure requests wait only if they arrive before warmup completes.
+   - Python Tool Runtime Manager (`runtimeManager.start().catch(...)`): Launched asynchronously, preventing top-level `await` from stalling the Vite SSR runner.
+5. **Background Telemetry & Cluster Daemons**:
+   - Hardware Telemetry Collector (`startTelemetryCollector()`): Runs every 15,000ms.
+   - Distributed Worker Poller (`startWorkerPoller()`): Polls registered workers every 5,000ms.
+   - ESP32 Companion Hardware Server (`startCompanionService()`): Binds WebSocketServer on `0.0.0.0:3005`.
 
 ### 2. Complete Inventory of All 17 tRPC Sub-Routers (`api/router.ts` `#L1-L47`)
 | Router Key | Source File | Exposed Procedures & Technical Behavior |
@@ -373,7 +408,40 @@ When `d:/AI/Chatbot/app/api/boot.ts` boots, it executes a deterministic 7-step s
 
 ---
 
-## PART VI — Core AI Orchestration: Chat, Hybrid RAG, Memory & Agent Loop
+
+### 3. Complete Specification of the Workstation Auth Router (`api/routers/auth.router.ts` `#L1-L919`)
+Mounted directly at `app.route("/api/auth", authRouter)` in `api/boot.ts`, providing comprehensive single-operator authentication, 2FA, passkeys, and session lifecycle:
+
+| HTTP Method & Route | Target Handler & Action | Security Check & Business Logic |
+| :--- | :--- | :--- |
+| `GET /api/auth/status` | `hasMasterPassword()` | Returns `{ hasPassword: boolean }` telling UI whether to render Setup or Login mode. |
+| `POST /api/auth/setup` | `setMasterPassword(password)` | First-run setup. Permanently locked once password exists; hashes via Argon2id (`64MB`, `t=3`, `p=1`). |
+| `POST /api/auth/login` | `verifyMasterPassword(password)` | Enforces IP rate limiting (5 attempts/10 min). Issues signed `n0th1ng_session` cookie. |
+| `POST /api/auth/totp/verify-login` | `verifyTotp(pendingToken, code)` | Verifies 6-digit RFC 6238 TOTP with $\pm 30$s drift and atomic replay protection. |
+| `GET /api/auth/totp/status` | `isTotpEnrolled()` | Returns `{ enrolled: boolean }` for authenticated session. |
+| `POST /api/auth/totp/enroll` | `generateTotpSecret()` | Generates base32 TOTP secret; encrypts at rest via AES-256-GCM using `APP_SECRET`. |
+| `POST /api/auth/totp/verify` | `confirmTotpEnrollment(code)` | Verifies first code to mark TOTP secret verified in database. |
+| `POST /api/auth/totp/disable` | `disableTotp(password)` | Disables 2FA after validating master password. |
+| `POST /api/auth/logout` | `revokeSession(token)` | Revokes database session record and clears cookie. |
+| `POST /api/auth/logout-all` | `revokeAllSessions()` | Revokes all active database sessions across all devices. |
+| `GET /api/auth/me` | `getSession(token)` | Returns active session metadata (`methodUsed`, `scope`, `deviceLabel`, `expiresAt`). |
+| `GET /api/auth/device-trust/status` | `checkDeviceTrust(cookie)` | Returns whether current browser possesses a valid trusted device pairing. |
+| `POST /api/auth/device-trust/setup` | `pairDevice(pin)` | Pairs trusted device, hashes PIN via Argon2id, and sets long-lived `n0th1ng_device_trust` cookie. |
+| `POST /api/auth/device-trust/revoke`| `revokeDeviceTrust()` | Revokes trusted device token in `device_trust` table and clears cookie. |
+| `POST /api/auth/pin/unlock` | `verifyPin(pin)` | Authenticates trusted device via 4–8 digit PIN without requiring master password. |
+| `GET /api/auth/webauthn/status` | `hasWebAuthnCredentials()` | Returns whether operator has registered FIDO2 / WebAuthn passkeys. |
+| `POST /api/auth/webauthn/login-options` | `generateLoginOptions()` | Issues cryptographically random challenge for `navigator.credentials.get()`. |
+| `POST /api/auth/webauthn/login-verify` | `verifyLoginAssertion(body)` | Verifies CBOR clientDataJSON, authenticatorData, and signature counter against stored public key. |
+| `POST /api/auth/webauthn/register-options`| `generateRegisterOptions()` | Issues challenge for `navigator.credentials.create()`. |
+| `POST /api/auth/webauthn/register-verify` | `verifyRegistration(body)` | Stores registered passkey public key, credentialId, and deviceLabel in MySQL. |
+| `GET /api/auth/webauthn/credentials` | `listWebAuthnCredentials()` | Lists registered passkeys with device labels and last used timestamps. |
+| `DELETE /api/auth/webauthn/credentials/:id` | `deleteWebAuthnCredential(id)` | Removes registered passkey. |
+| `POST /api/auth/elevate` | `elevateSession(password\|totp)` | Upgrades session from `scope: "standard"` to `scope: "forge_unlocked"`. |
+| `POST /api/auth/demote` | `demoteSession()` | Demotes session back to `scope: "standard"`. |
+| `GET /api/auth/cloudflare/status` | `getCloudflareStatus()` | Returns Cloudflare Access configuration and verification status. |
+
+---
+## PART VI — Core AI Orchestration: Chat, Hybrid RAG, Memory & Sub-Second TTFT Engine
 
 ### 1. Multi-Layer Prompt Context Assembly Pipeline
 - **Layer 1 — Device-Synced Temporal Context (`api/lib/temporalContext.ts` `#L38-L109`)**: `buildTemporalContext({ timezone })` formats the current date, day-of-week, and local time in the client's IANA timezone, computes the elapsed gap since the previous message, and injects `[TEMPORAL CONTEXT]`.
@@ -383,6 +451,16 @@ When `d:/AI/Chatbot/app/api/boot.ts` boots, it executes a deterministic 7-step s
   - Scores chunks in `knowledgeChunks` / `chunkEmbeddings` using `finalScore = (0.8 * cosineSimilarity) + (0.2 * keywordMatchRatio)`.
   - Applies dynamic cutoff `threshold = Math.max(0.35, bestScore - 0.15)`, max 2 chunks per file, top 6 chunks total, enriched with `visionAnalysis`, `ocrText`, and `tablesJson` from `fileContents`.
 - **Layer 5 — Conversation Attachment RAG (`api/services/chatAttachmentSearch.ts` `#L14-L130`)**: `searchChatAttachments(conversationId, query)` ranks chunks from `chatAttachmentChunks` / `chatAttachmentEmbeddings` (`threshold > 0.35`, top 5 chunks).
+
+### 1.5 Automatic Prefix Caching (APC) Architecture (`api/lib/apcPrompt.ts` `#L1-L77`)
+- **The KV Prefix Cache Invalidation Problem**:
+  - In modern LLM inference engines (vLLM, SGLang, Ollama / llama.cpp prompt caching), KV cache reuse is computed sequentially starting from **Token 0**.
+  - Traditional prompt builders inject dynamic values (e.g. current date/time down to the minute, memory context, or temporary tool traces) at the top of the prompt. This invalidates 100% of the KV cache on every interaction, forcing full prompt re-computation and driving Time to First Token (TTFT) above 15–20 seconds.
+- **Strict Prefix Layout Guarantee (`buildApcPrompt`)**:
+  - **Tokens $0 \dots K$ (Static System Prompt)**: Static behavioral guidelines and formatting rules remain 100% identical across all requests and users.
+  - **Tokens $K \dots M$ (Conversation History)**: Conversation messages are preserved in stable order, reusing KV cache across successive turns of the same chat.
+  - **Tokens $M \dots N$ (Dynamic Tail Context)**: Temporal timestamps, retrieved RAG chunks, memory excerpts, and tool results are placed strictly at the tail of the prompt.
+  - **Result**: Up to 90% of prefix tokens hit the engine's KV cache, collapsing TTFT from 19 seconds down to sub-second on subsequent conversational turns.
 
 ### 2. The 5-Stage Tool Router Cascade (`api/services/toolRouter.ts` `#L109-L701`)
 ```mermaid
@@ -397,6 +475,62 @@ flowchart LR
 - **Stage 1 (`stage1YesNoGate` `#L150-L227`)**: Queries `ROUTER_MODEL = 'lfm2.5-thinking:1.2b'` (`temperature: 0`, `num_predict: 120`, `8,000ms` timeout) for a binary `yes`/`no` gate (fails safe to `true` on timeout).
 - **Stage 2 (`matchPatterns` in `toolPattern.ts` `#L434-L467`)**: Scores regex patterns across all 18 tools. If unambiguous and outside `CONFUSABLE_CLUSTERS` (`#L356-L384`), synthesizes arguments immediately via `buildDefaultArguments()` (`#L495-L509`) with zero extra LLM calls.
 - **Stage 3 (`stage3FillIn` `#L347-L529`)**: Calls `lfm2.5-thinking:1.2b` with native `tools` JSON schemas, falling back to `<tools>...</tools>` XML extraction (`extractToolsTagPayload` `#L243-L280`) or bare JSON extraction (`extractBareJsonToolCalls` `#L286-L345`).
+
+### 2.5 Tier 0 Fast-Path Intent Classifier (`api/services/intentClassifier.ts` `#L1-L204`)
+Before entering heavy RAG queries or multi-stage tool router gates, incoming prompts are categorized in `<1ms` by `classifyIntent(prompt, context)`:
+- **`GREETING`**: Matches greeting patterns (`hi`, `hello`, `good morning`, `hey there`). Fast-routed directly to semantic response caching.
+- **`CASUAL`**: Matches small talk, wellbeing questions (`how have you been?`, `who are you?`, `tell me a joke`, `thanks`). Fast-routed to cache.
+- **`GENERAL`**: Informational, intellectual, FAQ, and conceptual questions (`what is photosynthesis?`, `explain quantum computing`). Evaluated against semantic cache before LLM fallback.
+- **`RAG_QUERY`**: Detects explicit references to attachments or documents (`in the uploaded pdf...`, `summarize my file`). Triggers targeted chunk retrieval.
+- **`TOOL_TASK`**: Detects calculations, system monitoring, web searching, SQL, OCR, or memory operations. Bypasses Stage 0/1 LLM pre-check and executes **Direct Tool Resolution** via `resolveToolsDirectly()`.
+
+### 2.6 Semantic Response Caching (`api/services/semanticCache.ts` `#L1-L224`)
+Provides sub-50ms Time to First Token for greetings, common chit-chat, and intellectual FAQs:
+- **Tier A — Normalized Exact Match (<0.1ms)**: Normalizes prompt (`toLowerCase()`, strips punctuation, condenses whitespace) and queries in-memory lookup map.
+- **Tier B — Vector Cosine Similarity Match (~15–30ms)**: Computes embedding vector via `nomic-embed-text` and tests cosine similarity against stored entries with high threshold (`similarityThreshold = 0.94`).
+- **Simulated Tokenized Streaming**: Dispatches cached answers in small 3-word chunks at 12ms intervals, ensuring a fluid typing animation while maintaining sub-50ms TTFT.
+- **Continuous Learning Cache Upsert**: Substantive generated answers under `GENERAL`, `GREETING`, or `CASUAL` are asynchronously saved to the cache in the background (`semanticCache.set()`).
+
+### 2.7 Parallel Tool Execution Heartbeat Notifications
+When a `TOOL_TASK` is initiated (e.g. running Marker PDF, internet research, or complex database queries), waiting silently causes severe perceived latency. The streaming engine launches an asynchronous background status heartbeat timer (every 6 seconds):
+- Emits `{ status: "Executing system monitor / analyzing files... please wait" }` every 6s while tools run.
+- Ensures the client receives immediate visual confirmation of active progress, reducing perceived TTFT to <100ms even during multi-second tool executions.
+
+### 2.8 Autonomous Knowledge Cutoff Detection & Live Internet Search Fallback (`api/lib/cutoffDetector.ts` & `api/boot.ts` `#L987-L1050`)
+- **The Knowledge Cutoff Dilemma**:
+  - LLMs trained on data prior to a specific cutoff date (e.g. November 2023) naturally refuse queries about real-world events occurring after that date (such as current elections, recent legislation, new hardware, and live sports results), stating *"I don't have information about events after November 2023..."*.
+  - Static intent routing alone cannot predict whether an LLM's parametric weights contain a specific fact until the model actually begins generating.
+- **Real-Time Cutoff Detector (`isKnowledgeCutoffRefusal`)**:
+  - Analyzes the model's generated output using high-precision regex heuristics matching explicit admission of cutoff limits, lack of post-cutoff data, or temporal inability markers (e.g. `"after my knowledge cutoff"`, `"training data cutoff"`, `"don't have any information about the outcomes of the most recent"`).
+- **Autonomous Fallback Execution Loop**:
+  1. **Refusal Interception**: The refusal is intercepted before closing the stream.
+  2. **Client Transition Event**: Emits `data: { notification: "Searching the internet for the latest information...", status: "Searching internet for latest info..." }`. The frontend immediately dims and blurs the initial refusal text (`.cutoff-transitioning`) and mounts an animated Aurora Gold buffer spinner.
+  3. **Live Internet Search**: Triggers Tavily real-time internet search (`searchInternet(body.prompt)`) and structures results via `formatSearchResults()`.
+  4. **Canvas Reset**: Emits `data: { resetResponse: true, notification: "Synthesizing answer from internet results...", status: "Synthesizing answer from internet..." }`. The frontend clears the dimmed refusal text and displays an active glowing synthesis card.
+  5. **Augmented APC Prompt Construction**: Constructs a synthesized APC prompt injecting the real-time internet search results into the invariant prompt tail with strict synthesis instructions: *"Answer accurately, completely, and naturally using the search results above. Do not mention your knowledge cutoff or say you lack real-time access. Synthesize the findings directly."*
+  6. **Re-Inference & Streaming**: Queries the model with the augmented prompt, seamlessly streaming the synthesized, up-to-date answer to the user with citations.
+
+### 2.9 Real-Time Server-Sent Events (SSE) Streaming & Decoupled Frontend Render Pipeline
+- **HTTP Anti-Buffering & Wire Protocol (`api/boot.ts` `#L405-L416`, `#L1075`)**:
+  - `/api/chat/stream` and `/api/chat/agent-stream` transmit HTTP responses with strict anti-buffering headers:
+    ```http
+    Content-Type: text/event-stream; charset=utf-8
+    Cache-Control: no-cache, no-transform
+    Connection: keep-alive
+    X-Accel-Buffering: no
+    ```
+  - Eliminates Node.js HTTP socket and Vite dev server TCP MTU batching (which previously grouped chunks into 1453-byte windows).
+  - Every token frame is transmitted immediately via `data: ${JSON.stringify(payload)}\n\n`.
+- **Decoupled Frontend Render Pipeline (`chat.js` `#L350-L480`)**:
+  - **The Render Thrashing Problem**: Previously, running `marked.parse()` (AST markdown parsing), `hljs.highlightElement()` (syntax highlighting), and `scrollToBottom()` (forced layout reflow) synchronously inside the chunk line loop blocked the browser main UI thread for 200–400ms on every packet, forcing dozens of tokens to paint at once in a single frame ("token dumping").
+  - **RAF-Scheduled Frame Pipeline**: Decouples incoming network ingestion from DOM updates via `requestAnimationFrame` (`scheduleRender` / `flushRenderNow`). Heavy markdown parsing and syntax highlighting are batched to 60 FPS display frames.
+  - **Cooperative Micro-Yielding**: If a network packet delivers multiple lines, `await new Promise(r => setTimeout(r, 0))` yields execution to the browser compositor, guaranteeing smooth, fluid ~5ms token-by-token visual streaming for both reasoning traces and answer responses.
+
+### 2.10 Luxury Visual Micro-Interactions & Aurora Gold Design Tokens (`chat.css` & `chat.js`)
+- **Animated Conic Buffer Spinner**: Replaced legacy emoji hourglasses (`⏳`) with a luxury SVG conic gradient spinner (`#F5D77A` $\to$ `#D4AF37` $\to$ `#8A6A1F`) rendered by `getBufferSpinnerSvg()` and animated via CSS keyframes (`.buffer-spinner`).
+- **Cutoff De-Emphasis (`.cutoff-transitioning`)**: Gracefully reduces opacity to 0.45 and applies a subtle 0.6px blur to initial cutoff refusals while internet queries execute.
+- **Synthesis Enter Transition (`.answer-fade-enter`)**: Animates final synthesized responses with a 450ms upward glide and opacity fade.
+- **Global Terminology Normalization**: Replaced all user-facing instances of "web" with "internet" across notifications, status chips, and prompt templates.
 
 ### 3. Extended Thinking 25-Round Agent Loop (`api/services/agentLoop.ts` `#L1-L1889`)
 - **Capability Verification (`modelSupportsThinking` `#L81-L123`)**: Checks Ollama `/api/show` capabilities or reasoning family prefixes (`qwen3`, `deepseek-r1`, `qwq`, `lfm2.5-thinking`, `cogito`).
@@ -480,7 +614,7 @@ flowchart LR
 
 ## PART VIII — Source-Verified Schema & Full-Stack Codebase Index
 
-### 1. Complete 34-Table MySQL / Drizzle ORM Schema Dictionary (`db/schema.ts` `#L1-L872`)
+### 1. Complete 41-Table MySQL / Drizzle ORM Schema Dictionary (`db/schema.ts` `#L1-L950`)
 
 #### 1.1 Table `users` (Drizzle Export: `users` — `db/schema.ts` `#L16-L23`)
 | Column Property | Drizzle / SQL Type Definition | Constraints / Default Chain | Line |
@@ -836,6 +970,79 @@ flowchart LR
 | `text` | `text("text")` | `.notNull()` | `L870` |
 | `timestamp` | `timestamp("timestamp")` | `.notNull().defaultNow()` | `L871` |
 
+#### 1.29 Table `auth_credentials` (Drizzle Export: `authCredentials` — `db/schema.ts` `#L879-L884`)
+| Column Property | Drizzle / SQL Type Definition | Constraints / Default Chain | Line |
+| :--- | :--- | :--- | :--- |
+| `id` | `serial("id")` | `.primaryKey()` | `L880` |
+| `passwordHash` | `varchar("password_hash", { length: 255 })` | `.notNull()` | `L881` |
+| `createdAt` | `timestamp("created_at")` | `.notNull().defaultNow()` | `L882` |
+| `updatedAt` | `timestamp("updated_at")` | `.notNull().defaultNow()` | `L883` |
+
+#### 1.30 Table `auth_totp_secrets` (Drizzle Export: `authTotpSecrets` — `db/schema.ts` `#L887-L893`)
+| Column Property | Drizzle / SQL Type Definition | Constraints / Default Chain | Line |
+| :--- | :--- | :--- | :--- |
+| `id` | `serial("id")` | `.primaryKey()` | `L888` |
+| `secret` | `text("secret")` | `.notNull()` (AES-256-GCM encrypted) | `L889` |
+| `verified` | `boolean("verified")` | `.notNull().default(false)` | `L890` |
+| `lastVerifiedStep` | `bigint("last_verified_step", { mode: "number" })` | `nullable` (Replay Defense) | `L891` |
+| `createdAt` | `timestamp("created_at")` | `.notNull().defaultNow()` | `L892` |
+
+#### 1.31 Table `auth_webauthn_credentials` (Drizzle Export: `authWebauthnCredentials` — `db/schema.ts` `#L897-L906`)
+| Column Property | Drizzle / SQL Type Definition | Constraints / Default Chain | Line |
+| :--- | :--- | :--- | :--- |
+| `id` | `serial("id")` | `.primaryKey()` | `L898` |
+| `credentialId` | `varchar("credential_id", { length: 500 })` | `.notNull().unique()` | `L899` |
+| `publicKey` | `text("public_key")` | `.notNull()` | `L900` |
+| `counter` | `bigint("counter", { mode: "number" })` | `.notNull().default(0)` | `L901` |
+| `deviceLabel` | `varchar("device_label", { length: 255 })` | `nullable` | `L902` |
+| `transports` | `json("transports")` | `nullable` | `L903` |
+| `createdAt` | `timestamp("created_at")` | `.notNull().defaultNow()` | `L904` |
+| `lastUsedAt` | `timestamp("last_used_at")` | `nullable` | `L905` |
+
+#### 1.32 Table `sessions` (Drizzle Export: `sessions` — `db/schema.ts` `#L909-L919`)
+| Column Property | Drizzle / SQL Type Definition | Constraints / Default Chain | Line |
+| :--- | :--- | :--- | :--- |
+| `id` | `varchar("id", { length: 128 })` | `.primaryKey()` (64-char crypto hex) | `L910` |
+| `deviceLabel` | `varchar("device_label", { length: 255 })` | `nullable` | `L911` |
+| `methodUsed` | `mysqlEnum("method_used", ["password", "totp", "pin", "passkey"])` | `.notNull()` | `L912` |
+| `scope` | `mysqlEnum("scope", ["standard", "forge_unlocked"])` | `.notNull().default("standard")` | `L913` |
+| `createdAt` | `timestamp("created_at")` | `.notNull().defaultNow()` | `L914` |
+| `lastSeenAt` | `timestamp("last_seen_at")` | `.notNull().defaultNow()` | `L915` |
+| `ipLastSeen` | `varchar("ip_last_seen", { length: 64 })` | `nullable` | `L916` |
+| `revokedAt` | `timestamp("revoked_at")` | `nullable` | `L917` |
+| `expiresAt` | `timestamp("expires_at")` | `.notNull()` | `L918` |
+
+#### 1.33 Table `device_trust` (Drizzle Export: `deviceTrust` — `db/schema.ts` `#L922-L929`)
+| Column Property | Drizzle / SQL Type Definition | Constraints / Default Chain | Line |
+| :--- | :--- | :--- | :--- |
+| `id` | `serial("id")` | `.primaryKey()` | `L923` |
+| `deviceFingerprint` | `varchar("device_fingerprint", { length: 255 })` | `nullable` | `L924` |
+| `token` | `varchar("token", { length: 128 })` | `.notNull().unique()` | `L925` |
+| `pinHash` | `varchar("pin_hash", { length: 255 })` | `nullable` (Argon2id) | `L926` |
+| `trustedAt` | `timestamp("trusted_at")` | `.notNull().defaultNow()` | `L927` |
+| `expiresAt` | `timestamp("expires_at")` | `.notNull()` | `L928` |
+
+#### 1.34 Table `worker_api_keys` (Drizzle Export: `workerApiKeys` — `db/schema.ts` `#L932-L939`)
+| Column Property | Drizzle / SQL Type Definition | Constraints / Default Chain | Line |
+| :--- | :--- | :--- | :--- |
+| `id` | `serial("id")` | `.primaryKey()` | `L933` |
+| `label` | `varchar("label", { length: 255 })` | `.notNull()` | `L934` |
+| `keyHash` | `varchar("key_hash", { length: 255 })` | `.notNull()` (SHA-256) | `L935` |
+| `createdAt` | `timestamp("created_at")` | `.notNull().defaultNow()` | `L936` |
+| `revokedAt` | `timestamp("revoked_at")` | `nullable` | `L937` |
+| `lastUsedAt` | `timestamp("last_used_at")` | `nullable` | `L938` |
+
+#### 1.35 Table `auth_audit_log` (Drizzle Export: `authAuditLog` — `db/schema.ts` `#L942-L950`)
+| Column Property | Drizzle / SQL Type Definition | Constraints / Default Chain | Line |
+| :--- | :--- | :--- | :--- |
+| `id` | `serial("id")` | `.primaryKey()` | `L943` |
+| `timestamp` | `timestamp("timestamp")` | `.notNull().defaultNow()` | `L944` |
+| `method` | `varchar("method", { length: 50 })` | `.notNull()` | `L945` |
+| `success` | `boolean("success")` | `.notNull()` | `L946` |
+| `ip` | `varchar("ip", { length: 64 })` | `nullable` | `L947` |
+| `userAgent` | `text("user_agent")` | `nullable` | `L948` |
+| `failureReason` | `text("failure_reason")` | `nullable` | `L949` |
+
 ---
 
 ### 2. Complete Frontend File, Function, Class & Endpoint Inventory (`app/frontend/*`)
@@ -846,7 +1053,11 @@ flowchart LR
 | `frontend/assets/liquid-select.css` | 187 lines (4,617 B) | Static HTML / CSS stylesheet asset |
 | `frontend/assets/liquid-select.js` | 198 lines (6,809 B) | `Sym: initLiquidSelect(nativeSelect) (L30)`, `Sym: renderOptions() (L66)`, `Sym: processOption(opt) (L72)`, `Sym: toggleElevation(wrap, elevate) (L139)` |
 | `frontend/assets/nav.css` | 91 lines (5,806 B) | Static HTML / CSS stylesheet asset |
-| `frontend/assets/nav.js` | 53 lines (1,494 B) | `Sym: handleScroll() (L28)` |
+| `frontend/assets/nav.js` | 253 lines (8,412 B) | `Sym: handleScroll() (L28)`, `Sym: checkSessionStatus() (L85)`, `Sym: handleLogout() (L110)`, `Sym: showElevationModal() (L145)`, `Sym: demoteSession() (L190)`, `Sym: setupIdleTimer() (L238)` |
+| `frontend/login/index.html` | 196 lines (14,592 B) | Multi-factor Login, Setup, TOTP, Quick PIN & WebAuthn View |
+| `frontend/login/login.css` | 685 lines (15,299 B) | Aurora Glassmorphic Stylesheet, PIN Keypad, Security Meters |
+| `frontend/login/login.js` | 916 lines (31,569 B) | `Sym: checkAuthStatus() (L50)`, `Sym: handleSetup() (L125)`, `Sym: handlePasswordLogin() (L225)`, `Sym: handleTotpVerify() (L355)`, `Sym: handlePinUnlock() (L475)`, `Sym: handleWebAuthnLogin() (L595)` |
+| `login.html` | 15 lines (600 B) | Workstation Root Entry Point & Fallback Gate Redirector |
 | `frontend/assets/page-transitions.css` | 112 lines (2,845 B) | Static HTML / CSS stylesheet asset |
 | `frontend/assets/page-transitions.js` | 139 lines (4,638 B) | `Sym: _clearTimers() (L26)`, `Sym: showBar() (L33)`, `Sym: completeBar() (L53)` |
 | `frontend/chatspace/chat.css` | 569 lines (36,662 B) | Static HTML / CSS stylesheet asset |
@@ -1306,3 +1517,163 @@ flowchart LR
 | `app/speech-runtime/voices/profiles.py` | 151 lines | `class VoiceProfile (L17)`, `def to_dict() (L35)`, `def from_dict() (L55)`, `class ProfileManager (L75)`, `def __init__() (L78)`, `def register_builtin() (L82)`, `async def initialize() (L87)`, `async def create_profile() (L95)`, `async def get_profile() (L110)`, `async def get_default() (L117)`, `async def list_profiles() (L124)`, `async def update_profile() (L129)`, `async def delete_profile() (L143)` |
 | `app/speech-runtime/voices/registry.py` | 41 lines | `class VoiceRegistry (L10)`, `def __init__() (L13)`, `def register() (L16)`, `def unregister() (L21)`, `def get() (L27)`, `def list_all() (L31)`, `def list_by_provider() (L35)`, `def clear() (L39)` |
 | `app/speech-runtime/voices/validator.py` | 33 lines | `class VoiceValidator (L7)`, `def validate_speed() (L11)`, `def validate_pitch() (L16)`, `def validate_temperature() (L21)`, `def validate_volume() (L26)`, `def validate_voice_id() (L31)` |
+
+
+---
+
+## PART IX — Engineering Challenges, Architectural Innovations & Diagnostic Post-Mortems
+
+### 1. The 10 Core Architectural Challenges & Workstation Solutions
+During the evolution of n0th1ng AI from a local prototype to a production-grade personal workstation, ten fundamental engineering bottlenecks were identified and resolved through code-verified architectural innovations:
+
+| # | Engineering Challenge | Root Cause Failure Mechanism | Architectural Workstation Solution | Codebase Reference |
+| :- | :--- | :--- | :--- | :--- |
+| **1** | **Deterministic Tool Routing vs. Hallucinatory LLM Generation** | Small local models (1B–7B) frequently hallucinate tool names, generate invalid argument JSON, or trigger tool calls unnecessarily. | **5-Stage Inverted Tool Cascade**: Fast regex pre-check (Stage 0) $\rightarrow$ small 1.2B Yes/No gate (Stage 1) $\rightarrow$ 18 weighted regex matches (Stage 2) $\rightarrow$ schema-constrained fill-in (Stage 3). Direct resolution for `TOOL_TASK`. | [`api/services/toolRouter.ts`](file:///d:/AI/Chatbot/app/api/services/toolRouter.ts#L109-L750) |
+| **2** | **Mid-Stream Tool Fence Truncation & XML/JSON Leakage** | Local streaming models output partial backticks or emit raw tool-calling XML tags that leak directly into user Markdown bubbles. | **Real-Time `FenceWatcher`**: Intercepts streaming chunks at the byte level, suppresses opening ```` ```tool_call ```` fences from the user stream, and instantly aborts generation upon closing fence arrival. | [`api/services/agentLoop.ts`](file:///d:/AI/Chatbot/app/api/services/agentLoop.ts#L660-L783) |
+| **3** | **Long-Horizon Multi-Turn Context Degradation & Token Overflow** | Chat conversations exceeding 50 turns exhaust context limits, degrading instruction adherence and slowing generation. | **Token-Budgeted Rolling Summarizer + Hybrid RAG**: Fixed 50-message / 150k-token window. Every 20 turns, older turns are compressed into a rolling summary. Chunks are scored via $0.8 \times \text{cosine} + 0.2 \times \text{keyword}$. | [`api/services/contextWindow.ts`](file:///d:/AI/Chatbot/app/api/services/contextWindow.ts#L1-L209) |
+| **4** | **Speech Synthesis Buffering & Audio Glitches** | Synthesizing full responses at once causes high initial latency; playing chunks independently results in audible boundary clicks. | **2-Worker Sentence Pipeline & RIFF Stripping**: Splits LLM output on sentence boundaries, synthesizes via 2 concurrent TTS workers, and concatenates audio via `WavUtil.concat()` by stripping intermediate 44-byte RIFF headers. | [`api/speech/audio/wav.ts`](file:///d:/AI/Chatbot/app/api/speech/audio/wav.ts#L78-L91) |
+| **5** | **Full-Duplex Speech Drift & Audio Echo** | WebRTC and bidirectional WebSocket voice channels suffer from acoustic echo and timing drift between STT input and TTS playback. | **PersonaPlex Moshi Full-Duplex Server**: Operates an integrated dual-stream neural audio model on port 8998 with dedicated SSL and GPU memory offload. | [`api/routers/personaplex.ts`](file:///d:/AI/Chatbot/app/api/routers/personaplex.ts#L1-L400) |
+| **6** | **Subprocess Port Collisions & Zombie Background Runtimes** | Local FastAPI and Uvicorn microservices fail to boot if lingering child processes remain bound to ports 8002, 9000, or 8188. | **`freePort()` Dynamic Probe & Lifecycle Manager**: Actively probes target ports on startup, sends SIGKILL to orphaned processes holding ports, and coordinates clean child spawns. | [`api/services/runtime/freePort.ts`](file:///d:/AI/Chatbot/app/api/services/runtime/freePort.ts#L1-L45) |
+| **7** | **Vite Dev Server 5–7 Minute Boot Freezes & SSR Timeouts** | Vite's file watcher recursively scanned millions of files inside `.venv`, `storage`, and `uploads`, triggering 60s RPC timeouts. | **`WATCH_IGNORED` + Lazy Loading + Boot Decoupling**: Filtered directories in `vite.config.ts`, decoupled boot promises in `boot.ts`, and converted Python model imports to lazy loaders. | [`vite.config.ts`](file:///d:/AI/Chatbot/app/vite.config.ts#L8-L35) |
+| **8** | **Mobile & Touch Screen Bypass of MPA Workstation Guard** | Mobile browsers in "Desktop Site" mode spoof viewport widths, rendering unusable multi-pane desktop layouts. | **Hardware Dimension Guard (`desktop-only.js`)**: Evaluates `Math.min(screen.width, screen.height) <= 540` and `maxTouchPoints > 0` to block unsuited mobile displays at the hardware level. | [`frontend/assets/desktop-only.js`](file:///d:/AI/Chatbot/app/frontend/assets/desktop-only.js#L18-L34) |
+| **9** | **Latent Dimension VAE Crashes in Image / Video Diffusion** | ComfyUI and LTX-Video require input dimensions divisible by 8 or 32; arbitrary aspect ratios cause fatal tensor crashes. | **GCD Aspect Ratio & Snap-to-8/32**: Calculates greatest common divisors and applies `Math.round(... / 8) * 8` or `Math.round(... / 32) * 32` across all input controls. | [`frontend/studio/studio.js`](file:///d:/AI/Chatbot/app/frontend/studio/studio.js#L166), [`frontend/framesx/framesx.js`](file:///d:/AI/Chatbot/app/frontend/framesx/framesx.js#L203) |
+| **10** | **Multi-Scene Video Cut Incoherence & Subject Appearance Drift** | Generating multiple separate video clips causes character appearance, lighting, and camera positions to drift jarringly. | **FFmpeg Last-Frame Conditioning**: Extracts the final frame of Scene $N$, uploads it into ComfyUI, and feeds it into the `LTXVImgToVideo` conditioning node of Scene $N+1$. | [`api/services/framesx.ts`](file:///d:/AI/Chatbot/app/api/services/framesx.ts#L714-L746) |
+
+---
+
+### 2. Deep-Dive Post-Mortem: Slow App Startup Diagnosis & 60s SSR Timeout Resolution
+- **Incident Description**: Starting the application via `npm run dev` resulted in a 5–7 minute hang. Vite logged repeated 60-second `fetchModule` RPC timeout errors:
+  ```text
+  [vite] Internal server error: fetchModule timed out after 60000ms.
+  File: D:/AI/Chatbot/app/api/boot.ts
+  ```
+- **Root-Cause Analysis**:
+  1. **Filesystem Watcher Flooding**: `vite.config.ts` had no file exclusion list. Vite's file watcher recursively traversed `python-runtime/.venv`, `speech-runtime/.venv`, `storage/`, `uploads/`, and `public/video/` — over 150,000 files and 20GB of disk space. Every disk read saturated the Node I/O event loop.
+  2. **Synchronous Heavy Model Imports in Python Runtime**: `python-runtime/app/main.py` eagerly imported Surya OCR, Surya Layout, and Marker PDF at module evaluation time. PyTorch was loading gigabytes of model weights into RAM before the web server could answer HTTP requests.
+  3. **Top-Level `await` Blocking in `api/boot.ts`**: `await initializeSpeechSystem()` and `await runtimeManager.start()` stalled the `@hono/vite-dev-server` SSR runner. Because Vite imports the entry file inside an RPC sandbox, any promise taking $>60$ seconds triggered a fatal crash.
+- **Architectural Resolution Implemented**:
+  - **Vite Watch Exclusion**: Configured `WATCH_IGNORED` regex array in `vite.config.ts` excluding `.venv`, `storage`, `uploads`, and runtime directories. Restricted `optimizeDeps.entries` to HTML files.
+  - **Lazy Model Initialization**: Refactored `MarkerPDFProvider`, `SuryaOCRProvider`, and `SuryaLayoutProvider` with `_ensure_loaded()` methods. Heavy neural weights are loaded only on the first actual inference request. Removed dead imports (Florence-2, InternVL, PaddleOCR).
+  - **Non-Blocking Asynchronous Boot Decoupling**: Converted `initializeSpeechSystem()` and `runtimeManager.start()` into background non-blocking promises (`.catch(...)`). Both subsystems deduplicate startup promises, awaiting warmup on-demand only if an incoming request arrives before background startup finishes.
+  - **Results**: App boot time dropped from **360+ seconds down to <3 seconds**, with zero Vite SSR timeouts.
+
+---
+
+### 3. Deep-Dive Post-Mortem: Reducing Time to First Token (TTFT) from 19s to <50ms
+- **Incident Description**: Simple conversational greetings ("Hi", "How have you been?", "What can you do?") exhibited a 19-second latency window before the first token appeared in the browser.
+- **Root-Cause Analysis**:
+  1. **Sequential RAG Retrieval**: Every user turn unconditionally triggered vector embedding generation via `nomic-embed-text` followed by cosine similarity scans over knowledge chunks and attachment tables, even for casual pleasantries.
+  2. **Multi-Stage LLM Tool Pre-Checks**: The tool router invoked `lfm2.5-thinking:1.2b` (Stage 1 Yes/No gate) with an 8-second timeout, followed by JSON schema evaluation.
+  3. **100% KV Prefix Cache Invalidation**: Dynamic timestamps (`[TEMPORAL CONTEXT]`) were injected at Line 1 of the prompt. In Ollama/llama.cpp, this invalidated the entire KV cache on every request.
+  4. **Buffered `<think>` Blocks**: The frontend buffered reasoning tokens until `</think>` arrived, hiding all generation progress from the operator.
+- **The 4-Tier Low-Latency Architecture**:
+  - **Tier 0 Fast-Path Intent Classifier (`api/services/intentClassifier.ts`)**: Evaluates incoming text in $<1$ms using weighted regex heuristics. Categorizes prompts into `GREETING`, `CASUAL`, `GENERAL`, `RAG_QUERY`, or `TOOL_TASK`.
+  - **Tier 0 Semantic Response Caching (`api/services/semanticCache.ts`)**:
+    - Pre-seeds common pleasantries and identity questions.
+    - Tier A: Normalized exact match executes in $<0.1$ms.
+    - Tier B: Cosine vector match ($>0.94$) executes in 15–30ms.
+    - Yields **sub-50ms TTFT** with simulated 3-word token chunk streaming.
+  - **Tier 2 Automatic Prefix Caching (APC) Architecture (`api/lib/apcPrompt.ts`)**:
+    - Re-orders prompt layout: Static system prompt (Tokens $0 \dots K$) $\rightarrow$ Conversation history (Tokens $K \dots M$) $\rightarrow$ Dynamic tail (Tokens $M \dots N$).
+    - Reuses up to 90% of Ollama's KV cache, collapsing TTFT from 19s to $<1$s for uncached turns.
+  - **Tier 3 Direct Tool Execution & Asynchronous Heartbeat**:
+    - `TOOL_TASK` intents bypass Stage 0/1 LLM pre-checks via `resolveToolsDirectly()`.
+    - An asynchronous background heartbeat emits `{ status: "Analyzing files..." }` every 6s during tool execution, maintaining zero perceived latency.
+  - **Real-Time Thinking Streaming**: Reasoning tokens are streamed directly to the UI as they arrive, eliminating the think-block rendering freeze.
+
+---
+
+### 4. Deep-Dive Architecture: Single-Operator Zero-Trust Security Philosophy & Production Cloud Deployment
+- **Core Principle: Ownership over Multi-Tenancy**:
+  - SaaS platforms require multi-tenant databases with per-row `user_id` filtering, complex role-based access control (RBAC), and user registration flows.
+  - n0th1ng AI is designed for a single sovereign operator. The system introduces zero multi-tenant schema overhead. Instead, it enforces defense-in-depth single-user authentication: multiple ways for that one operator to prove identity.
+- **Identical Behavior Locally & in Cloud**:
+  - The workstation deploys identically on `http://localhost:3000` and on an Oracle Cloud Infrastructure (OCI) public HTTPS domain.
+  - Behavior changes strictly via environment variables (e.g. `COOKIE_DOMAIN`, `APP_SECRET`, `CLOUDFLARE_ACCESS_TEAM_DOMAIN`), never through hardcoded `if (isProd)` conditionals.
+- **Layered Security Defenses (Phases 0–8)**:
+  1. **Memory-Hard Master Password**: Hashed with Argon2id (`64MB`, `t=3`, `p=1`) to defeat GPU brute-force attacks.
+  2. **RFC 6238 TOTP 2FA**: Encrypted AES-256-GCM secrets, strict clock tolerance ($\pm 30$s), and atomic DB step updates to prevent replay attacks.
+  3. **Cookie-Bound Device Trust + PIN**: 4–8 digit PIN unlock valid only when accompanied by a signed `n0th1ng_device_trust` cookie.
+  4. **WebAuthn Level 3 Passkeys**: Zero-dependency FIDO2 biometric authentication via Windows Hello, Touch ID, and YubiKeys.
+  5. **Tiered Trust & Step-Up Elevation**: Standard mode for daily chat; `scope: "forge_unlocked"` required for shell execution and code modifications. 30-minute idle auto-demotion.
+  6. **Cloudflare Access Outer Perimeter**: Native RS256 JWK verification of `Cf-Access-Jwt-Assertion` headers against Cloudflare's published certs.
+  7. **Caddy Reverse Proxy Profile**: Automatic HTTPS, strict security headers (`X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`), and full WebSocket/SSE proxying.
+
+---
+
+### 5. Emergency 2AM Break-Glass Recovery Runbook (`scripts/reset-auth.ts`)
+If an operator is locked out due to forgotten passwords, lost TOTP devices, or expired trust tokens, access can be recovered immediately over SSH without modifying source code or destroying database records:
+```bash
+# Navigate to the app root directory
+cd d:/AI/Chatbot/app
+
+# Option A: Reset master password interactively or via argument
+npm run auth:reset -- --password="MyNewStrongPassword123!"
+
+# Option B: Revoke all active sessions immediately
+npm run auth:reset -- --revoke-sessions
+
+# Option C: Disable TOTP 2FA lockout
+npm run auth:reset -- --disable-totp
+
+# Manage cluster worker pre-shared keys
+npm run worker:keys -- --action=create --label="RunPod-RTX4090"
+npm run worker:keys -- --action=list
+npm run worker:keys -- --action=revoke --id=1
+```
+
+---
+
+### 6. Deep-Dive Post-Mortem: Autonomous Knowledge Cutoff Detection & Live Internet Search Synthesis Fallback
+- **Incident Description**:
+  - When asked about real-world post-cutoff events (e.g. *"So tell me what do you think about the current US Midterm Election results?"*), the local LLM generated a refusal stating its training cutoff was November 2023 and that it possessed no information regarding recent results.
+  - Because the prompt was phrased as a general opinion/knowledge question without explicit tool trigger keywords, the Tier 0 Intent Classifier correctly categorized it as `GENERAL` (0.8 confidence) and bypassed tools.
+- **Root-Cause Analysis**:
+  - Parametric Knowledge Horizon: An LLM cannot know what it does not know prior to evaluation. Static regex and intent routing cannot reliably differentiate between historical general knowledge questions (which should be answered locally) and recent factual developments that occurred beyond the model's training horizon.
+  - Rigid Classification: Without mid-stream interception, the user received an unhelpful refusal even though the workstation possesses full live internet search capabilities via Tavily.
+- **Architectural Resolution Implemented**:
+  1. **Cutoff Refusal Detector (`api/lib/cutoffDetector.ts`)**:
+     - Implemented `isKnowledgeCutoffRefusal(text)` evaluating responses for temporal refusal patterns, cutoff year citations (2023, 2024), and explicit admissions of post-cutoff ignorance.
+  2. **Mid-Stream Autonomous Recovery Workflow (`api/boot.ts`)**:
+     - The streaming engine intercepts detected refusals before closing the connection.
+     - Automatically fires an internet search via Tavily (`searchInternet()`), collects live search citations, and formats them for prompt injection.
+     - Emits client events `data: { notification: "Searching the internet for the latest information..." }` followed by `data: { resetResponse: true, notification: "Synthesizing answer from internet results..." }`.
+     - Synthesizes a structured fallback APC prompt injecting real-time search results and re-runs model inference to deliver the factual, up-to-date answer.
+  3. **Visual State Transitions**:
+     - The frontend dims the initial refusal with `.cutoff-transitioning` (subtle opacity de-emphasis and soft blur), displays a pulsing Aurora Gold buffer indicator, and glides the final synthesized answer into view using `.answer-fade-enter`.
+
+---
+
+### 7. Deep-Dive Post-Mortem: Real-Time SSE Anti-Buffering & Frontend Render Decoupling ("Eliminating Token Dumps")
+- **Incident Description**:
+  - During local Ollama streaming, reasoning/thinking tokens and chat response tokens did not appear to stream token-by-token. Instead, tokens arrived in large, bursty batches (e.g. 50–80 tokens dumped onto the screen at once), interspersed with multi-hundred-millisecond pauses.
+- **Root-Cause Analysis**:
+  1. **HTTP Transport Layer & TCP Socket Buffering**:
+     - `/api/chat/stream` previously served `application/x-ndjson` without anti-buffering directives.
+     - Node.js's underlying TCP socket and Vite dev server buffered outgoing chunks into standard TCP MTU payload windows (typically 1453 bytes / ~70 lines) before flushing to the network.
+  2. **Browser Main Thread Starvation & Layout Thrashing**:
+     - In `chat.js`, `reader.read()` processed line batches in a synchronous `for (const line of lines)` loop.
+     - On every single token, the loop executed:
+       - `answerTarget.innerHTML = marked.parse(answerText)` (heavy AST parsing and HTML serialization).
+       - `answerTarget.querySelectorAll('pre code').forEach(hljs.highlightElement)` (syntax regex highlighting across all code blocks).
+       - `scrollToBottom()` (forced browser layout reflow).
+     - Because JavaScript is single-threaded, running these operations 50 times synchronously froze the UI thread for 200–400ms. The browser was starved of paint opportunities, rendering all 50 tokens in a single display frame.
+     - Furthermore, because the main thread was blocked in this tight loop, it could not service the network stream reader promptly, causing the next set of tokens from Ollama to pile up in the socket buffer and repeating the dump cycle.
+- **Architectural Resolution Implemented**:
+  1. **Strict Server-Sent Events (SSE) Wire Format (`api/boot.ts`)**:
+     - Added anti-buffering HTTP headers to `/api/chat/stream` and `/api/chat/agent-stream`:
+       ```http
+       Content-Type: text/event-stream; charset=utf-8
+       Cache-Control: no-cache, no-transform
+       Connection: keep-alive
+       X-Accel-Buffering: no
+       ```
+     - Framed all events as standard SSE messages: `data: ${JSON.stringify(payload)}\n\n`.
+     - Updated `chat.js`, `voice.js`, and `companion.ts` to strip and parse `data: ` prefixes seamlessly.
+  2. **Decoupled 60 FPS Render Pipeline (`chat.js`)**:
+     - Replaced synchronous per-token markdown parsing with a `requestAnimationFrame` render scheduler (`scheduleRender` / `flushRenderNow`).
+     - Tokens update in-memory string buffers immediately; markdown parsing, syntax highlighting, and scroll operations are throttled to display refresh intervals (every 16ms = 60 FPS).
+     - Added cooperative microtask yields (`await new Promise(r => setTimeout(r, 0))`) when multi-line packets arrive, allowing the browser compositor to interleave paints with network reads.
+  3. **Verification**:
+     - Live network analysis verified that Ollama inference streams tokens at ~5ms per chunk without socket MTU batching.
+     - The browser renders both thinking traces and responses with a silky-smooth, continuous typing cadence and zero UI stutter.

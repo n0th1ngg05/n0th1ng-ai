@@ -1,3 +1,18 @@
+// Color-matching luxury buffer spinner (matches --gold and --gold-bright aurora theme)
+function getBufferSpinnerSvg() {
+  return `<svg class="buffer-spinner" width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <circle cx="12" cy="12" r="9.5" stroke="rgba(245, 215, 122, 0.2)" stroke-width="2.5" stroke-linecap="round"/>
+    <path d="M12 2.5C17.2467 2.5 21.5 6.75329 21.5 12C21.5 14.2 20.7 16.2 19.4 17.8" stroke="url(#goldBufferGrad)" stroke-width="2.5" stroke-linecap="round"/>
+    <defs>
+      <linearGradient id="goldBufferGrad" x1="12" y1="2.5" x2="21.5" y2="17.8" gradientUnits="userSpaceOnUse">
+        <stop stop-color="#F5D77A"/>
+        <stop offset="60%" stop-color="#D4AF37"/>
+        <stop offset="100%" stop-color="#8A6A1F"/>
+      </linearGradient>
+    </defs>
+  </svg>`;
+}
+
 let currentConversationId = null;
 let currentModel = null;
 let selectedKnowledgeFiles = [];
@@ -312,6 +327,7 @@ async function generateRealResponse(prompt, uploadedAttachments = []) {
   let answerText = '';
   let fullResponse = '';
   let thinkingClosed = false;
+  let isSynthesizing = false;
 
   try {
     const response = await fetch('/api/chat/stream', {
@@ -334,48 +350,132 @@ async function generateRealResponse(prompt, uploadedAttachments = []) {
     const decoder = new TextDecoder();
 
     let buffer = ''; 
+    let renderFrameId = null;
+    let pendingAnswer = false;
+    let pendingThinking = false;
+
+    // High-performance RAF-scheduled render pipeline: prevents UI freeze / layout thrashing
+    const scheduleRender = () => {
+      if (renderFrameId !== null) return;
+      renderFrameId = requestAnimationFrame(() => {
+        renderFrameId = null;
+        if (pendingThinking && thinkingTarget) {
+          pendingThinking = false;
+          thinkingTarget.textContent = thinkingText;
+          thinkingTarget.scrollTop = thinkingTarget.scrollHeight;
+        }
+        if (pendingAnswer) {
+          pendingAnswer = false;
+          answerTarget.innerHTML = marked.parse(answerText);
+          answerTarget.querySelectorAll('pre code').forEach((block) => {
+            hljs.highlightElement(block);
+          });
+        }
+        scrollToBottom();
+      });
+    };
+
+    const flushRenderNow = () => {
+      if (renderFrameId !== null) {
+        cancelAnimationFrame(renderFrameId);
+        renderFrameId = null;
+      }
+      if (thinkingTarget) {
+        thinkingTarget.textContent = thinkingText;
+        thinkingTarget.scrollTop = thinkingTarget.scrollHeight;
+      }
+      if (answerText) {
+        answerTarget.innerHTML = marked.parse(answerText);
+        answerTarget.querySelectorAll('pre code').forEach((block) => {
+          hljs.highlightElement(block);
+        });
+      }
+      scrollToBottom();
+    };
 
     const processLine = (line) => {
-      if (!line.trim()) return;
+      let raw = line.trim();
+      if (!raw) return;
+      if (raw.startsWith('data:')) {
+        raw = raw.slice(5).trim();
+      }
+      if (!raw || raw === '[DONE]') return;
 
       let json;
       try {
-        json = JSON.parse(line);
+        json = JSON.parse(raw);
       } catch {
         return; 
       }
 
       if (json.thinking) {
         thinkingText += json.thinking;
-        thinkingTarget.textContent = thinkingText;
+        pendingThinking = true;
+        scheduleRender();
+      }
+
+      if (json.resetResponse) {
+        flushRenderNow();
+        answerText = '';
+        fullResponse = '';
+        isSynthesizing = true;
+        thinkingClosed = false;
+        const notif = json.notification || 'Synthesizing answer from internet results...';
+        const summaryEl = thinkingBox?.querySelector('summary');
+        if (summaryEl) summaryEl.textContent = notif;
+
+        // Smooth transition from cutoff refusal: clear dimmed text and show glowing synthesizing card
+        answerTarget.classList.remove('cutoff-transitioning');
+        answerTarget.innerHTML = `<div class="tool-status-live synthesizing"><span class="buffer-indicator-wrap">${getBufferSpinnerSvg()}</span> <span class="buffer-notification-text text-aurora font-medium">${escapeHTML(notif)}</span></div>`;
+        scrollToBottom();
+        return;
       }
 
       if (json.status) {
-        // Show the router's status (e.g. "Reading system information...")
-        // in the thinking box summary while a tool is running, so the user
-        // gets visible feedback before tokens start arriving.
         const summaryEl = thinkingBox?.querySelector('summary');
         if (summaryEl) summaryEl.textContent = json.status;
         return;
       }
 
+      if (json.notification) {
+        const summaryEl = thinkingBox?.querySelector('summary');
+        if (summaryEl) summaryEl.textContent = json.notification;
+
+        if (answerText) {
+          answerTarget.classList.add('cutoff-transitioning');
+          let banner = answerTarget.querySelector('.tool-status-live');
+          if (!banner) {
+            banner = document.createElement('div');
+            banner.className = 'tool-status-live';
+            answerTarget.appendChild(banner);
+          }
+          banner.innerHTML = `<span class="buffer-indicator-wrap">${getBufferSpinnerSvg()}</span> <span class="buffer-notification-text">${escapeHTML(json.notification)}</span>`;
+        } else {
+          answerTarget.innerHTML = `<div class="tool-status-live"><span class="buffer-indicator-wrap">${getBufferSpinnerSvg()}</span> <span class="buffer-notification-text">${escapeHTML(json.notification)}</span></div>`;
+        }
+        scrollToBottom();
+        return;
+      }
+
       if (json.error) {
-        // Server surfaced a structured error mid-stream (Ollama backend
-        // error, stall timeout, etc) instead of silently going quiet.
+        flushRenderNow();
         console.error('[STREAM] server error:', json.error);
         answerTarget.innerHTML = `Error: ${escapeHTML(json.error)}`;
         return;
       }
 
       if (json.response) {
+        if (isSynthesizing) {
+          isSynthesizing = false;
+          answerTarget.classList.remove('cutoff-transitioning');
+          answerTarget.classList.add('answer-fade-enter');
+          setTimeout(() => answerTarget.classList.remove('answer-fade-enter'), 450);
+        }
+
         answerText += json.response;
         fullResponse += json.response;
-
-        answerTarget.innerHTML = marked.parse(answerText);
-
-        answerTarget.querySelectorAll('pre code').forEach((block) => {
-          hljs.highlightElement(block);
-        });
+        pendingAnswer = true;
+        scheduleRender();
 
         if (thinkingText.length > 0 && !thinkingClosed) {
           thinkingTimer.stop();
@@ -383,17 +483,12 @@ async function generateRealResponse(prompt, uploadedAttachments = []) {
           thinkingClosed = true;
         }
       }
-
-      scrollToBottom();
     };
 
     const safeProcessLine = (line) => {
       try {
         processLine(line);
       } catch (err) {
-        // A throw here previously killed the entire stream (caught by the
-        // outer try/catch below) even when most of the response had already
-        // arrived fine. Log and keep going instead.
         console.error('[STREAM] processLine threw on line:', line, err);
       }
     };
@@ -403,6 +498,7 @@ async function generateRealResponse(prompt, uploadedAttachments = []) {
 
       if (done) {
         if (buffer.trim()) safeProcessLine(buffer);
+        flushRenderNow();
         break;
       }
 
@@ -411,6 +507,11 @@ async function generateRealResponse(prompt, uploadedAttachments = []) {
       buffer = lines.pop(); 
 
       for (const line of lines) safeProcessLine(line);
+
+      // Micro-yield if a multi-line chunk arrived so requestAnimationFrame has a repaint slice
+      if (lines.length > 1) {
+        await new Promise((r) => setTimeout(r, 0));
+      }
     }
 
     // Hide the thinking box entirely if the model produced no thinking tokens
@@ -558,11 +659,16 @@ async function generateAgentResponse(prompt, uploadedAttachments = []) {
     let buffer = '';
 
     const processLine = (line) => {
-      if (!line.trim()) return;
+      let raw = line.trim();
+      if (!raw) return;
+      if (raw.startsWith('data:')) {
+        raw = raw.slice(5).trim();
+      }
+      if (!raw || raw === '[DONE]') return;
 
       let json;
       try {
-        json = JSON.parse(line);
+        json = JSON.parse(raw);
       } catch {
         return;
       }
@@ -579,7 +685,11 @@ async function generateAgentResponse(prompt, uploadedAttachments = []) {
 
       if (json.thinking) {
         currentThinkingText += json.thinking;
-        if (currentThinkingEl) currentThinkingEl.textContent = currentThinkingText;
+        if (currentThinkingEl) {
+          currentThinkingEl.textContent = currentThinkingText;
+          currentThinkingEl.scrollTop = currentThinkingEl.scrollHeight;
+        }
+        scrollToBottom();
         return;
       }
 
@@ -735,6 +845,10 @@ async function generateAgentResponse(prompt, uploadedAttachments = []) {
       buffer = lines.pop();
 
       for (const line of lines) safeProcessLine(line);
+
+      if (lines.length > 1) {
+        await new Promise((r) => setTimeout(r, 0));
+      }
     }
 
     // Flush whatever the LAST round accumulated — startRoundBlock() only
