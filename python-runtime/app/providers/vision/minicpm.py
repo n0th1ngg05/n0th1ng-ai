@@ -1,3 +1,4 @@
+import os
 import ollama
 
 from app.providers.vision.base import VisionProvider
@@ -10,9 +11,10 @@ class MiniCPMVProvider(VisionProvider):
 
     def __init__(self):
 
-        self.model = "minicpm-v4.6:1b"
+        self.model = os.getenv("VISION_MINICPM_MODEL", "minicpm-v4.6:1b")
+        host = os.getenv("OLLAMA_HOST_URL", "http://127.0.0.1:11434")
 
-        self.client = ollama.Client(host="http://127.0.0.1:11434")
+        self.client = ollama.Client(host=host)
 
     async def initialize(self):
 

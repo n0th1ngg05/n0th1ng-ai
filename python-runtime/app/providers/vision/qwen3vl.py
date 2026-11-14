@@ -1,3 +1,4 @@
+import os
 import ollama
 
 from app.providers.vision.base import VisionProvider
@@ -10,9 +11,10 @@ class Qwen3VLProvider(VisionProvider):
 
     def __init__(self):
 
-        self.model = "qwen3-vl:4b"
+        self.model = os.getenv("VISION_QWEN_MODEL", "qwen3-vl:4b")
+        host = os.getenv("OLLAMA_HOST_URL", "http://127.0.0.1:11434")
 
-        self.client = ollama.Client(host="http://127.0.0.1:11434")
+        self.client = ollama.Client(host=host)
 
     async def initialize(self):
 

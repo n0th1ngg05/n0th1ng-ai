@@ -82,6 +82,14 @@ def get_python_executable() -> Path:
         if venv_py.exists():
             return venv_py
 
+    nvidia_venv_py = (
+        ROOT / "venv-nvidia" / "Scripts" / "python.exe"
+        if os.name == "nt"
+        else ROOT / "venv-nvidia" / "bin" / "python"
+    ).resolve()
+    if nvidia_venv_py.exists():
+        return nvidia_venv_py
+
     default_venv_py = (
         ROOT / ".venv" / "Scripts" / "python.exe"
         if os.name == "nt"

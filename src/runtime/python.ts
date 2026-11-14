@@ -16,12 +16,9 @@ export function startPythonRuntime(): RuntimeProcess {
         "python-runtime"
     );
 
-    const pythonExe = path.join(
-        runtimePath,
-        ".venv",
-        "Scripts",
-        "python.exe"
-    );
+    const pythonExe = process.platform === "win32"
+        ? path.join(runtimePath, ".venv", "Scripts", "python.exe")
+        : path.join(runtimePath, ".venv", "bin", "python");
 
     return startProcess(
 

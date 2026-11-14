@@ -12,6 +12,7 @@ relay live model output, not just node-start/node-end markers.
 
 import json
 import logging
+import os
 import time
 import asyncio
 
@@ -26,8 +27,8 @@ from .prompts import SUMMARY_PROMPT, EXTRACTION_PROMPT, METADATA_PROMPT
 
 logger = logging.getLogger("document_analysis")
 
-OLLAMA_ENDPOINT = "http://127.0.0.1:11434/api/chat"
-MODEL = "lfm2.5:8b"
+OLLAMA_ENDPOINT = os.getenv("OLLAMA_CHAT_ENDPOINT", "http://127.0.0.1:11434/api/chat")
+MODEL = os.getenv("DOCUMENT_ANALYSIS_MODEL", "lfm2.5:8b")
 
 TokenCallback = Optional[Callable[[str, str], Awaitable[None]]]
 

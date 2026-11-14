@@ -36,6 +36,15 @@ class EngineManager:
 
         engine = self._engine_dir(provider)
 
+        # Check dedicated NVIDIA CUDA venv if present (e.g. Kokoro on GTX 1060)
+        nvidia_py = (
+            engine / "venv-nvidia" / "Scripts" / "python.exe"
+            if sys.platform == "win32"
+            else engine / "venv-nvidia" / "bin" / "python"
+        )
+        if nvidia_py.exists():
+            return nvidia_py
+
         default_py = (
             engine / ".venv" / "Scripts" / "python.exe"
             if sys.platform == "win32"

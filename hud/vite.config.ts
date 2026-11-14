@@ -30,6 +30,7 @@ export default defineConfig({
     root: ".",
     build: { outDir: "dist" },
     server: {
+        host: true,
         port: 5173,
         proxy: {
             // All /internal/* calls get the HUD token injected automatically.

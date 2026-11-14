@@ -1,0 +1,76 @@
+services:
+  # ── 1. AMD ROCm Ollama (Port 11434) ───────────────────────────────────
+  ollama-amd:
+    image: ollama/ollama:rocm
+    container_name: ollama-amd
+    restart: unless-stopped
+    network_mode: host
+    environment:
+      - OLLAMA_HOST=0.0.0.0:11434
+      - OLLAMA_ORIGINS=*
+      - ROCR_VISIBLE_DEVICES=0
+      - HSA_OVERRIDE_GFX_VERSION=${HSA_OVERRIDE_GFX_VERSION:-}
+    devices:
+      - /dev/kfd:/dev/kfd
+      - /dev/dri:/dev/dri
+    group_add:
+      - video
+      - render
+    volumes:
+      - ${STORAGE_PATH:-/data}/models/ollama:/root/.ollama
+
+  # ── 2. NVIDIA CUDA Ollama (Port 11435) ─────────────────────────────────
+  ollama-nvidia:
+    image: ollama/ollama:latest
+    container_name: ollama-nvidia
+    restart: unless-stopped
+    network_mode: host
+    environment:
+      - OLLAMA_HOST=0.0.0.0:11435
+      - OLLAMA_ORIGINS=*
+      - CUDA_VISIBLE_DEVICES=0
+    volumes:
+      - ${STORAGE_PATH:-/data}/models/ollama:/root/.ollama
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+
+  # ── 3. Unified Worker (Node + Python + Kokoro on CUDA) ────────────────
+  worker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: chatbot-worker
+    restart: unless-stopped
+    network_mode: host
+    depends_on:
+      - ollama-amd
+      - ollama-nvidia
+    environment:
+      - NODE_ENV=production
+      - PORT=3001
+      - EXPOSE_PORT=3443
+      - HUD_PORT=5173
+      - CUDA_VISIBLE_DEVICES=0
+      - NVIDIA_VISIBLE_DEVICES=all
+      - NVIDIA_DRIVER_CAPABILITIES=compute,utility
+      - OLLAMA_AMD_HOST=http://127.0.0.1:11434
+      - OLLAMA_NVIDIA_HOST=http://127.0.0.1:11435
+      - PRIMARY_LLM_MODEL=${PRIMARY_LLM_MODEL:-nemotron-3.5-bolt:e4b}
+      - WORKER_DATABASE_URL=${WORKER_DATABASE_URL:-mysql://root:root@127.0.0.1:3306/workerdb}
+      - WORKER_API_KEY=${WORKER_API_KEY}
+      - HUD_TOKEN=${HUD_TOKEN}
+      - CF_TUNNEL_MODE=${CF_TUNNEL_MODE:-quick}
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    volumes:
+      - ${STORAGE_PATH:-/data}/models/huggingface:/root/.cache/huggingface
