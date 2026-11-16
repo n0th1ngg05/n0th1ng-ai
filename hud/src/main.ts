@@ -65,8 +65,65 @@ function drawSparkline(canvas: HTMLCanvasElement) {
         ctx.stroke();
     };
 
-    drawLine(RX_HISTORY, "#00ff88");
-    drawLine(TX_HISTORY, "#00c8ff");
+    drawLine(RX_HISTORY, "#4ade80");
+    drawLine(TX_HISTORY, "#60a5fa");
+}
+
+// ── Gold particle constellation background ────────────────────────────────
+function startParticles() {
+    const canvas = document.getElementById("particles") as HTMLCanvasElement | null;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+    const dpr = Math.min(2, window.devicePixelRatio || 1);
+
+    function resize() {
+        canvas!.width = canvas!.offsetWidth * dpr;
+        canvas!.height = canvas!.offsetHeight * dpr;
+    }
+    resize();
+    window.addEventListener("resize", resize);
+
+    const N = 60;
+    const parts = Array.from({ length: N }, () => ({
+        x: Math.random() * canvas.width,
+        y: Math.random() * canvas.height,
+        vx: (Math.random() - 0.5) * 0.25 * dpr,
+        vy: (Math.random() - 0.5) * 0.25 * dpr,
+        r: (Math.random() * 1.2 + 0.3) * dpr,
+    }));
+
+    function tick() {
+        ctx!.clearRect(0, 0, canvas!.width, canvas!.height);
+        for (const p of parts) {
+            p.x += p.vx; p.y += p.vy;
+            if (p.x < 0 || p.x > canvas!.width) p.vx *= -1;
+            if (p.y < 0 || p.y > canvas!.height) p.vy *= -1;
+            ctx!.beginPath();
+            ctx!.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+            ctx!.fillStyle = "rgba(212,175,55,0.6)";
+            ctx!.fill();
+        }
+        const max = 130 * dpr;
+        for (let i = 0; i < N; i++) {
+            for (let j = i + 1; j < N; j++) {
+                const a = parts[i], b = parts[j];
+                const dx = a.x - b.x, dy = a.y - b.y;
+                const d2 = dx * dx + dy * dy;
+                if (d2 < max * max) {
+                    const alpha = 1 - Math.sqrt(d2) / max;
+                    ctx!.strokeStyle = `rgba(245,215,122,${alpha * 0.16})`;
+                    ctx!.lineWidth = 0.6 * dpr;
+                    ctx!.beginPath();
+                    ctx!.moveTo(a.x, a.y);
+                    ctx!.lineTo(b.x, b.y);
+                    ctx!.stroke();
+                }
+            }
+        }
+        requestAnimationFrame(tick);
+    }
+    tick();
 }
 
 // ── Status polling — single call to /internal/status covers everything ─────────
@@ -381,6 +438,7 @@ function wireLogTabs() {
 // ── Init ──────────────────────────────────────────────────────────────────────
 function init() {
     startClock();
+    startParticles();
     wireToggleButtons();
     wireLogTabs();
 

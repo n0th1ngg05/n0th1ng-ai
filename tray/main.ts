@@ -93,6 +93,7 @@ function openHud() {
         minWidth:        1100,
         minHeight:       700,
         title:           "Worker HUD",
+        icon:            iconPath("window-icon.ico"),
         backgroundColor: "#080b10",
         darkTheme:       true,
         autoHideMenuBar: true,

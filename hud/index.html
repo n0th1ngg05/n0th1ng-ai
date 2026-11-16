@@ -2,24 +2,34 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Worker HUD — AI-DESKTOP</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <title>n0th1ng AI Worker</title>
+    <link rel="icon" type="image/png" href="src/logo.png" />
+    <link rel="shortcut icon" type="image/png" href="src/logo.png" />
+    <link rel="apple-touch-icon" href="src/logo.png" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&family=Orbitron:wght@400;500;700;900&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="/src/style.css" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@200;300;400;500;600;700&family=JetBrains+Mono:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="src/style.css" />
 </head>
-<body>
+<body class="noise">
+    <canvas id="particles" class="bg-particles"></canvas>
+
     <div id="app">
 
         <!-- ── Header ────────────────────────────────────────────────── -->
-        <header class="hud-header">
+        <header class="hud-header glass-liquid">
             <div class="header-left">
-                <div class="logo-mark">
+                <div class="logo-mark glass-strong">
+                    <img class="logo-img" src="src/logo.png" alt="n0th1ng" onerror="this.style.display='none'" />
                     <div class="logo-ring"></div>
-                    <span class="logo-text">WORKER</span>
+                </div>
+                <div class="header-id">
+                    <span class="brand-name text-aurora">n0th1ng</span>
+                    <span class="brand-tag">WORKER NODE</span>
                 </div>
                 <div class="header-meta">
+                    <span class="sep">/</span>
                     <span class="host-id" id="hostId">AI-DESKTOP</span>
                     <span class="sep">·</span>
                     <span class="host-ip" id="hostIp">192.168.0.108</span>
@@ -32,7 +42,7 @@
                 <div class="system-date" id="systemDate">--- --, ----</div>
             </div>
             <div class="header-right">
-                <div class="master-status" id="masterStatus">
+                <div class="master-status glass" id="masterStatus">
                     <div class="status-dot" id="masterDot"></div>
                     <span id="masterLabel">CONNECTING...</span>
                 </div>
@@ -43,29 +53,48 @@
         <main class="hud-grid">
 
             <!-- Row 1: Vitals gauges -->
-            <section class="panel vitals-panel">
-                <div class="panel-title">SYSTEM VITALS</div>
+            <section class="panel glass-liquid vitals-panel fade-up">
+                <div class="panel-title"><span class="panel-dot"></span>System Vitals</div>
                 <div class="gauges-row">
                     <div class="gauge-wrap">
                         <svg class="gauge-svg" viewBox="0 0 100 60">
+                            <defs>
+                                <linearGradient id="gradCpu" x1="0%" y1="0%" x2="100%" y2="0%">
+                                    <stop offset="0%" stop-color="#8A6A1F"/>
+                                    <stop offset="50%" stop-color="#D4AF37"/>
+                                    <stop offset="100%" stop-color="#F5D77A"/>
+                                </linearGradient>
+                            </defs>
                             <path class="gauge-bg" d="M10,55 A45,45 0 0,1 90,55" />
-                            <path class="gauge-fill" id="cpuArc" d="M10,55 A45,45 0 0,1 90,55" stroke-dasharray="0 141" />
+                            <path class="gauge-fill" id="cpuArc" d="M10,55 A45,45 0 0,1 90,55" stroke="url(#gradCpu)" stroke-dasharray="0 141" />
                         </svg>
                         <div class="gauge-val" id="cpuVal">--%</div>
                         <div class="gauge-lbl">CPU</div>
                     </div>
                     <div class="gauge-wrap">
                         <svg class="gauge-svg" viewBox="0 0 100 60">
+                            <defs>
+                                <linearGradient id="gradRam" x1="0%" y1="0%" x2="100%" y2="0%">
+                                    <stop offset="0%" stop-color="#3b82f6"/>
+                                    <stop offset="100%" stop-color="#93c5fd"/>
+                                </linearGradient>
+                            </defs>
                             <path class="gauge-bg" d="M10,55 A45,45 0 0,1 90,55" />
-                            <path class="gauge-fill gauge-fill--ram" id="ramArc" d="M10,55 A45,45 0 0,1 90,55" stroke-dasharray="0 141" />
+                            <path class="gauge-fill gauge-fill--ram" id="ramArc" d="M10,55 A45,45 0 0,1 90,55" stroke="url(#gradRam)" stroke-dasharray="0 141" />
                         </svg>
                         <div class="gauge-val" id="ramVal">-- GB</div>
                         <div class="gauge-lbl">RAM</div>
                     </div>
                     <div class="gauge-wrap">
                         <svg class="gauge-svg" viewBox="0 0 100 60">
+                            <defs>
+                                <linearGradient id="gradGpu" x1="0%" y1="0%" x2="100%" y2="0%">
+                                    <stop offset="0%" stop-color="#a855f7"/>
+                                    <stop offset="100%" stop-color="#e9d5ff"/>
+                                </linearGradient>
+                            </defs>
                             <path class="gauge-bg" d="M10,55 A45,45 0 0,1 90,55" />
-                            <path class="gauge-fill gauge-fill--gpu" id="gpuArc" d="M10,55 A45,45 0 0,1 90,55" stroke-dasharray="0 141" />
+                            <path class="gauge-fill gauge-fill--gpu" id="gpuArc" d="M10,55 A45,45 0 0,1 90,55" stroke="url(#gradGpu)" stroke-dasharray="0 141" />
                         </svg>
                         <div class="gauge-val" id="gpuVal">--%</div>
                         <div class="gauge-lbl">GPU</div>
@@ -85,8 +114,8 @@
             </section>
 
             <!-- Network sparkline -->
-            <section class="panel network-panel">
-                <div class="panel-title">NETWORK I/O</div>
+            <section class="panel glass-liquid network-panel fade-up">
+                <div class="panel-title"><span class="panel-dot"></span>Network I/O</div>
                 <div class="net-stats">
                     <div class="net-stat">
                         <span class="net-arrow">↓</span>
@@ -103,8 +132,8 @@
             </section>
 
             <!-- Runtimes -->
-            <section class="panel runtimes-panel">
-                <div class="panel-title">RUNTIMES</div>
+            <section class="panel glass-liquid runtimes-panel fade-up">
+                <div class="panel-title"><span class="panel-dot"></span>Runtimes</div>
                 <div class="runtime-list">
                     <div class="runtime-item" id="rtPython">
                         <div class="rt-dot"></div>
@@ -142,10 +171,10 @@
             </section>
 
             <!-- Internet Exposure -->
-            <section class="panel exposure-panel">
-                <div class="panel-title">INTERNET EXPOSURE</div>
+            <section class="panel glass-liquid exposure-panel fade-up">
+                <div class="panel-title"><span class="panel-dot"></span>Internet Exposure</div>
                 <div class="exposure-body">
-                    <div class="exposure-state" id="exposureState">
+                    <div class="exposure-state glass" id="exposureState">
                         <div class="exp-indicator" id="expIndicator">
                             <div class="exp-ring"></div>
                             <div class="exp-core"></div>
@@ -169,8 +198,8 @@
             </section>
 
             <!-- Active Jobs -->
-            <section class="panel jobs-panel">
-                <div class="panel-title">ACTIVE JOBS <span class="badge" id="jobCount">0</span></div>
+            <section class="panel glass-liquid jobs-panel fade-up">
+                <div class="panel-title"><span class="panel-dot"></span>Active Jobs <span class="badge" id="jobCount">0</span></div>
                 <div class="table-wrap">
                     <table class="hud-table">
                         <thead>
@@ -189,8 +218,8 @@
             </section>
 
             <!-- Tool History -->
-            <section class="panel history-panel">
-                <div class="panel-title">TOOL HISTORY</div>
+            <section class="panel glass-liquid history-panel fade-up">
+                <div class="panel-title"><span class="panel-dot"></span>Tool History</div>
                 <div class="table-wrap">
                     <table class="hud-table">
                         <thead>
@@ -210,9 +239,9 @@
             </section>
 
             <!-- Logs -->
-            <section class="panel logs-panel">
+            <section class="panel glass-liquid logs-panel fade-up">
                 <div class="panel-title">
-                    RUNTIME LOGS
+                    <span class="panel-dot"></span>Runtime Logs
                     <div class="log-tabs">
                         <button class="log-tab active" data-src="">ALL</button>
                         <button class="log-tab" data-src="python">PYTHON</button>
@@ -226,6 +255,6 @@
         </main>
     </div>
 
-    <script type="module" src="/src/main.ts"></script>
+    <script type="module" src="src/main.ts"></script>
 </body>
 </html>
