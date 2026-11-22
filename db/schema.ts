@@ -471,6 +471,7 @@ export const chunkEmbeddings =
         "chunk_id",
         {
           mode: "number",
+          unsigned: true,
         }
       ).references(
         () => knowledgeChunks.id
@@ -542,7 +543,7 @@ export const memoryChunks =
         .primaryKey(),
 
       memoryId:
-        int("memory_id")
+        bigint("memory_id", { mode: "number", unsigned: true })
           .notNull()
           .references(
             () => memories.id
@@ -571,7 +572,7 @@ export const memoryChunkEmbeddings =
         .primaryKey(),
 
       chunkId:
-        int("chunk_id")
+        bigint("chunk_id", { mode: "number", unsigned: true })
           .notNull()
           .references(
             () => memoryChunks.id

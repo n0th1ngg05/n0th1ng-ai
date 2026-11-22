@@ -70,7 +70,7 @@ CREATE TABLE `chat_attachments` (
 --> statement-breakpoint
 CREATE TABLE `chunk_embeddings` (
 	`id` serial AUTO_INCREMENT NOT NULL,
-	`chunk_id` bigint,
+	`chunk_id` bigint unsigned,
 	`embedding` json NOT NULL,
 	`created_at` timestamp DEFAULT (now()),
 	CONSTRAINT `chunk_embeddings_id` PRIMARY KEY(`id`)
@@ -229,7 +229,7 @@ CREATE TABLE `memories` (
 --> statement-breakpoint
 CREATE TABLE `memory_chunk_embeddings` (
 	`id` serial AUTO_INCREMENT NOT NULL,
-	`chunk_id` int NOT NULL,
+	`chunk_id` bigint unsigned NOT NULL,
 	`embedding` json NOT NULL,
 	`created_at` timestamp DEFAULT (now()),
 	CONSTRAINT `memory_chunk_embeddings_id` PRIMARY KEY(`id`)
@@ -237,7 +237,7 @@ CREATE TABLE `memory_chunk_embeddings` (
 --> statement-breakpoint
 CREATE TABLE `memory_chunks` (
 	`id` serial AUTO_INCREMENT NOT NULL,
-	`memory_id` int NOT NULL,
+	`memory_id` bigint unsigned NOT NULL,
 	`content` text NOT NULL,
 	`created_at` timestamp DEFAULT (now()),
 	CONSTRAINT `memory_chunks_id` PRIMARY KEY(`id`)
