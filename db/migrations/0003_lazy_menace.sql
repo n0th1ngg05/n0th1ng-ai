@@ -1,0 +1,1 @@
+ALTER TABLE `auth_totp_secrets` ADD `last_verified_step` bigint;

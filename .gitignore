@@ -79,7 +79,6 @@ lerna-debug.log*
 *.db
 *.sqlite
 *.sqlite3
-db/migrations/*.sql
 
 # ============================================================
 # TypeScript / Vite cache
