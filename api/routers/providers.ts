@@ -1,8 +1,9 @@
+import { COMFYUI_URL } from "../lib/cloud";
 import { z } from "zod";
 import { createRouter, publicQuery } from "../middleware";
 import { listProviders, type MediaType } from "../services/providers";
 
-const COMFY_URL = "http://127.0.0.1:8188";
+const COMFY_URL = COMFYUI_URL;
 
 // Fallback values when ComfyUI is offline
 const FALLBACK_SAMPLERS = ["euler", "euler_ancestral", "dpmpp_2m", "dpmpp_sde", "dpmpp_2m_sde", "dpmpp_3m_sde", "heun", "lcm", "ddim"];

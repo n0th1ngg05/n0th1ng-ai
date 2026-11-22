@@ -1,0 +1,44 @@
+services:
+  db:
+    image: mariadb:11
+    restart: unless-stopped
+    environment:
+      MARIADB_ROOT_PASSWORD: ${MARIADB_ROOT_PASSWORD}
+      MARIADB_DATABASE: ${MARIADB_DATABASE:-n0th1ng}
+      MARIADB_USER: ${MARIADB_USER:-n0th1ng}
+      MARIADB_PASSWORD: ${MARIADB_PASSWORD}
+    command: ["--innodb-buffer-pool-size=3G"]
+    volumes: [dbdata:/var/lib/mysql]
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 10s
+      retries: 10
+
+  app:
+    build: .
+    restart: unless-stopped
+    env_file: .env
+    depends_on:
+      db: { condition: service_healthy }
+    ports: ["127.0.0.1:3000:3000"]
+    volumes:
+      - uploads:/app/app/uploads
+      - appdata:/app/app/data
+      - storage:/app/storage
+
+  tunnel:
+    image: cloudflare/cloudflared:latest
+    profiles: [tunnel]
+    restart: unless-stopped
+    command: tunnel --no-autoupdate run
+    environment:
+      TUNNEL_TOKEN: ${CLOUDFLARE_TUNNEL_TOKEN}
+    depends_on: [app]
+
+  ollama-embed:
+    image: ollama/ollama:latest
+    profiles: [embeddings]
+    restart: unless-stopped
+    volumes: [ollama:/root/.ollama]
+
+volumes: { dbdata: {}, uploads: {}, appdata: {}, storage: {}, ollama: {} }

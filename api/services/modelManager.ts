@@ -1,9 +1,10 @@
+import { OLLAMA_BASE_URL } from "../lib/cloud";
 export async function
 getInstalledModels() {
 
   const response =
     await fetch(
-      "http://localhost:11434/api/tags"
+      `${OLLAMA_BASE_URL}/api/tags`
     );
 
   const data =

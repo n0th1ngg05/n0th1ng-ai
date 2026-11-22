@@ -1,9 +1,10 @@
+import { OLLAMA_BASE_URL } from "../lib/cloud";
 export async function
 getRunningModels() {
 
   const response =
     await fetch(
-      "http://localhost:11434/api/ps"
+      `${OLLAMA_BASE_URL}/api/ps`
     );
 
   return await response.json();

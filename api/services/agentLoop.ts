@@ -1,3 +1,4 @@
+import { OLLAMA_BASE_URL } from "../lib/cloud";
 // ─────────────────────────────────────────────────────────────────────────────
 // agentLoop.ts
 //
@@ -56,9 +57,9 @@ import { PhaseTrackerService } from "./phaseTracker";
 import { buildTemporalContext } from "../lib/temporalContext";
 import { isOpenRouterModel, streamOpenRouterGenerate, streamOpenRouterTyped } from "./openRouter";
 
-const OLLAMA_GENERATE_URL = "http://localhost:11434/api/generate";
-const OLLAMA_CHAT_URL     = "http://localhost:11434/api/chat";
-const OLLAMA_SHOW_URL     = "http://localhost:11434/api/show";
+const OLLAMA_GENERATE_URL = `${OLLAMA_BASE_URL}/api/generate`;
+const OLLAMA_CHAT_URL     = `${OLLAMA_BASE_URL}/api/chat`;
+const OLLAMA_SHOW_URL     = `${OLLAMA_BASE_URL}/api/show`;
 
 // ── Thinking-capability detection ───────────────────────────────────────────
 // Ollama's behavior for `think: true` on a model that doesn't support

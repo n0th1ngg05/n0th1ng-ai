@@ -1,3 +1,5 @@
+import { cloud, OLLAMA_BASE_URL, validateCloudConfig, logCloudSummary } from "./lib/cloud";
+import { resolveChatModel, markOllamaDown, fallbackAvailable, fallbackModelId } from "./lib/llmRouter";
 import { Hono } from "hono";
 import { bodyLimit } from "hono/body-limit";
 import type { HttpBindings } from "@hono/node-server";
@@ -63,8 +65,8 @@ import { startWorkerPoller } from "./services/workerPoller";
 
 import { runtimeManager } from "./services/runtime/manager";
 import { startCompanionService } from "./services/companion";
-import { forgeStreamRouter } from "./forge/routes";
-import { forgexStreamRouter } from "./forgex/routes";
+// import { forgeStreamRouter } from "./forge/routes";  // parked
+// import { forgexStreamRouter } from "./forgex/routes";  // parked
 import { isOpenRouterModel, streamOpenRouterGenerate, streamOpenRouterTyped } from "./services/openRouter";
 import { authRouter } from "./routers/auth.router";
 import { verifyWorkerKey, verifySession } from "./services/auth.service";
@@ -119,6 +121,9 @@ async function safeJson(c: any): Promise<any> {
 // all request handlers. connection.ts fires initDb() in the background when
 // it is first imported, but we explicitly await it here to guarantee the
 // drizzle instance is ready before the first HTTP request can arrive.
+validateCloudConfig();
+logCloudSummary();
+
 try {
     await getDbAsync();
     console.log("[Boot] Database connection initialized.");
@@ -131,14 +136,20 @@ try {
 // under Vite's SSR runner (preventing 60s fetchModule RPC timeouts). Both
 // subsystems deduplicate their startup promises and are awaited on demand if a
 // request arrives before background warmup finishes.
-initializeSpeechSystem().catch((err) => {
-    console.error("[Boot] Speech system initialization failed — continuing without speech:", err);
-});
+if (cloud.localRuntimes) {
+    initializeSpeechSystem().catch((err) => {
+        console.error("[Boot] Speech system initialization failed — continuing without speech:", err);
+    });
 
-runtimeManager.start().catch((err) => {
-    console.error("[Boot] Python runtime startup failed:", err);
-});
-startCompanionService();
+    runtimeManager.start().catch((err) => {
+        console.error("[Boot] Python runtime startup failed:", err);
+    });
+} else {
+    console.log("[Boot] Local runtimes disabled (speech + python sidecars not started).");
+}
+if (cloud.companion) {
+    startCompanionService();
+}
 startTelemetryCollector();
 startWorkerPoller();
 
@@ -377,7 +388,7 @@ ${body.prompt}
 `;
   }
 
-  const response = await fetch("http://localhost:11434/api/generate", {
+  const response = await fetch(`${OLLAMA_BASE_URL}/api/generate`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
@@ -823,11 +834,29 @@ ${toolResult.toolCalls.map((t: any, idx: number) => `Tool ${idx + 1}: ${t.tool}\
       async function runModelInference(promptToUse: string): Promise<string> {
         let accumulated = "";
 
-        if (isOpenRouterModel(body.model)) {
+        // Cloud routing: use the requested model while its backend is up, otherwise the OpenRouter fallback.
+        const routed = await resolveChatModel(body.model);
+        const modelToUse = routed.model;
+        if (routed.usedFallback) {
+          console.warn(`[LLM-ROUTER] Ollama unreachable; using ${modelToUse} instead of ${body.model}`);
+          await flush({
+            status: "Local model offline, answering with the cloud fallback model...",
+            notification: "Local model offline, using the cloud fallback model.",
+          });
+        }
+        // Switches to the fallback when a request to Ollama fails mid-flight.
+        const failoverToFallback = (why: string): boolean => {
+          if (routed.usedFallback || !fallbackAvailable()) return false;
+          markOllamaDown();
+          console.warn(`[LLM-ROUTER] ${why}; retrying on ${fallbackModelId()}`);
+          return true;
+        };
+
+        if (isOpenRouterModel(modelToUse)) {
           const orController = new AbortController();
           const orTimeoutId = setTimeout(() => orController.abort(), GENERATE_TIMEOUT_MS);
           try {
-            for await (const tok of streamOpenRouterTyped(body.model, promptToUse, undefined, orController.signal)) {
+            for await (const tok of streamOpenRouterTyped(modelToUse, promptToUse, undefined, orController.signal)) {
               if (tok.type === "thinking") {
                 await flush({ thinking: tok.text });
               } else {
@@ -845,7 +874,7 @@ ${toolResult.toolCalls.map((t: any, idx: number) => `Tool ${idx + 1}: ${t.tool}\
           const generateTimeoutId = setTimeout(() => generateController.abort(), GENERATE_TIMEOUT_MS);
 
           const ollamaPayload: any = {
-            model: body.model,
+            model: modelToUse,
             prompt: promptToUse,
             stream: true,
           };
@@ -856,7 +885,7 @@ ${toolResult.toolCalls.map((t: any, idx: number) => `Tool ${idx + 1}: ${t.tool}\
 
           let ollamaResponse: Response;
           try {
-            ollamaResponse = await fetch("http://localhost:11434/api/generate", {
+            ollamaResponse = await fetch(`${OLLAMA_BASE_URL}/api/generate`, {
               method: "POST",
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify(ollamaPayload),
@@ -865,11 +894,18 @@ ${toolResult.toolCalls.map((t: any, idx: number) => `Tool ${idx + 1}: ${t.tool}\
           } catch (fetchErr) {
             clearTimeout(generateTimeoutId);
             const isAbort = fetchErr instanceof Error && fetchErr.name === "AbortError";
+            if (!isAbort && failoverToFallback("request to Ollama failed")) {
+              return runModelInference(promptToUse);
+            }
             await flush({ error: isAbort ? "Model backend timed out generating a response." : "Failed to reach the model backend." });
             return accumulated;
           }
 
           clearTimeout(generateTimeoutId);
+
+          if (ollamaResponse.status >= 502 && failoverToFallback(`Ollama returned ${ollamaResponse.status}`)) {
+            return runModelInference(promptToUse);
+          }
 
           if (!ollamaResponse.ok || !ollamaResponse.body) {
             const errText = await ollamaResponse.text().catch(() => "");
@@ -2344,10 +2380,10 @@ app.delete("/api/video/:id", async (c) => {
 app.get("/api/models/list", async (c) => {
   let ollamaModels: any[] = [];
   try {
-    const tagsResponse = await fetch("http://localhost:11434/api/tags");
+    const tagsResponse = await fetch(`${OLLAMA_BASE_URL}/api/tags`);
     const tagsData = await tagsResponse.json();
 
-    const psResponse = await fetch("http://localhost:11434/api/ps");
+    const psResponse = await fetch(`${OLLAMA_BASE_URL}/api/ps`);
     const psData = await psResponse.json();
 
     const loadedModels = new Set((psData.models ?? []).map((m: any) => m.name));
@@ -2382,8 +2418,17 @@ app.get("/api/models/list", async (c) => {
 });
 
 app.get("/uploads/*", async (c) => {
-  const filePath = path.join(process.cwd(), c.req.path);
-  if (!fs.existsSync(filePath)) return c.notFound();
+  // Confine to ./uploads so a crafted path (e.g. /uploads/..%2f.env) cannot escape it.
+  const uploadsRoot = path.resolve(process.cwd(), "uploads");
+  let relPath: string;
+  try {
+    relPath = decodeURIComponent(c.req.path).replace(/^\/uploads\//, "");
+  } catch {
+    return c.notFound();
+  }
+  const filePath = path.resolve(uploadsRoot, relPath);
+  if (filePath !== uploadsRoot && !filePath.startsWith(uploadsRoot + path.sep)) return c.notFound();
+  if (!fs.existsSync(filePath) || !fs.statSync(filePath).isFile()) return c.notFound();
   return c.body(fs.readFileSync(filePath));
 });
 
@@ -2507,8 +2552,18 @@ setInterval(() => {
 }, 5000);
 
 
-app.route("/api/forge", forgeStreamRouter);
-app.route("/api/forgex", forgexStreamRouter);
+// Forge / ForgeX parked (code in _parked/). Re-enable: restore dirs, imports, router.ts entries.
+/*
+if (cloud.forge) {
+  app.route("/api/forge", forgeStreamRouter);
+  app.route("/api/forgex", forgexStreamRouter);
+} else {
+  const forgeDisabled = (c: any) =>
+    c.json({ error: "Forge is disabled (set ENABLE_FORGE=true to enable)." }, 503);
+  app.all("/api/forge/*", forgeDisabled);
+  app.all("/api/forgex/*", forgeDisabled);
+}
+*/
 
 
 //All other routes should be declared before this scope, otherwise they will not be reachable. This is a catch-all route for any undefined API endpoints.

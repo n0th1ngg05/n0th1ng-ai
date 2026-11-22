@@ -1,3 +1,4 @@
+import { OLLAMA_BASE_URL } from "../lib/cloud";
 // ─────────────────────────────────────────────────────────────────────────────
 // forge/constants.ts
 //
@@ -26,8 +27,8 @@ export const FORGE_MODEL =
 // mean an unvetted model name reaches callForgeModel with no chance to catch
 // a typo before burning a planning call on it. Add a model here once it's
 // been pulled and is known to produce parseable JSON actions reliably.
-export const OLLAMA_TAGS_URL = "http://localhost:11434/api/tags";
-export const OLLAMA_GENERATE_URL = "http://localhost:11434/api/generate";
+export const OLLAMA_TAGS_URL = `${OLLAMA_BASE_URL}/api/tags`;
+export const OLLAMA_GENERATE_URL = `${OLLAMA_BASE_URL}/api/generate`;
 
 export const DEFAULT_COMMAND_TIMEOUT_MS = 120_000;
 

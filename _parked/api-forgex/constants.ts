@@ -1,3 +1,4 @@
+import { OLLAMA_BASE_URL } from "../lib/cloud";
 // ─────────────────────────────────────────────────────────────────────────────
 // forgex/constants.ts
 //
@@ -23,8 +24,8 @@ export const FORGEX_ROOT = "D:\\ForgeX\\workspaces";
 // (e.g. LiteLLM) would be needed in front of it instead — see
 // processManager.ts's startup health check, which surfaces this distinction
 // clearly rather than failing silently.
-export const OLLAMA_ANTHROPIC_BASE_URL = "http://localhost:11434";
-export const OLLAMA_TAGS_URL = "http://localhost:11434/api/tags";
+export const OLLAMA_ANTHROPIC_BASE_URL = `${OLLAMA_BASE_URL}`;
+export const OLLAMA_TAGS_URL = `${OLLAMA_BASE_URL}/api/tags`;
 
 // Claude Code reads ANTHROPIC_BASE_URL once at process start — changing it
 // requires restarting the process, not just updating an env var live. This

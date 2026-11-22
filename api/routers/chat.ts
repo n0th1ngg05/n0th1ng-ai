@@ -1,3 +1,4 @@
+import { OLLAMA_BASE_URL } from "../lib/cloud";
 import { z } from "zod";
 import { createRouter, publicQuery } from "../middleware";
 // NOTE: Do NOT statically import speechManager here.
@@ -17,7 +18,7 @@ export const chatRouter = createRouter({
       console.log("CHAT REQUEST MODEL:", input.model);
 
       const response = await fetch(
-        "http://localhost:11434/api/generate",
+        `${OLLAMA_BASE_URL}/api/generate`,
         {
           method: "POST",
           headers: {

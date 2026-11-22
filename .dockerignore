@@ -3,3 +3,17 @@ dist
 .git
 *.swp
 *.log
+.env
+.env.*
+!.env.example
+!.env-cloud.example
+uploads
+storage
+data
+public/generated
+public/video
+*.zip
+*.pptx
+runtimes
+ComfyUI
+LTX*

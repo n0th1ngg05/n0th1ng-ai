@@ -1,3 +1,4 @@
+import { OLLAMA_BASE_URL } from "../lib/cloud";
 import { z } from "zod";
 import { createRouter, publicQuery } from "../middleware";
 import { listOpenRouterModels } from "../services/openRouter";
@@ -11,10 +12,10 @@ export const modelRouter = createRouter({
     // ── Ollama models ──────────────────────────────────────────────────────
     let ollamaModels: any[] = [];
     try {
-      const tagsResponse = await fetch("http://localhost:11434/api/tags");
+      const tagsResponse = await fetch(`${OLLAMA_BASE_URL}/api/tags`);
       const tagsData = await tagsResponse.json();
 
-      const psResponse = await fetch("http://localhost:11434/api/ps");
+      const psResponse = await fetch(`${OLLAMA_BASE_URL}/api/ps`);
       const psData = await psResponse.json();
 
       const loadedModels = new Set(
@@ -59,7 +60,7 @@ export const modelRouter = createRouter({
   }),
 
   activeMetrics: publicQuery.query(async () => {
-    const psResponse = await fetch("http://localhost:11434/api/ps");
+    const psResponse = await fetch(`${OLLAMA_BASE_URL}/api/ps`);
     const psData = await psResponse.json();
 
     if (!psData.models || psData.models.length === 0) {
@@ -114,7 +115,7 @@ export const modelRouter = createRouter({
       })
     )
     .mutation(async ({ input }) => {
-      const response = await fetch("http://localhost:11434/api/generate", {
+      const response = await fetch(`${OLLAMA_BASE_URL}/api/generate`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -139,7 +140,7 @@ export const modelRouter = createRouter({
       // Ollama's documented way to force-unload a loaded model: issue a
       // generate call with an empty prompt and keep_alive: 0, which evicts
       // it from VRAM as soon as the (trivial) request completes.
-      const response = await fetch("http://localhost:11434/api/generate", {
+      const response = await fetch(`${OLLAMA_BASE_URL}/api/generate`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

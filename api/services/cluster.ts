@@ -1,3 +1,4 @@
+import { cloud } from "../lib/cloud";
 // api/services/cluster.ts
 
 import type { ToolCall } from "./toolSelector";
@@ -228,7 +229,7 @@ export async function executeClusterTool(
 
             console.log("[CLUSTER] Using Local Python Runtime");
 
-            return await pythonRuntimeClient.execute(
+            return await runLocalPython(
                 tool,
                 toolCall.arguments ?? {}
             );
@@ -268,7 +269,7 @@ export async function executeClusterTool(
 
         console.log("[CLUSTER] Using Local Python Runtime (worker fallback)");
 
-        return await pythonRuntimeClient.execute(
+        return await runLocalPython(
             tool,
             toolCall.arguments ?? {}
         );
@@ -279,4 +280,15 @@ export async function executeClusterTool(
 
     return await localExecutor();
 
+}
+
+/** Local Python sidecar fallback; unavailable when local runtimes are off (cloud mode). */
+function runLocalPython(tool: string, args: any): Promise<ExecutionResult> {
+    if (!cloud.localRuntimes) {
+        return Promise.resolve({
+            success: false,
+            error: `No GPU worker is online for '${tool}', and local Python runtimes are disabled on this server.`,
+        });
+    }
+    return pythonRuntimeClient.execute(tool, args);
 }

@@ -3,10 +3,13 @@ import { memorySearch } from "./memory";
 export async function buildMemoryContext(
   prompt: string
 ) {
-  const memories =
-    await memorySearch(
-      prompt
-    );
+  let memories: any[] = [];
+  try {
+    memories = await memorySearch(prompt);
+  } catch (err) {
+    // Embedding backend unreachable: answer without memory instead of failing the chat.
+    console.warn("[MEMORY] Memory search unavailable, continuing without it:", err instanceof Error ? err.message : err);
+  }
 
   if (
     memories.length === 0

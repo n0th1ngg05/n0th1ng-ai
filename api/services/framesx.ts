@@ -1,3 +1,4 @@
+import { COMFYUI_URL } from "../lib/cloud";
 // api/services/framesx.ts
 //
 // FramesX — the video-studio counterpart to services/comfy.ts +
@@ -29,8 +30,8 @@ import { videoJobs, recomputeOverallProgress, type SceneStatus } from "./videoGe
 import { buildVideoWorkflow, buildStage1Workflow, buildStage2Workflow, buildStage3Workflow, type SceneConfig } from "./videoWorkflow";
 import { getProvider, getDefaultProvider } from "./providers";
 
-const COMFY_HTTP = "http://127.0.0.1:8188";
-const COMFY_WS = "ws://127.0.0.1:8188/ws";
+const COMFY_HTTP = COMFYUI_URL;
+const COMFY_WS = `${COMFYUI_URL.replace(/^http/, "ws")}/ws`;
 const COMFY_OUTPUT = "D:/AI/ComfyUI/output";
 const OLLAMA_URL = "http://localhost:11434/api/generate";
 

@@ -1,3 +1,4 @@
+import { assertForge } from "../lib/cloud";
 // ─────────────────────────────────────────────────────────────────────────────
 // forge/execWorker.ts
 //
@@ -104,6 +105,7 @@ export async function runCommand(
     cmd: string,
     timeoutMs: number = DEFAULT_COMMAND_TIMEOUT_MS
 ): Promise<CommandResult> {
+    assertForge("Forge run_command");
     validateCommand(cmd);
     const cwd = resolveSafePath(sessionId, ".");
 

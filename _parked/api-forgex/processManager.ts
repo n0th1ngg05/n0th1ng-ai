@@ -1,3 +1,4 @@
+import { assertForge } from "../lib/cloud";
 // ─────────────────────────────────────────────────────────────────────────────
 // forgex/processManager.ts
 //
@@ -158,6 +159,7 @@ function winQuote(arg: string): string {
     return `"${arg.replace(/"/g, '\\"')}"`;
 }
 function spawnClaudeCode(args: string[], opts: { cwd: string; env: NodeJS.ProcessEnv }) {
+    assertForge("ForgeX (Claude Code)");
     const isWin = process.platform === "win32";
     return spawn(
         CLAUDE_CODE_BIN,

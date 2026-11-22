@@ -1,3 +1,4 @@
+import { assertLocalRuntimes } from "../../lib/cloud";
 import {
   RuntimeConfig,
   RuntimeId,
@@ -58,6 +59,7 @@ async initialize(): Promise<void> {
 
   /** Starts (connects to) the shared runtime for a provider */
   async startRuntime(providerId: ProviderId): Promise<Runtime> {
+    assertLocalRuntimes("Speech runtime");
     console.log("========== START RUNTIME ==========");
     console.log("Provider:", providerId, "-> shared runtime on port", this.sharedPort);
 

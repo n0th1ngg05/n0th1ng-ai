@@ -13,8 +13,8 @@ import { workflowRouter } from "./routers/workflow";
 import { activityRouter } from "./routers/activity";
 import { fileContentRouter } from "./routers/fileContent";
 import { speechRouter } from "./speech";
-import { forgeRouter } from "./forge/router";
-import { forgexRouter } from "./forgex/router";
+// import { forgeRouter } from "./forge/router";
+// import { forgexRouter } from "./forgex/router";
 import { providersRouter } from "./routers/providers";
 import { runtimeRouter } from "./routers/runtime";
 import { clusterRouter } from "./routers/cluster";
@@ -36,8 +36,8 @@ export const appRouter = createRouter({
   activity: activityRouter,
   fileContent: fileContentRouter,
   speech: speechRouter,
-  forge: forgeRouter,
-  forgex: forgexRouter,
+  // forge: forgeRouter,
+  // forgex: forgexRouter,
   providers: providersRouter,
   runtime: runtimeRouter,
   cluster: clusterRouter,

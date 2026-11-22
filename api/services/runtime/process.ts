@@ -1,3 +1,4 @@
+import { assertLocalRuntimes } from "../../lib/cloud";
 import { ChildProcess, spawn } from "child_process";
 
 export interface RuntimeProcess {
@@ -16,6 +17,7 @@ export function startProcess(
     args: string[],
     cwd: string
 ): RuntimeProcess {
+    assertLocalRuntimes("Local runtime process");
 
     const child = spawn(
         executable,

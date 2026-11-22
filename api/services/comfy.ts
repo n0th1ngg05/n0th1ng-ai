@@ -1,3 +1,4 @@
+import { COMFYUI_URL } from "../lib/cloud";
 import fs from "node:fs/promises";
 import path from "node:path";
 import { execFile } from "node:child_process";
@@ -25,8 +26,8 @@ import {
 
 const execFileAsync = promisify(execFile);
 
-const COMFY_URL = "http://127.0.0.1:8188";
-const COMFY_WS = "ws://127.0.0.1:8188/ws";
+const COMFY_URL = COMFYUI_URL;
+const COMFY_WS = `${COMFYUI_URL.replace(/^http/, "ws")}/ws`;
 const COMFY_OUTPUT = "D:/AI/ComfyUI/output";
 
 // Same live-progress event shape framesx.ts uses for video (see

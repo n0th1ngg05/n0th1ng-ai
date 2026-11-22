@@ -1,3 +1,4 @@
+import { assertLocalRuntimes } from "../lib/cloud";
 // api/routers/personaplex.ts
 //
 // PersonaPlex (nvidia/personaplex-7b-v1) is a full-duplex speech-to-speech
@@ -146,6 +147,7 @@ function pushLog(buf: string[], line: string) {
 }
 
 function runStep(cmd: string, args: string[], cwd: string): Promise<void> {
+  assertLocalRuntimes("PersonaPlex setup");
   return new Promise((resolve, reject) => {
     const child = spawn(cmd, args, { cwd, shell: process.platform === "win32" });
     setupProcess = child;
@@ -248,6 +250,7 @@ function startServer(cpuOffload: boolean, hfToken?: string): Promise<void> {
       return;
     }
 
+    assertLocalRuntimes("PersonaPlex server");
     serverStatus = "starting";
     serverError = null;
     serverLog = [];
