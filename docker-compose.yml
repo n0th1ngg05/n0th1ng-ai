@@ -1,18 +1,22 @@
 services:
   db:
-    image: mariadb:11
+    # MySQL 8: the migrations are generated for MySQL (MariaDB rejects `serial AUTO_INCREMENT`).
+    # The MARIADB_* names in .env are kept so existing .env files keep working.
+    image: mysql:8.4
     restart: unless-stopped
     environment:
-      MARIADB_ROOT_PASSWORD: ${MARIADB_ROOT_PASSWORD}
-      MARIADB_DATABASE: ${MARIADB_DATABASE:-n0th1ng}
-      MARIADB_USER: ${MARIADB_USER:-n0th1ng}
-      MARIADB_PASSWORD: ${MARIADB_PASSWORD}
-    command: ["--innodb-buffer-pool-size=3G"]
+      MYSQL_ROOT_PASSWORD: ${MARIADB_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MARIADB_DATABASE:-n0th1ng}
+      MYSQL_USER: ${MARIADB_USER:-n0th1ng}
+      MYSQL_PASSWORD: ${MARIADB_PASSWORD}
+    command: ["--innodb-buffer-pool-size=3G", "--character-set-server=utf8mb4", "--collation-server=utf8mb4_unicode_ci"]
     volumes: [dbdata:/var/lib/mysql]
     healthcheck:
-      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uroot -p$$MYSQL_ROOT_PASSWORD --silent"]
       interval: 10s
-      retries: 10
+      timeout: 5s
+      retries: 12
+      start_period: 30s
 
   app:
     build: .
