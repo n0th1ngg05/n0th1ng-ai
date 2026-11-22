@@ -1,5 +1,5 @@
 import { speechEvents } from './emitter.js';
-import { RequestId, ProviderId, TTSResponse, STTResponse, BenchmarkResult, ModelId } from '../types.js';
+import { RequestId, ProviderId, TTSResponse, STTResponse, BenchmarkResult, ModelId, DeviceId, ProfileId, VoiceProfile } from '../types.js';
 
 /** Emits speech generation success event */
 export function emitSpeechGenerated(requestId: RequestId, providerId: ProviderId, duration: number): void {
@@ -29,6 +29,26 @@ export function emitTranscriptionCompleted(requestId: RequestId, providerId: Pro
 /** Emits transcription failure event */
 export function emitTranscriptionFailed(requestId: RequestId, providerId: ProviderId, error: string): void {
   speechEvents.emit('transcription:failed', { requestId, providerId, error });
+}
+
+/** Emits audio device selection change event */
+export function emitDeviceChanged(payload: { deviceId: DeviceId; type: 'microphone' | 'speaker' }): void {
+  speechEvents.emit('device:changed', payload);
+}
+
+/** Emits voice profile created event */
+export function emitProfileCreated(payload: { profile: VoiceProfile }): void {
+  speechEvents.emit('profile:created', payload);
+}
+
+/** Emits voice profile updated event */
+export function emitProfileUpdated(payload: { profile: VoiceProfile }): void {
+  speechEvents.emit('profile:updated', payload);
+}
+
+/** Emits voice profile deleted event */
+export function emitProfileDeleted(payload: { profileId: ProfileId }): void {
+  speechEvents.emit('profile:deleted', payload);
 }
 
 export { speechEvents };
