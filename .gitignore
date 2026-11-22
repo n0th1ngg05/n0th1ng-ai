@@ -48,10 +48,10 @@ personaplex-runtime/**/*.pth
 # ============================================================
 # User-generated / runtime data
 # ============================================================
-uploads/
+/uploads/
 transfer/
-storage/
-data/
+/storage/
+/data/
 
 # ============================================================
 # Build outputs
