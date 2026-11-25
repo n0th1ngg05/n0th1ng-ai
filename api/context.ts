@@ -1,5 +1,6 @@
 import type { FetchCreateContextFnOptions } from "@trpc/server/adapters/fetch";
 import { verifySession } from "./services/auth.service";
+import { resolveClientIp } from "./lib/clientIp";
 
 export type TrpcContext = {
   req: Request;
@@ -16,7 +17,7 @@ export async function createContext(
     const match = cookieHeader.match(/(?:^|;\s*)n0th1ng_session=([^;]*)/);
     if (match) {
       const cookieValue = decodeURIComponent(match[1]);
-      const clientIp = opts.req.headers.get("x-forwarded-for")?.split(",")[0].trim() || "127.0.0.1";
+      const clientIp = resolveClientIp((n) => opts.req.headers.get(n));
       session = await verifySession(cookieValue, clientIp);
     }
   }

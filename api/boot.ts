@@ -23,6 +23,7 @@ import si from "systeminformation";
 import { createJob, generationJobs, } from "./services/generationState";
 import { listProviders } from "./services/providers";
 import { generateEmbedding } from "./services/embeddingService";
+import { resolveClientIp } from "./lib/clientIp";
 import { runGeneration, } from "./services/backgroundGeneration";
 import { createVideoJob, videoJobs } from "./services/videoGenerationState";
 import { runFramesXGeneration, type FramesXEvent } from "./services/framesx";
@@ -272,7 +273,7 @@ app.use("*", async (c, next) => {
     }
   }
 
-  const clientIp = c.req.header("x-forwarded-for")?.split(",")[0].trim() || "127.0.0.1";
+  const clientIp = resolveClientIp((n) => c.req.header(n));
   const session = await verifySession(sessionCookie, clientIp);
 
   if (session) {

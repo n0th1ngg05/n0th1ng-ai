@@ -43,14 +43,12 @@ import {
   extractCloudflareToken,
 } from "../services/cloudflare.service";
 
+import { resolveClientIp } from "../lib/clientIp";
+
 export const authRouter = new Hono();
 
 function getClientIp(c: any): string {
-  const forwarded = c.req.header("x-forwarded-for");
-  if (forwarded) {
-    return forwarded.split(",")[0].trim();
-  }
-  return c.req.header("cf-connecting-ip") || "127.0.0.1";
+  return resolveClientIp((n) => c.req.header(n));
 }
 
 function parseCookie(c: any, name: string): string | undefined {
