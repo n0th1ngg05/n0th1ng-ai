@@ -2,7 +2,7 @@
 
 This guide reproduces the setup that is running today: n0th1ng AI as a headless, always-on server in Docker on an Oracle Cloud Always Free Ampere A1 VM (Ubuntu 24.04, aarch64, 2 OCPU / 12 GB). It is controlled by one switch, `CLOUD_MODE=true`. See the README section "Cloud Mode & Docker Deployment" for what the switch changes.
 
-Status: image build, migrations, boot, master-password setup and login (through an SSH tunnel) are verified. The OpenRouter fallback under real failure, embeddings in the container, the Cloudflare tunnel with Access, the GPU worker and reboot recovery are **not yet verified**.
+Status: image build, migrations, boot, master-password setup and login (through an SSH tunnel) are verified. The OpenRouter fallback under real failure, embeddings in the container, the Cloudflare Access PIN flow (the tunnel itself works), the GPU worker and reboot recovery are **not yet verified**.
 
 ## 1. Architecture
 
@@ -107,12 +107,25 @@ Lets you pull and test models from the shell (the VM is CPU-only; a 1.2B model s
 4. In `.env`: `OLLAMA_BASE_URL=http://host.docker.internal:11434` and `OLLAMA_EMBED_URL` the same; start without the `embeddings` profile.
 5. If the container cannot connect, an iptables rule allowing `172.17.0.0/16` to port 11434 may be needed.
 
-## 9. Going public (planned)
+## 9. Going public with Cloudflare (ai.nothingstudios.co.in)
 
-1. A domain on Cloudflare. Create a Cloudflare Tunnel, put the token in `CLOUDFLARE_TUNNEL_TOKEN`, route the hostname to `http://app:3000`, then `docker compose --profile tunnel up -d`.
-2. Update `PRODUCTION_ORIGIN`, `ALLOWED_ORIGINS`, `WEBAUTHN_ORIGIN` and `WEBAUTHN_RP_ID` to the real domain.
-3. Enable Cloudflare Access (`CF_ACCESS_REQUIRED=true`, team domain and AUD) and make workers use service tokens or their pre-shared keys.
-4. Test login and passkeys behind the tunnel.
+The tunnel part below was done and works (site loads and is usable). Access enforcement was configured in the dashboard and `.env`; the end-to-end PIN flow is not yet confirmed.
+
+**Phase 1 - tunnel**
+1. Cloudflare dashboard -> Zero Trust -> Networks -> Tunnels -> create a *Cloudflared* tunnel. On the install page choose the **Docker** tab and copy only the token (do not run the Windows command; the connector runs on the VM).
+2. Put the token in the VM's `.env` as `CLOUDFLARE_TUNNEL_TOKEN` (never commit or paste it anywhere).
+3. Add a public hostname (Routes): subdomain `ai`, domain `nothingstudios.co.in`, service `http://app:3000`. Cloudflare creates the DNS record.
+4. In `.env`: `PRODUCTION_ORIGIN`, `ALLOWED_ORIGINS` and `WEBAUTHN_ORIGIN` = `https://ai.nothingstudios.co.in`; keep `CF_ACCESS_REQUIRED=false` for now.
+5. `docker compose --profile embeddings --profile tunnel up -d --build`, then `docker compose logs tunnel` (should show registered connections) and open the URL.
+
+**Phase 2 - Access**
+1. Zero Trust -> Access -> Applications -> Add -> Self-hosted: hostname `ai.nothingstudios.co.in`, name `n0th1ng AI`.
+2. Create a policy `Owner`: action *Allow*, include *Emails* = your address; leave identity providers on (One-time PIN is the default).
+3. Copy the application's **AUD tag**; the team domain is under Zero Trust -> Settings (`<team>.cloudflareaccess.com`).
+4. `.env`: `CF_ACCESS_TEAM_DOMAIN`, `CF_ACCESS_AUD`, `CF_ACCESS_REQUIRED=true`; then `docker compose up -d app`.
+5. Test in a private window: Cloudflare asks for the email and PIN first, then the app's own login appears. A 403 `CF_ACCESS_REQUIRED` JSON error means the AUD/team domain do not match; set `CF_ACCESS_REQUIRED=false` to get back in while debugging.
+
+Workers and API clients cannot answer the PIN: give them a Cloudflare service token (`CF_ACCESS_SERVICE_CLIENT_ID` / `CF_ACCESS_SERVICE_CLIENT_SECRET`) or use the worker pre-shared keys. Also set `WEBAUTHN_RP_ID` to the real domain before registering passkeys.
 
 ## 10. Connecting the GPU worker (planned)
 
@@ -138,3 +151,6 @@ Set `WORKER_DESKTOP_URL` and `WORKER_DESKTOP_KEY` (keys come from `npm run worke
 | `Identifier 'createRequire' has already been declared` | The bundle banner clashed with a bundled dependency. Banner now aliases the import. |
 | `permission denied ... docker.sock` | Group change not active yet: `newgrp docker` or reconnect. |
 | Log floods with the same migration error | The container restart loop repeats it; read only the first error and use `docker compose logs --tail=40 app`. |
+| Log repeats `Error: spawn ps ENOENT` | The slim Node image has no `ps`; telemetry and the system monitor spawn it. The runtime stage of the `Dockerfile` now installs `procps`. Rebuild with `--build`. |
+| `403 CF_ACCESS_REQUIRED` after the Cloudflare PIN | `CF_ACCESS_AUD` or `CF_ACCESS_TEAM_DOMAIN` does not match the Access application. Fix them, or set `CF_ACCESS_REQUIRED=false` temporarily. |
+| Tunnel shows healthy but the site gives 502/1033 | The hostname route is missing or points to `localhost`; it must be `http://app:3000`. |

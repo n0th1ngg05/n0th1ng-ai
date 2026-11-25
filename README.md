@@ -412,7 +412,7 @@ If the embedding backend is unreachable, memory search degrades to "no memories"
 
 | File | Purpose |
 |---|---|
-| `Dockerfile` | Multi-stage Node 22 build (arm64 and x86_64). Runs `npm run build`, bundles `scripts/migrate.ts`, copies `frontend/` into `dist/public/frontend`, prunes dev dependencies. Starts `node dist/migrate.js && node dist/boot.js`. |
+| `Dockerfile` | Multi-stage Node 22 build (arm64 and x86_64); the runtime stage installs `procps` because telemetry and the system monitor spawn `ps`. Runs `npm run build`, bundles `scripts/migrate.ts`, copies `frontend/` into `dist/public/frontend`, prunes dev dependencies. Starts `node dist/migrate.js && node dist/boot.js`. |
 | `docker-compose.yml` | `db` (MySQL 8.4), `app` (bound to `127.0.0.1:3000`), optional `tunnel` profile (cloudflared) and `embeddings` profile (Ollama for `nomic-embed-text`). |
 | `.env-cloud.example` | Template for the VM's `.env`, with `CLOUD_MODE=true`. |
 | `scripts/migrate.ts` | Applies Drizzle migrations at container start (no `drizzle-kit` needed). |
@@ -427,9 +427,26 @@ Notes that matter:
 
 Full step-by-step instructions, maintenance and troubleshooting are in [`docs/CLOUD_DEPLOY.md`](docs/CLOUD_DEPLOY.md).
 
+### Public access: Cloudflare Tunnel + Access (`ai.nothingstudios.co.in`)
+
+The app container publishes `127.0.0.1:3000` only, so nothing is exposed on the VM's public IP and no Oracle ingress port needs opening. Public access goes through a Cloudflare Tunnel, with Cloudflare Access in front of the app's own login:
+
+```
+Browser -> Cloudflare (Access: email + one-time PIN) -> cloudflared container -> http://app:3000
+```
+
+1. **Tunnel:** Zero Trust -> Networks -> Tunnels -> create a *Cloudflared* tunnel; put its token in `CLOUDFLARE_TUNNEL_TOKEN` (never commit it); add a public hostname `ai.nothingstudios.co.in` -> `http://app:3000` (use the `app` service name, not `localhost`).
+2. **Origins:** set `PRODUCTION_ORIGIN`, `ALLOWED_ORIGINS` and `WEBAUTHN_ORIGIN` to the `https://` hostname (the CSRF origin check and passkeys depend on them).
+3. **Start:** `docker compose --profile embeddings --profile tunnel up -d --build`.
+4. **Access:** Zero Trust -> Access -> Applications -> Self-hosted, hostname `ai.nothingstudios.co.in`, policy *Allow* for your email (one-time PIN login). Then set `CF_ACCESS_TEAM_DOMAIN` (`<team>.cloudflareaccess.com`; the bare team name also works), `CF_ACCESS_AUD` (the application's AUD tag) and `CF_ACCESS_REQUIRED=true`, and run `docker compose up -d app`.
+
+With enforcement on, the server rejects any request that lacks a valid `Cf-Access-Jwt-Assertion` header (403 `CF_ACCESS_REQUIRED`). Visitors pass Cloudflare's PIN check first and then reach the app's own login (master password / passkey). Workers and API clients cannot use the PIN, so they need a Cloudflare service token (`CF_ACCESS_SERVICE_CLIENT_ID` / `CF_ACCESS_SERVICE_CLIENT_SECRET`) or their worker pre-shared keys.
+
+**Client IP:** rate limiting, login lockouts and the IP-bound session check use `resolveClientIp()` (`api/lib/clientIp.ts`), which prefers `CF-Connecting-IP` (set by Cloudflare, not forgeable by visitors) and only falls back to `X-Forwarded-For`. Earlier code trusted the first `X-Forwarded-For` entry, which a visitor can fake.
+
 ### Verification status
 
-Verified on a real Oracle Always Free VM (Ubuntu 24.04, ARM): image build, migrations on MySQL 8.4, boot in cloud mode, master-password setup and login through an SSH tunnel. **Not yet verified:** OpenRouter fallback under real failure, embeddings and memory in the container, the Cloudflare tunnel with Access enabled, the GPU-worker path and failover, and recovery after a VM reboot.
+Verified on a real Oracle Always Free VM (Ubuntu 24.04, ARM): image build, migrations on MySQL 8.4, boot in cloud mode, master-password setup and login through an SSH tunnel. The Cloudflare tunnel is connected and the site loads at `https://ai.nothingstudios.co.in` and is usable. **Not yet verified:** Cloudflare Access enforcement end to end (`CF_ACCESS_REQUIRED=true` with the PIN flow), the `resolveClientIp` change under real traffic, OpenRouter fallback under real failure, embeddings and memory in the container, the tool-router model pull, the GPU-worker path and failover, and recovery after a VM reboot.
 
 ---
 
@@ -561,7 +578,7 @@ WEBAUTHN_ORIGIN=https://ai.yourdomain.com
 
 # ── V2.0 Cloudflare Access Outer Perimeter (Optional) ────────────────────────
 CF_ACCESS_REQUIRED=false
-CF_ACCESS_TEAM_DOMAIN=https://your-team.cloudflareaccess.com
+CF_ACCESS_TEAM_DOMAIN=your-team.cloudflareaccess.com   # bare team name or full domain, both accepted
 CF_ACCESS_AUD=your_cloudflare_access_application_aud_tag
 
 # ── External AI Providers ────────────────────────────────────────────────────
@@ -673,7 +690,7 @@ npm start
 ### Docker / Cloud Server
 ```bash
 cp .env-cloud.example .env     # fill in the values
-docker compose --profile embeddings up -d --build
+docker compose --profile embeddings --profile tunnel up -d --build   # drop `--profile tunnel` for SSH-tunnel-only access
 docker compose logs --tail=40 app
 ```
 The app listens on `127.0.0.1:3000` only; reach it through an SSH tunnel or a Cloudflare tunnel. Details: [`docs/CLOUD_DEPLOY.md`](docs/CLOUD_DEPLOY.md).
@@ -728,6 +745,7 @@ n0th1ng-ai/
 │   │   ├── middleware.ts             # Elevated (forge_unlocked) procedure guards
 │   │   ├── lib/
 │   │   │   ├── cloud.ts              # CLOUD_MODE switch, feature flags, service URLs, config validation
+│   │   │   ├── clientIp.ts           # Real client IP (CF-Connecting-IP first, then X-Forwarded-For)
 │   │   │   └── llmRouter.ts          # Ollama health check + OpenRouter fallback routing
 │   │   ├── routers/
 │   │   │   ├── auth.router.ts        # V2.0 Authentication & Passkey HTTP router
