@@ -44,6 +44,8 @@ export const OLLAMA_BASE_URL = baseUrl(process.env.OLLAMA_BASE_URL, "http://loca
 // it can point at a small local Ollama container so memory keeps working while
 // the GPU worker is offline.
 export const OLLAMA_EMBED_URL = baseUrl(process.env.OLLAMA_EMBED_URL, OLLAMA_BASE_URL);
+/** Small helper model (tool router gate + Stage 3). Separate from chat so chat can go to a worker/OpenRouter. */
+export const OLLAMA_AUX_URL = baseUrl(process.env.OLLAMA_AUX_URL, OLLAMA_BASE_URL);
 export const OLLAMA_EMBED_MODEL = process.env.OLLAMA_EMBED_MODEL?.trim() || "nomic-embed-text";
 
 export const COMFYUI_URL = baseUrl(process.env.COMFYUI_URL, "http://127.0.0.1:8188");
@@ -120,7 +122,7 @@ export function logCloudSummary(): void {
   if (!isCloudMode) return;
   console.log(
     "[CLOUD] CLOUD_MODE on |",
-    `ollama=${OLLAMA_BASE_URL} embed=${OLLAMA_EMBED_URL} |`,
+    `ollama=${OLLAMA_BASE_URL} embed=${OLLAMA_EMBED_URL} aux=${OLLAMA_AUX_URL} |`,
     `localRuntimes=${cloud.localRuntimes} companion=${cloud.companion} forge=${cloud.forge} |`,
     `llmFallback=${cloud.llmFallback ? cloud.llmFallbackModel : "off"}`,
   );

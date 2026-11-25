@@ -39,10 +39,30 @@ services:
       TUNNEL_TOKEN: ${CLOUDFLARE_TUNNEL_TOKEN}
     depends_on: [app]
 
+  # Small CPU models used by the app: embeddings (memory/RAG) and the tool router (Stage 3).
   ollama-embed:
     image: ollama/ollama:latest
     profiles: [embeddings]
     restart: unless-stopped
+    environment:
+      OLLAMA_KEEP_ALIVE: 30m
+      OLLAMA_MAX_LOADED_MODELS: "2"
     volumes: [ollama:/root/.ollama]
+
+  # One-shot: pulls the models into the volume (skips what is already there), then exits.
+  ollama-models:
+    image: ollama/ollama:latest
+    profiles: [embeddings]
+    restart: "no"
+    depends_on: [ollama-embed]
+    environment:
+      OLLAMA_HOST: ollama-embed:11434
+      TOOL_ROUTER_MODEL: ${TOOL_ROUTER_MODEL:-lfm2.5-thinking:1.2b}
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        until ollama list >/dev/null 2>&1; do sleep 2; done
+        ollama pull nomic-embed-text
+        ollama pull $${TOOL_ROUTER_MODEL:-lfm2.5-thinking:1.2b}
 
 volumes: { dbdata: {}, uploads: {}, appdata: {}, storage: {}, ollama: {} }

@@ -1,3 +1,4 @@
+import { OLLAMA_AUX_URL } from "../lib/cloud";
 // ─────────────────────────────────────────────────────────────────────────────
 // toolRouter.ts
 //
@@ -61,8 +62,8 @@ export type ToolDecision = {
 
 };
 
-const OLLAMA_CHAT_URL = "http://localhost:11434/api/chat";
-const OLLAMA_GENERATE_URL = "http://localhost:11434/api/generate";
+const OLLAMA_CHAT_URL = `${OLLAMA_AUX_URL}/api/chat`;
+const OLLAMA_GENERATE_URL = `${OLLAMA_AUX_URL}/api/generate`;
 
 // ── Stage 3 model ─────────────────────────────────────────────────────────────
 // Small model, fast, native tool-calling. Only invoked when Stage 0/1/2

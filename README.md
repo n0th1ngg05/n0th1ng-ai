@@ -69,7 +69,7 @@ Version 2.0 upgrades n0th1ng AI from a purely local prototype to a **cloud-harde
 9. [Image Studio](#image-studio)
 10. [FramesX](#framesx)
 11. [Voice Studio](#voice-studio)
-12. [Forge & ForgeX (Tiered Execution)](#forge--forgex-tiered-execution)
+12. [Forge & ForgeX (Tiered Execution)](#forge--forgex-tiered-execution) — *currently parked, see Cloud Mode*
 13. [Files and Document Intelligence](#files-and-document-intelligence)
 14. [Knowledge Base and RAG](#knowledge-base-and-rag)
 15. [Monitor](#monitor)
@@ -79,13 +79,14 @@ Version 2.0 upgrades n0th1ng AI from a purely local prototype to a **cloud-harde
 19. [Memory System](#memory-system)
 20. [Distributed GPU Cluster Workers](#distributed-gpu-cluster-workers)
 21. [Frontend Architecture](#frontend-architecture)
-22. [Production Deployment Guide (Oracle Cloud / Caddy)](#production-deployment-guide-oracle-cloud--caddy)
-23. [Emergency 2AM Break-Glass Recovery Runbook](#emergency-2am-break-glass-recovery-runbook)
-24. [Environment Variables](#environment-variables)
-25. [Installation and Setup](#installation-and-setup)
-26. [Running the Project](#running-the-project)
-27. [Automated Verification Test Suite](#automated-verification-test-suite)
-28. [Project Structure](#project-structure)
+22. [Cloud Mode & Docker Deployment](#cloud-mode--docker-deployment)
+23. [Production Deployment Guide (Oracle Cloud / Caddy)](#production-deployment-guide-oracle-cloud--caddy)
+24. [Emergency 2AM Break-Glass Recovery Runbook](#emergency-2am-break-glass-recovery-runbook)
+25. [Environment Variables](#environment-variables)
+26. [Installation and Setup](#installation-and-setup)
+27. [Running the Project](#running-the-project)
+28. [Automated Verification Test Suite](#automated-verification-test-suite)
+29. [Project Structure](#project-structure)
 
 ---
 
@@ -226,8 +227,8 @@ n0th1ng AI V2.0 employs a layered defense-in-depth pipeline bridging user authen
 | **Image Studio** | Text-to-image generation via ComfyUI with 10+ configured workflows | Standard | Live |
 | **FramesX** | Multi-scene cinematic video generation via LTX-Video and Wan2.1 | Standard | Live |
 | **Voice Studio** | Local TTS/STT with 7+ providers and voice conversations with memory | Standard | Live |
-| **Forge** | Autonomous multi-task build agent with plan/act/evaluate loop | Elevated (`forge_unlocked`) | Live |
-| **ForgeX** | Agentic coding via Claude Code CLI bridged to local Ollama | Elevated (`forge_unlocked`) | Live |
+| **Forge** | Autonomous multi-task build agent with plan/act/evaluate loop | Elevated (`forge_unlocked`) | **Parked** (disabled; code in `_parked/`) |
+| **ForgeX** | Agentic coding via Claude Code CLI bridged to local Ollama | Elevated (`forge_unlocked`) | **Parked** (disabled; code in `_parked/`) |
 | **Files & Docs** | Document library with OCR, PDF parsing, and LangGraph analysis pipeline | Standard | Live |
 | **Knowledge Base** | RAG-powered vector store with semantic search and embeddings | Standard | Live |
 | **Monitor** | Real-time system telemetry: CPU, GPU, VRAM, RAM, network, services | Standard | Live |
@@ -361,6 +362,74 @@ npm run worker:keys list
 # Revoke a compromised worker key
 npm run worker:keys revoke <KEY_ID>
 ```
+
+---
+
+## Cloud Mode & Docker Deployment
+
+`CLOUD_MODE=true` in `.env` switches the whole app into a headless, always-on server profile (built for a small Linux VM such as Oracle Always Free). One switch, no code branches: `api/lib/cloud.ts` reads it first (it is the first import in `api/boot.ts`), sets `NODE_ENV=production` if unset, and exposes the resolved flags to the rest of the server.
+
+### What CLOUD_MODE changes
+
+| Setting | Local default | Cloud default | Override |
+|---|---|---|---|
+| Speech + Python runtime sidecars | on | **off** | `ENABLE_LOCAL_RUNTIMES` |
+| ESP32 companion service (port 3005) | on | **off** | `ENABLE_COMPANION` |
+| Forge / ForgeX | off (parked) | off (parked) | `ENABLE_FORGE` (code must be restored from `_parked/`) |
+| OpenRouter fallback for chat | off | **on** | `LLM_FALLBACK_ENABLED` |
+| Startup config check | none | **required vars are validated, warnings logged** | n/a |
+
+With `CLOUD_MODE=false` (or unset) behaviour is unchanged from before.
+
+At startup the server prints one line such as `[CLOUD] CLOUD_MODE on | ollama=... embed=... | localRuntimes=false companion=false forge=false | llmFallback=...`. In cloud mode it refuses to start without `APP_SECRET`, `DATABASE_URL` and `PRODUCTION_ORIGIN`, and warns if `WEBAUTHN_*` is missing, if the fallback is enabled without `OPENROUTER_API_KEY`, or if `CF_ACCESS_REQUIRED` is not `true`.
+
+### LLM routing and OpenRouter fallback (`api/lib/llmRouter.ts`)
+
+Chat requests go to the Ollama at `OLLAMA_BASE_URL` (a GPU worker or any reachable Ollama). When the fallback is configured (`LLM_FALLBACK_ENABLED=true`, `OPENROUTER_API_KEY` and `LLM_FALLBACK_MODEL` set):
+
+1. Before each chat turn the router checks Ollama (`/api/tags`, 2.5 s timeout, result cached for 10 s). If it is down, the turn is answered by `openrouter:<LLM_FALLBACK_MODEL>` and the UI is notified.
+2. If Ollama accepts the request but then fails (connection error, or HTTP 502 or higher such as a dropped Cloudflare tunnel), the router marks Ollama down and retries the same turn on the fallback model.
+3. Models already prefixed `openrouter:` are never rerouted.
+
+Without a configured fallback the router does nothing and requests go straight to Ollama as before.
+
+### Configurable service URLs
+
+All hard-coded local endpoints now come from the environment (read once in `api/lib/cloud.ts`):
+
+| Variable | Default | Used for |
+|---|---|---|
+| `OLLAMA_BASE_URL` | `http://localhost:11434` | Chat, agent loop, model manager, tags/ps |
+| `OLLAMA_EMBED_URL` | same as `OLLAMA_BASE_URL` | Embeddings (memory, RAG) |
+| `OLLAMA_EMBED_MODEL` | `nomic-embed-text` | Embedding model name |
+| `OLLAMA_AUX_URL` | same as `OLLAMA_BASE_URL` | Tool router helper model (gate + Stage 3), model set by `TOOL_ROUTER_MODEL` |
+| `COMFYUI_URL` | `http://127.0.0.1:8188` | Image Studio / FramesX (needs a GPU host) |
+| `LLM_FALLBACK_MODEL` | `google/gemma-4-31b-it:free` | OpenRouter model used as fallback |
+
+If the embedding backend is unreachable, memory search degrades to "no memories" instead of failing the chat.
+
+### Container stack
+
+| File | Purpose |
+|---|---|
+| `Dockerfile` | Multi-stage Node 22 build (arm64 and x86_64). Runs `npm run build`, bundles `scripts/migrate.ts`, copies `frontend/` into `dist/public/frontend`, prunes dev dependencies. Starts `node dist/migrate.js && node dist/boot.js`. |
+| `docker-compose.yml` | `db` (MySQL 8.4), `app` (bound to `127.0.0.1:3000`), optional `tunnel` profile (cloudflared) and `embeddings` profile (Ollama for `nomic-embed-text`). |
+| `.env-cloud.example` | Template for the VM's `.env`, with `CLOUD_MODE=true`. |
+| `scripts/migrate.ts` | Applies Drizzle migrations at container start (no `drizzle-kit` needed). |
+| `.dockerignore` | Keeps `.env`, runtimes, uploads, models and archives out of the image. |
+
+Notes that matter:
+
+- **Use MySQL 8, not MariaDB.** The generated migrations contain `serial AUTO_INCREMENT`, which MariaDB rejects. The compose file reads the existing `MARIADB_*` variable names and passes them to the MySQL image.
+- **Forge and ForgeX are parked.** Their code lives in `_parked/` and their imports, routes, tRPC entries and nav links are commented out.
+- The security-sensitive `/uploads/*` route is now confined to the `uploads/` folder.
+- Build output keeps `argon2` and `tesseract.js` external (they need their native/worker files from `node_modules`).
+
+Full step-by-step instructions, maintenance and troubleshooting are in [`docs/CLOUD_DEPLOY.md`](docs/CLOUD_DEPLOY.md).
+
+### Verification status
+
+Verified on a real Oracle Always Free VM (Ubuntu 24.04, ARM): image build, migrations on MySQL 8.4, boot in cloud mode, master-password setup and login through an SSH tunnel. **Not yet verified:** OpenRouter fallback under real failure, embeddings and memory in the container, the Cloudflare tunnel with Access enabled, the GPU-worker path and failover, and recovery after a VM reboot.
 
 ---
 
@@ -505,6 +574,16 @@ OLLAMA_BASE_URL=http://localhost:11434
 COMFYUI_URL=http://localhost:8188
 CLAUDE_CODE_BIN=C:\Users\username\.local\bin\claude.exe
 
+# ── Cloud Mode (see "Cloud Mode & Docker Deployment") ────────────────────────
+CLOUD_MODE=false                 # true = headless server profile (see .env-cloud.example)
+OLLAMA_EMBED_URL=                # defaults to OLLAMA_BASE_URL
+OLLAMA_EMBED_MODEL=nomic-embed-text
+LLM_FALLBACK_ENABLED=            # defaults to true in cloud mode, false otherwise
+LLM_FALLBACK_MODEL=google/gemma-4-31b-it:free
+ENABLE_LOCAL_RUNTIMES=           # speech + python sidecars (default: off in cloud mode)
+ENABLE_COMPANION=                # ESP32 companion service (default: off in cloud mode)
+ENABLE_FORGE=false               # Forge/ForgeX are parked
+
 # ── Remote Cluster Worker Pre-Shared Keys ────────────────────────────────────
 WORKER_DESKTOP_URL=https://worker.yourdomain.com
 WORKER_DESKTOP_KEY=your_worker_preshared_key
@@ -517,7 +596,7 @@ WORKER_DESKTOP_KEY=your_worker_preshared_key
 ### Prerequisites
 - **Node.js**: v22.0.0 or higher
 - **npm**: v10.0.0 or higher
-- **MySQL**: 8.0 or higher
+- **MySQL**: 8.0 or higher (MariaDB is **not** supported: the migrations use `serial AUTO_INCREMENT`)
 - **Ollama**: Latest version (for local LLMs)
 - **Python**: 3.10–3.12 (for sidecars; PersonaPlex requires <= 3.12)
 - **CUDA**: 12+ (optional, for local GPU acceleration)
@@ -591,6 +670,16 @@ npm run build
 npm start
 ```
 
+### Docker / Cloud Server
+```bash
+cp .env-cloud.example .env     # fill in the values
+docker compose --profile embeddings up -d --build
+docker compose logs --tail=40 app
+```
+The app listens on `127.0.0.1:3000` only; reach it through an SSH tunnel or a Cloudflare tunnel. Details: [`docs/CLOUD_DEPLOY.md`](docs/CLOUD_DEPLOY.md).
+
+> **Dev mode notes:** `npm run dev` now loads the API (database, runtimes, poller) as soon as Vite starts instead of on the first API call, and page loads go through the login gate first, so a signed-out browser lands on the login page before the landing page.
+
 ### Starting Distributed GPU Workers
 On your remote GPU machine:
 ```bash
@@ -636,7 +725,10 @@ n0th1ng-ai/
 │   │   ├── boot.ts                   # Gateway middleware, routes, asset filters
 │   │   ├── router.ts                 # Root tRPC router
 │   │   ├── context.ts                # Session-aware tRPC context
-│   │   ├── middleware.ts             # Elevated Forge procedure guards
+│   │   ├── middleware.ts             # Elevated (forge_unlocked) procedure guards
+│   │   ├── lib/
+│   │   │   ├── cloud.ts              # CLOUD_MODE switch, feature flags, service URLs, config validation
+│   │   │   └── llmRouter.ts          # Ollama health check + OpenRouter fallback routing
 │   │   ├── routers/
 │   │   │   ├── auth.router.ts        # V2.0 Authentication & Passkey HTTP router
 │   │   │   ├── chat.ts               # Chatspace conversations & messages
@@ -649,7 +741,11 @@ n0th1ng-ai/
 │   │   │   ├── agentLoop.ts          # Extended multi-round tool agent engine
 │   │   │   ├── memory.ts             # Persistent semantic memory store
 │   │   │   └── ...                   # 40+ business logic services
-│   │   └── forge/                    # Forge & ForgeX autonomous build controllers
+│   │   └── (forge/, forgex/ are parked in _parked/)
+│   ├── _parked/                      # Disabled code (Forge/ForgeX API + UI), restorable
+│   ├── Dockerfile                    # Multi-stage image (arm64 / x86_64)
+│   ├── docker-compose.yml            # db (MySQL 8.4) + app + optional tunnel / embeddings
+│   ├── .env-cloud.example            # Template env for CLOUD_MODE=true servers
 │   ├── db/
 │   │   ├── schema.ts                 # Complete Drizzle schema (37+ tables)
 │   │   └── migrations/               # Schema migration journals & snapshots
@@ -665,14 +761,13 @@ n0th1ng-ai/
 │   │   ├── studio/                   # ComfyUI Image Studio
 │   │   ├── framesx/                  # FramesX cinematic video generator
 │   │   ├── voice/                    # Voice Studio TTS/STT
-│   │   ├── forge/                    # Autonomous agent builder
-│   │   ├── forgex/                   # Claude Code CLI interactive UI
 │   │   ├── monitor/                  # System hardware telemetry
 │   │   └── ...
 │   ├── scripts/
 │   │   ├── reset-auth.ts             # 2AM emergency CLI password recovery tool
 │   │   ├── manage-worker-keys.ts     # CLI worker pre-shared key manager
 │   │   ├── migrate-auth.ts           # Non-destructive schema migration runner
+│   │   ├── migrate.ts                # Drizzle migration runner used by the Docker image
 │   │   └── test-phase*.ts            # Automated security regression test suites
 │   ├── python-runtime/               # Document Intelligence FastAPI Sidecar
 │   ├── speech-runtime/               # TTS & STT FastAPI Sidecar

@@ -1,3 +1,4 @@
+import { OLLAMA_BASE_URL } from "../lib/cloud";
 /**
  * phaseTracker.ts
  * ================
@@ -475,7 +476,7 @@ export class PhaseTrackerService {
     }, TRACKER_TIMEOUT_MS);
 
     try {
-      const response = await fetch("http://localhost:11434/api/chat", {
+      const response = await fetch(`${OLLAMA_BASE_URL}/api/chat`, {
         method:  "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

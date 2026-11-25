@@ -17,6 +17,7 @@
 - [x] **Phase 6 — Tiered Trust: Forge / ForgeX Execution Gate**
 - [x] **Phase 7 — Cloudflare Access Outer Perimeter Integration**
 - [x] **Phase 8 — Production Hardening & Reverse Proxy Pass**
+- [x] **Phase 9 — Cloud Mode, Dockerization & LLM Fallback Routing**
 
 ---
 
@@ -365,6 +366,23 @@
 | `api/services/security.service.ts` | Created | Central CSRF validator (`validateCsrfProtection`), dynamic origin resolver (`getAllowedOrigins`), and security header injector (`applySecurityHeaders`). |
 | `api/boot.ts` | Modified | Integrated CSRF verification and security response headers into gatekeeper middleware; ensured `app.route("/api/auth", authRouter)` is protected. |
 | `scripts/test-phase8-hardening.ts` | Created | Automated test script validating CSRF blocking, worker lane bypass, and security response headers. |
+
+---
+
+## Phase 9 — Cloud Mode, Dockerization & LLM Fallback Routing (Completed)
+
+**Goal:** run the workstation 24x7 as a headless server on a small cloud VM (Oracle Always Free, ARM) with one switch, while keeping local behaviour unchanged.
+
+- **`CLOUD_MODE=true`** (`api/lib/cloud.ts`, first import of `api/boot.ts`): sets `NODE_ENV=production` if unset, disables the speech/Python sidecars and the companion service, enables the OpenRouter fallback, and validates `APP_SECRET`, `DATABASE_URL`, `PRODUCTION_ORIGIN` at startup (warns on missing WebAuthn config, missing OpenRouter key, and `CF_ACCESS_REQUIRED` not true). Individual flags: `ENABLE_LOCAL_RUNTIMES`, `ENABLE_COMPANION`, `ENABLE_FORGE`, `LLM_FALLBACK_ENABLED`.
+- **LLM router** (`api/lib/llmRouter.ts`): cached Ollama health check; if Ollama is down or fails mid-request (connection error or HTTP >= 502) the turn is answered by `openrouter:<LLM_FALLBACK_MODEL>`. No behaviour change when no fallback is configured.
+- **Configurable endpoints:** `OLLAMA_BASE_URL`, `OLLAMA_EMBED_URL`, `OLLAMA_EMBED_MODEL`, `COMFYUI_URL` replace hard-coded localhost URLs (about 12 files). Memory search failures no longer break chat.
+- **Execution guards:** `assertForge` / `assertLocalRuntimes` block shell/process spawning in Forge, ForgeX, PersonaPlex, speech and runtime managers when disabled. Forge and ForgeX are currently **parked** (code moved to `_parked/`, routes, tRPC entries and nav links commented out).
+- **Security fix:** `/uploads/*` is confined to the `uploads/` directory (path-traversal fix).
+- **Containers:** `Dockerfile`, `docker-compose.yml` (MySQL 8.4 + app, optional cloudflared and Ollama profiles), `.env-cloud.example`, `scripts/migrate.ts`, new `.dockerignore`. See `docs/CLOUD_DEPLOY.md`.
+- **Repository fixes found while deploying:** `.gitignore` no longer hides `api/speech/storage/` or `db/migrations/*.sql`; missing speech event helpers added; three foreign-key column types corrected for MySQL; bundle banner and native-module externals fixed.
+- **Dev server:** `vite.config.ts` loads the API at Vite start and routes page loads through the login gate first.
+
+Not yet verified: fallback under real failure, embeddings in the container, Cloudflare tunnel + Access, GPU-worker failover, reboot recovery.
 
 ---
 

@@ -1,3 +1,4 @@
+import { OLLAMA_BASE_URL } from "../lib/cloud";
 import { isOpenRouterModel, generateWithOpenRouter } from "./openRouter";
 
 type ConversationMessage = {
@@ -72,7 +73,7 @@ ${conversation}
 
   const response =
     await fetch(
-      "http://localhost:11434/api/generate",
+      `${OLLAMA_BASE_URL}/api/generate`,
       {
         method: "POST",
 

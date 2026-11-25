@@ -235,12 +235,18 @@ Every module stylesheet (e.g., `d:/AI/Chatbot/app/frontend/home/styles.css` `#L1
 - **Setup & Server State Machine (`renderServerState()` `#L105-L213`)**: Handles `!setupStatus.installed` (`not_started` $\rightarrow$ 'Install PersonaPlex' calling `personaplex.setup.start`; `cloning`/`installing` $\rightarrow$ polls every `2000ms` via `startPollingIfNeeded()` `#L67-L97` and streams logs into `#activeLogConsole`; `error` $\rightarrow$ retry) and `setupStatus.installed` (`stopped` $\rightarrow$ collects HuggingFace token `#hfToken` and CPU Offload toggle `#cpuOffload` $\rightarrow$ calls `personaplex.server.start` `#L241-L256`; `starting` $\rightarrow$ `2000ms` log polling; `running` $\rightarrow$ renders Online badge + external link to `serverStatus.url` + 'Stop Server' button). Also provides Persona CRUD (`#L270-L347`).
 
 ### Module 8: The Forge — Autonomous Build Agent (`frontend/forge/*`)
+
+> **Status (Nov 2026): parked.** This module is disabled: its API and UI code now live in `_parked/`, and its routes, tRPC entries and nav links are commented out. Paths below describe the original layout and apply again if the module is restored.
+
 - **Files**: `d:/AI/Chatbot/app/frontend/forge/index.html` (`#L1-L292`), `forge.js` (`#L1-L811`), `forge.css` (`#L1-L321`).
 - **Dual Ambient Canvases (`forge.js` `#L18-L145`)**: `liquidField()` (`#L24-L85`) renders 5 pulsing molten-gold radial gradient metaballs with `globalCompositeOperation = 'lighter'`; `particles()` (`#L91-L145`) renders a 55-node gold particle network.
 - **Cross-Chunk `<think>` Tag Splitter (`streamRawText()` `#L147-L275`)**: Maintains a 10-character tail buffer (`TAG_BUFFER_MAX = 10`, `#L168`) so `<think>` and `</think>` tags split across arbitrary SSE token chunks are cleanly detected, routing reasoning tokens into dim `.raw-think-text` spans (`appendThinkText` `#L257-L265`) and action JSON into bright `.raw-final-text` spans (`appendFinalText` `#L267-L275`).
 - **Task Tree & 5-Event SSE Stream (`connectLiveLog` `#L456-L625`)**: `renderTaskTree()` (`#L456-L492`) computes task depth and wires `focusTask(taskId)` (`#L494-L506` $\rightarrow$ `forge.getTaskLog`). `EventSource('/api/forge/${sessionId}/stream')` listens to `iteration` (renders `[THINK]`/`[ACT]`/`[EVALUATE]` groups), `token`, `status`, `raw_activity` (inserts dashed run separators on `false -> true` transitions), and `error`. `sendFollowUp()` (`#L768-L798`) appends new tasks when status is `done`, `blocked`, or `paused`.
 
 ### Module 9: ForgeX — Local Claude Code CLI Bridge (`frontend/forgex/*`)
+
+> **Status (Nov 2026): parked.** This module is disabled: its API and UI code now live in `_parked/`, and its routes, tRPC entries and nav links are commented out. Paths below describe the original layout and apply again if the module is restored.
+
 - **Files**: `d:/AI/Chatbot/app/frontend/forgex/index.html` (`#L1-L223`), `forgex.js` (`#L1-L360`), `forgex.css` (`#L1-L321`).
 - **Workflow (`forgex.js` `#L98-L360`)**: `FORGEX_API` (`#L98-L127`) wraps `/api/trpc/forgex.*` (`list`, `listModels`, `create`, `sendInput`, `stop`). `connectLiveTerminal(sessionId)` (`#L237-L266`) subscribes to `EventSource('/api/forgex/${sessionId}/stream')` for `output` (`stdout`/`stderr`/`[SYSTEM]` lines in `#forgexTerminal`) and `status`. Because stopping a session kills only the OS child process while keeping `claudeSessionId` in MySQL, `updateFollowupBar()` (`#L213-L224`) enables resumable follow-ups (`claude -p --resume`) whenever status is `idle` or `exited`.
 
@@ -1677,3 +1683,30 @@ npm run worker:keys -- --action=revoke --id=1
   3. **Verification**:
      - Live network analysis verified that Ollama inference streams tokens at ~5ms per chunk without socket MTU batching.
      - The browser renders both thinking traces and responses with a silky-smooth, continuous typing cadence and zero UI stutter.
+
+---
+
+## Addendum — Cloud Mode, Container Deployment & Dev-Server Changes (Nov 2026)
+
+This addendum records changes made after the v2.1.0 manual was written. See `README.md` ("Cloud Mode & Docker Deployment") and `docs/CLOUD_DEPLOY.md` for operating instructions.
+
+### A.1 `CLOUD_MODE` and feature flags (`api/lib/cloud.ts`)
+First import of `api/boot.ts`. Reads `CLOUD_MODE` and sets `NODE_ENV=production` when unset. Exports `OLLAMA_BASE_URL`, `OLLAMA_EMBED_URL`, `OLLAMA_EMBED_MODEL`, `COMFYUI_URL` and a `cloud` object (`localRuntimes`, `companion`, `forge`, `llmFallback`, `llmFallbackModel`), plus `assertLocalRuntimes()` / `assertForge()` guards, `validateCloudConfig()` and `logCloudSummary()`. Defaults: local runtimes and companion on locally and off in cloud mode; Forge off; fallback on in cloud mode only.
+
+### A.2 Boot sequence changes (`api/boot.ts`)
+Cloud config is validated before the database warm-up. Speech initialization and the Python runtime start only when `cloud.localRuntimes`; the companion service only when `cloud.companion`; telemetry and the worker poller always start. Forge and ForgeX routes are not mounted. Every Ollama call uses `OLLAMA_BASE_URL`. `/uploads/*` resolves paths against `./uploads` and rejects anything outside it.
+
+### A.3 Chat routing with fallback (`api/lib/llmRouter.ts`, `/api/chat/stream`)
+`runModelInference` calls `resolveChatModel(body.model)`. If the fallback is configured and Ollama is unreachable (`/api/tags`, 2.5 s timeout, 10 s cache), the turn uses `openrouter:<LLM_FALLBACK_MODEL>` and a status notification is streamed. If an Ollama request fails with a connection error or HTTP >= 502, `markOllamaDown()` is called and the turn is retried once on the fallback. `openrouter:` models are never rerouted.
+
+### A.4 Cluster and services
+`executeClusterTool` only falls back to the local Python runtime when `cloud.localRuntimes`; otherwise it returns `{ success: false, error }`. `embeddingService.ts` uses `OLLAMA_EMBED_URL`/`OLLAMA_EMBED_MODEL`. `buildMemoryContext` returns no memories when embedding search fails. ComfyUI HTTP/WS URLs derive from `COMFYUI_URL`.
+
+### A.5 Database
+Migrations run at container start through `scripts/migrate.ts` (bundled to `dist/migrate.js`). Target engine is **MySQL 8**; MariaDB rejects the generated `serial AUTO_INCREMENT`. Foreign-key columns `chunk_embeddings.chunk_id`, `memory_chunk_embeddings.chunk_id` and `memory_chunks.memory_id` are now `bigint unsigned` to match their parents (schema and migration `0002`).
+
+### A.6 Build and container
+`npm run build` bundles the server with esbuild, aliasing the banner import (`__n0CreateRequire`) and keeping `argon2` and `tesseract.js` external. The Dockerfile copies `frontend/` into `dist/public/frontend` so the production server can serve the page tree. Compose binds the app to `127.0.0.1:3000`.
+
+### A.7 Development server (`vite.config.ts`)
+A dev-only plugin loads `api/boot.ts` as soon as Vite is listening (previously the API was loaded lazily on the first `/api` request), and sends page navigations through the Hono auth gate first so a signed-out browser is redirected to `/frontend/login/` before any page renders.

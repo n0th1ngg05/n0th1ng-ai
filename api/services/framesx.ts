@@ -1,3 +1,4 @@
+import { OLLAMA_BASE_URL } from "../lib/cloud";
 import { COMFYUI_URL } from "../lib/cloud";
 // api/services/framesx.ts
 //
@@ -33,7 +34,7 @@ import { getProvider, getDefaultProvider } from "./providers";
 const COMFY_HTTP = COMFYUI_URL;
 const COMFY_WS = `${COMFYUI_URL.replace(/^http/, "ws")}/ws`;
 const COMFY_OUTPUT = "D:/AI/ComfyUI/output";
-const OLLAMA_URL = "http://localhost:11434/api/generate";
+const OLLAMA_URL = `${OLLAMA_BASE_URL}/api/generate`;
 
 function getPublicGeneratedVideos() {
   return path.join(process.cwd(), "public", "video", "generated");
